@@ -2,6 +2,7 @@ package com.belinze.lifeos.ui.components
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 
@@ -70,6 +72,10 @@ fun PageScaffold(
     actions:    @Composable (() -> Unit)? = null,
     scrollable: Boolean                = true,
     gradient:   Boolean                = true,
+    // Optional banner overlay — floats over content at the top of the content
+    // area without pushing anything down. Pass your TopBanner here so it
+    // animates in/out on top of the page instead of shifting layout.
+    topBanner: (@Composable BoxScope.() -> Unit)? = null,
     content:    @Composable ColumnScope.() -> Unit,
 ) {
     val isDark = isSystemInDarkTheme()
@@ -166,25 +172,38 @@ fun PageScaffold(
         }
 
         // ── Content ──────────────────────────────────────────────────────────
-        if (scrollable) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        horizontal = Spacing.screenHorizontal,
-                        vertical   = Spacing.sm,
-                    )
-                    .padding(bottom = Spacing.bottomNavSafeArea),
-                content = content,
-            )
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
-                content = content,
-            )
+        // Wrap in Box so topBanner can float over content without shifting it.
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (scrollable) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            horizontal = Spacing.screenHorizontal,
+                            vertical   = Spacing.sm,
+                        )
+                        .padding(bottom = Spacing.bottomNavSafeArea),
+                    content = content,
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                    content = content,
+                )
+            }
+            // Overlay: banner slides in/out above the content without pushing it.
+            if (topBanner != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopStart)
+                        .zIndex(1f),
+                    content = topBanner,
+                )
+            }
         }
     }
 }

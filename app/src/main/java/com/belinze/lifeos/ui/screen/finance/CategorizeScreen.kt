@@ -69,16 +69,17 @@ fun CategorizeScreen(
         title = "Categorize",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            if (state.message != null) {
+                TopBanner(
+                    tone = if (state.isError) BannerTone.Error else BannerTone.Success,
+                    message = state.message.orEmpty(),
+                    visible = true,
+                    onDismiss = { viewModel.clearMessage() },
+                )
+            }
+        },
     ) {
-        if (state.message != null) {
-            TopBanner(
-                tone = if (state.isError) BannerTone.Error else BannerTone.Success,
-                message = state.message.orEmpty(),
-                visible = true,
-                onDismiss = { viewModel.clearMessage() },
-            )
-        }
-
         if (state.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

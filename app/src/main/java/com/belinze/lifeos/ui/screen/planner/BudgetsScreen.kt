@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -56,6 +60,15 @@ fun BudgetsScreen(
     navController: NavHostController,
     viewModel:     BudgetViewModel = hiltViewModel(),
 ) {
+    // Reload whenever the screen resumes (e.g. returning from BudgetFormScreen)
+    // so newly added or edited budgets appear immediately.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.load()
+        }
+    }
+
     val state by viewModel.uiState.collectAsState()
     val active = state.budgets.filter { it.budget.isActive != 0 }
     val totalLimit = active.sumOf { it.budget.limitAmount }

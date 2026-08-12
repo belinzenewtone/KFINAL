@@ -65,15 +65,16 @@ fun ScreenLockScreen(
         title = "Screen Lock",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = message != null,
+                message = message ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { message = null },
+                autoDismissMs = 2500,
+            )
+        },
     ) {
-        TopBanner(
-            visible = message != null,
-            message = message ?: "",
-            tone = BannerTone.Success,
-            onDismiss = { message = null },
-            autoDismissMs = 2500,
-        )
-
         Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             GlassCard {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
