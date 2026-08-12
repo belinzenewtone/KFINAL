@@ -74,6 +74,7 @@ fun GoalsScreen(
         title = "Goals",
         subtitle = "${activeGoals.size} active goal${if (activeGoals.size == 1) "" else "s"}",
         onBack = { navController.popBackStack() },
+        scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.goalForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add goal", tint = MaterialTheme.colorScheme.primary)

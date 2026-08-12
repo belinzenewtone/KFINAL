@@ -2,7 +2,6 @@ package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,8 +14,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -76,15 +80,29 @@ fun BudgetFormScreen(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Spacing.base),
         ) {
-            Text("Category", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                CATEGORIES.forEach { cat ->
-                    FilterChip(
-                        selected = form.category == cat,
-                        onClick = { viewModel.updateCategory(cat) },
-                        label = { Text(cat.replaceFirstChar { it.uppercase() }) },
-                    )
+            var categoryExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = form.category.replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false },
+                ) {
+                    CATEGORIES.forEach { cat ->
+                        DropdownMenuItem(
+                            text = { Text(cat.replaceFirstChar { it.uppercase() }) },
+                            onClick = { viewModel.updateCategory(cat); categoryExpanded = false },
+                        )
+                    }
                 }
             }
 
@@ -99,15 +117,29 @@ fun BudgetFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Text("Period", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                PERIODS.forEach { period ->
-                    FilterChip(
-                        selected = form.period == period,
-                        onClick = { viewModel.updatePeriod(period) },
-                        label = { Text(period.replaceFirstChar { it.uppercase() }) },
-                    )
+            var periodExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = periodExpanded,
+                onExpandedChange = { periodExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = form.period.replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Period") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(periodExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = periodExpanded,
+                    onDismissRequest = { periodExpanded = false },
+                ) {
+                    PERIODS.forEach { period ->
+                        DropdownMenuItem(
+                            text = { Text(period.replaceFirstChar { it.uppercase() }) },
+                            onClick = { viewModel.updatePeriod(period); periodExpanded = false },
+                        )
+                    }
                 }
             }
 

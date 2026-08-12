@@ -18,10 +18,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -70,6 +74,7 @@ private val SESSIONS = listOf(
     LearningSession("Writing a personal OKR set", "Career", "Turn annual goals into quarterly, measurable outcomes.", 14),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LearningScreen(navController: NavHostController) {
     var category by remember { mutableStateOf<String?>(null) }
@@ -109,13 +114,29 @@ fun LearningScreen(navController: NavHostController) {
                     }
 
                     Spacer(Modifier.height(Spacing.base))
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        CATEGORIES.forEach { cat ->
-                            FilterChip(
-                                selected = if (cat == "All") category == null else category == cat,
-                                onClick = { category = if (cat == "All") null else cat },
-                                label = { Text(cat) },
-                            )
+                    var categoryExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = categoryExpanded,
+                        onExpandedChange = { categoryExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = category ?: "All",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Category") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false },
+                        ) {
+                            CATEGORIES.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(cat) },
+                                    onClick = { category = if (cat == "All") null else cat; categoryExpanded = false },
+                                )
+                            }
                         }
                     }
                     Spacer(Modifier.height(Spacing.base))

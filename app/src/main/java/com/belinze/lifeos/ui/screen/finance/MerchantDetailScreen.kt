@@ -52,6 +52,7 @@ fun MerchantDetailScreen(
         title = merchant,
         subtitle = "${state.transactions.size} transaction${if (state.transactions.size != 1) "s" else ""}",
         onBack = { navController.popBackStack() },
+        scrollable = false,
     ) {
         if (state.transactions.isEmpty() && !state.isLoading) {
             Column(

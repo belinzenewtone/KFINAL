@@ -68,6 +68,7 @@ fun CategorizeScreen(
         eyebrow = "Finance",
         title = "Categorize",
         onBack = { navController.popBackStack() },
+        scrollable = false,
     ) {
         if (state.message != null) {
             TopBanner(

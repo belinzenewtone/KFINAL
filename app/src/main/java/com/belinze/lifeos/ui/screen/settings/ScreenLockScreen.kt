@@ -14,7 +14,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -104,19 +107,37 @@ fun ScreenLockScreen(
                         Spacer(Modifier.height(Spacing.lg))
                         Text("Auto-lock", style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            TIMEOUT_OPTIONS.forEach { mins ->
-                                FilterChip(
-                                    selected = settings.lockTimeoutMinutes == mins,
-                                    onClick = { viewModel.setLockTimeout(mins) },
-                                    label = {
-                                        Text(
-                                            if (mins == 0) "Immediately"
-                                            else if (mins == 60) "After 1 hour"
-                                            else "After $mins minute${if (mins == 1) "" else "s"}"
-                                        )
-                                    },
-                                )
+                        var timeoutExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = timeoutExpanded,
+                            onExpandedChange = { timeoutExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value = if (settings.lockTimeoutMinutes == 0) "Immediately"
+                                    else if (settings.lockTimeoutMinutes == 60) "After 1 hour"
+                                    else "After ${settings.lockTimeoutMinutes} minute${if (settings.lockTimeoutMinutes == 1) "" else "s"}",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Auto-lock after") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(timeoutExpanded) },
+                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            )
+                            ExposedDropdownMenu(
+                                expanded = timeoutExpanded,
+                                onDismissRequest = { timeoutExpanded = false },
+                            ) {
+                                TIMEOUT_OPTIONS.forEach { mins ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (mins == 0) "Immediately"
+                                                else if (mins == 60) "After 1 hour"
+                                                else "After $mins minute${if (mins == 1) "" else "s"}"
+                                            )
+                                        },
+                                        onClick = { viewModel.setLockTimeout(mins); timeoutExpanded = false },
+                                    )
+                                }
                             }
                         }
                         Text(

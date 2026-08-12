@@ -15,7 +15,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -113,28 +119,56 @@ fun RecurringFormScreen(
                 }
             }
 
-            Text("Cadence", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                CADENCES.forEach { cadence ->
-                    FilterChip(
-                        selected = form.frequency == cadence,
-                        onClick = { viewModel.updateRecurringFrequency(cadence) },
-                        label = { Text(cadence.replaceFirstChar { it.uppercase() }) },
-                    )
+            var cadenceExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = cadenceExpanded,
+                onExpandedChange = { cadenceExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = form.frequency.replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Cadence") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(cadenceExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = cadenceExpanded,
+                    onDismissRequest = { cadenceExpanded = false },
+                ) {
+                    CADENCES.forEach { cadence ->
+                        DropdownMenuItem(
+                            text = { Text(cadence.replaceFirstChar { it.uppercase() }) },
+                            onClick = { viewModel.updateRecurringFrequency(cadence); cadenceExpanded = false },
+                        )
+                    }
                 }
             }
 
             if (form.type == "expense") {
-                Text("Category", style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    CATEGORIES.forEach { cat ->
-                        FilterChip(
-                            selected = form.category == cat,
-                            onClick = { viewModel.updateRecurringCategory(cat) },
-                            label = { Text(cat.replaceFirstChar { it.uppercase() }) },
-                        )
+                var categoryExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = form.category.replaceFirstChar { it.uppercase() },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false },
+                    ) {
+                        CATEGORIES.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat.replaceFirstChar { it.uppercase() }) },
+                                onClick = { viewModel.updateRecurringCategory(cat); categoryExpanded = false },
+                            )
+                        }
                     }
                 }
             }

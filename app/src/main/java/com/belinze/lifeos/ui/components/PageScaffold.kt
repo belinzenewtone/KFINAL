@@ -44,7 +44,11 @@ import com.belinze.lifeos.ui.theme.Spacing
 //  ‣ subtitle  — secondary text below title (optional)
 //  ‣ onBack    — if non-null, shows back chevron in AppBar
 //  ‣ actions   — trailing slot in AppBar (optional)
-//  ‣ scrollable — wraps content in verticalScroll when true (default true)
+//  ‣ scrollable — wraps content in verticalScroll when true (default true).
+//               ⚠ MUST be false when content contains a LazyColumn/LazyRow —
+//               nesting a lazy list inside verticalScroll gives it infinite
+//               height constraints and crashes at runtime. Use scrollable=false
+//               and let the LazyColumn handle its own scrolling instead.
 //  ‣ gradient  — page background uses gradient when true (default true)
 //
 // Layout:

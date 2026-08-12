@@ -67,6 +67,7 @@ fun BudgetsScreen(
     PageScaffold(
         title = "Budgets",
         onBack = { navController.popBackStack() },
+        scrollable = false, // LazyColumn below provides its own scrolling
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.budgetForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add budget", tint = MaterialTheme.colorScheme.primary)

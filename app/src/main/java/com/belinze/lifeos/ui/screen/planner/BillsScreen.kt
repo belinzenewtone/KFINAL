@@ -65,6 +65,7 @@ fun BillsScreen(
         title = "Bills",
         subtitle = "${activeBills.size} active bill${if (activeBills.size == 1) "" else "s"}",
         onBack = { navController.popBackStack() },
+        scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.billForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add bill", tint = MaterialTheme.colorScheme.primary)

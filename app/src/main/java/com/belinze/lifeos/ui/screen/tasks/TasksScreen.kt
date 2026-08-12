@@ -94,6 +94,7 @@ fun TasksScreen(
         title = "Tasks",
         subtitle = "$openCount open · $completedCount completed",
         onBack = { navController.popBackStack() },
+        scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(Route.TASK_FORM) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add task", tint = MaterialTheme.colorScheme.onSurface)

@@ -58,6 +58,7 @@ fun RecurringScreen(
         title = "Recurring",
         subtitle = "Subscriptions and repeating items",
         onBack = { navController.popBackStack() },
+        scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.recurringForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add rule", tint = MaterialTheme.colorScheme.primary)

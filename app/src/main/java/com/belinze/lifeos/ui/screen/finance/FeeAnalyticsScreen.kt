@@ -57,6 +57,7 @@ fun FeeAnalyticsScreen(
         title = "Service Charges",
         subtitle = "Airtime, Fuliza, withdrawals and subscriptions this month",
         onBack = { navController.popBackStack() },
+        scrollable = false,
     ) {
         if (!state.isLoading && state.categories.isEmpty()) {
             Column(

@@ -59,6 +59,7 @@ fun EventsScreen(
         title = "Events",
         subtitle = "Upcoming",
         onBack = { navController.popBackStack() },
+        scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.eventForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add event", tint = MaterialTheme.colorScheme.primary)

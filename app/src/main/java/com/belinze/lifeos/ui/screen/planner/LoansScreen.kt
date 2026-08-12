@@ -72,6 +72,7 @@ fun LoansScreen(
         title = "Loans & Fuliza",
         subtitle = "Track outstanding draws and repayment history",
         onBack = { navController.popBackStack() },
+        scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.loanForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add loan", tint = MaterialTheme.colorScheme.primary)

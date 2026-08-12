@@ -56,6 +56,7 @@ fun IncomeScreen(
         title = "Income",
         subtitle = "${incomes.size} entr${if (incomes.size == 1) "y" else "ies"} tracked",
         onBack = { navController.popBackStack() },
+        scrollable = false, // LazyColumn below provides its own scrolling
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.incomeForm()) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add income", tint = MaterialTheme.colorScheme.primary)

@@ -136,14 +136,30 @@ fun EventFormScreen(
         ) {
             Spacer(Modifier.height(Spacing.sm))
 
-            // ─ Type chips ─
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                items(EVENT_TYPES) { (value, label) ->
-                    FilterChip(
-                        selected = form.type == value,
-                        onClick  = { viewModel.updateType(value) },
-                        label    = { Text(label) },
-                    )
+            // ─ Type ─
+            var typeExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = typeExpanded,
+                onExpandedChange = { typeExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value         = EVENT_TYPES.find { it.first == form.type }?.second ?: form.type,
+                    onValueChange = {},
+                    readOnly      = true,
+                    label         = { Text("Type") },
+                    trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(typeExpanded) },
+                    modifier      = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded         = typeExpanded,
+                    onDismissRequest = { typeExpanded = false },
+                ) {
+                    EVENT_TYPES.forEach { (value, label) ->
+                        DropdownMenuItem(
+                            text    = { Text(label) },
+                            onClick = { viewModel.updateType(value); typeExpanded = false },
+                        )
+                    }
                 }
             }
 
@@ -336,13 +352,29 @@ fun EventFormScreen(
 
                 // Category (kind)
                 SectionHeader("Category")
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    items(EVENT_CATEGORIES) { cat ->
-                        FilterChip(
-                            selected = form.kind == cat,
-                            onClick  = { viewModel.updateKind(cat) },
-                            label    = { Text(cat.replaceFirstChar { it.uppercaseChar() }) },
-                        )
+                var categoryExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded         = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = it },
+                ) {
+                    OutlinedTextField(
+                        value         = form.kind.replaceFirstChar { it.uppercaseChar() },
+                        onValueChange = {},
+                        readOnly      = true,
+                        label         = { Text("Category") },
+                        trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
+                        modifier      = Modifier.fillMaxWidth().menuAnchor(),
+                    )
+                    ExposedDropdownMenu(
+                        expanded         = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false },
+                    ) {
+                        EVENT_CATEGORIES.forEach { cat ->
+                            DropdownMenuItem(
+                                text    = { Text(cat.replaceFirstChar { it.uppercaseChar() }) },
+                                onClick = { viewModel.updateKind(cat); categoryExpanded = false },
+                            )
+                        }
                     }
                 }
 
