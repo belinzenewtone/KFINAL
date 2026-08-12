@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  XML color resources — used only for the splash screen and window background.
+  All other colours are defined in Kotlin (Color.kt) and accessed via
+  MaterialTheme.colorScheme inside Compose.
+-->
+<resources>
+    <!-- bgPrimary dark — matches Color.kt BgPrimary -->
+    <color name="bg_primary">#FF0B0E14</color>
+</resources>
