@@ -70,6 +70,9 @@ object PreferenceKeys {
     val PROFILE_PHONE            = stringPreferencesKey("profile_phone")
     val PROFILE_AVATAR_URI       = stringPreferencesKey("profile_avatar_uri")
     val PROFILE_USERNAME         = stringPreferencesKey("profile_username")
+
+    // Fired budget alerts — JSON map of "category|level|yearMonth" → ISO timestamp
+    val FIRED_BUDGET_ALERTS      = stringPreferencesKey("fired_budget_alerts")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +114,7 @@ data class AppPreferenceState(
     val profilePhone: String            = "",
     val profileAvatarUri: String        = "",
     val profileUsername: String         = "",
+    val firedBudgetAlerts: Map<String, String> = emptyMap(),
 )
 
 @Singleton
@@ -125,6 +129,25 @@ class AppPreferences @Inject constructor(
 
     suspend fun update(transform: suspend (MutablePreferences) -> Unit) {
         store.edit { transform(it) }
+    }
+
+    /** Wipe all persisted preferences — used by "Clear all local data". */
+    suspend fun clearAll() {
+        store.edit { it.clear() }
+    }
+
+    /** Persist a fired budget-alert key (category|level|yearMonth) → ISO timestamp. */
+    suspend fun markBudgetAlertFired(key: String, timestamp: String) {
+        store.edit { prefs ->
+            val raw = prefs[PreferenceKeys.FIRED_BUDGET_ALERTS]
+            val obj = try {
+                if (raw.isNullOrBlank()) org.json.JSONObject() else org.json.JSONObject(raw)
+            } catch (_: Exception) {
+                org.json.JSONObject()
+            }
+            obj.put(key, timestamp)
+            prefs[PreferenceKeys.FIRED_BUDGET_ALERTS] = obj.toString()
+        }
     }
 
     private fun Preferences.toState() = AppPreferenceState(
@@ -161,5 +184,28 @@ class AppPreferences @Inject constructor(
         profilePhone           = this[PreferenceKeys.PROFILE_PHONE]            ?: "",
         profileAvatarUri       = this[PreferenceKeys.PROFILE_AVATAR_URI]       ?: "",
         profileUsername        = this[PreferenceKeys.PROFILE_USERNAME]         ?: "",
+        firedBudgetAlerts      = parseFiredAlerts(this[PreferenceKeys.FIRED_BUDGET_ALERTS]),
     )
+
+    /** Parse the stored JSON map of fired budget alerts; prune to current+prev month. */
+    private fun parseFiredAlerts(raw: String?): Map<String, String> {
+        if (raw.isNullOrBlank()) return emptyMap()
+        return try {
+            val obj = org.json.JSONObject(raw)
+            val now = java.time.LocalDate.now()
+            val ym = { d: java.time.LocalDate -> "${d.year}-${String.format(java.util.Locale.US, "%02d", d.monthValue)}" }
+            val keep = setOf(ym(now), ym(now.minusMonths(1)))
+            val result = mutableMapOf<String, String>()
+            obj.keys().forEach { key ->
+                val parts = key.split("|")
+                val month = parts.getOrNull(2)
+                if (month != null && keep.contains(month)) {
+                    result[key] = obj.optString(key)
+                }
+            }
+            result
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
 }

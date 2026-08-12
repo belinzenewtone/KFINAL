@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferenceState
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
+import com.belinze.lifeos.services.BudgetAlertService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,6 +28,7 @@ data class AppUiState(
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val appPreferences: AppPreferences,
+    private val budgetAlertService: BudgetAlertService,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AppUiState())
@@ -48,6 +51,20 @@ class AppViewModel @Inject constructor(
         _uiState.update { it.copy(isAppLocked = locked) }
     }
 
+    /**
+     * Foreground re-check: mirrors the RN AppState 'active' handler that runs
+     * syncAllNotifications + checkAllBudgetThresholds (throttled) when the app
+     * returns to the foreground.
+     */
+    fun refreshOnForeground() {
+        viewModelScope.launch {
+            runCatching {
+                val state = appPreferences.state.first()
+                budgetAlertService.checkAllBudgetThresholds(state)
+            }
+        }
+    }
+
     fun setAuthenticated(authenticated: Boolean) {
         viewModelScope.launch {
             appPreferences.update { it[PreferenceKeys.IS_AUTHENTICATED] = authenticated }
@@ -57,6 +74,44 @@ class AppViewModel @Inject constructor(
     fun completeOnboarding() {
         viewModelScope.launch {
             appPreferences.update { it[PreferenceKeys.HAS_COMPLETED_ONBOARDING] = true }
+        }
+    }
+
+    // ─── Onboarding flow state ─────────────────────────────────────────────────
+
+    fun setOnboardingStep(step: Int) {
+        viewModelScope.launch {
+            appPreferences.update { it[PreferenceKeys.ONBOARDING_STEP] = step }
+        }
+    }
+
+    fun setOnboardingGoal(goal: String) {
+        viewModelScope.launch {
+            appPreferences.update { it[PreferenceKeys.ONBOARDING_GOAL] = goal }
+        }
+    }
+
+    fun setProfileName(name: String) {
+        viewModelScope.launch {
+            appPreferences.update { it[PreferenceKeys.PROFILE_NAME] = name }
+        }
+    }
+
+    fun setProfileUsername(username: String) {
+        viewModelScope.launch {
+            appPreferences.update { it[PreferenceKeys.PROFILE_USERNAME] = username }
+        }
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            appPreferences.update { it[PreferenceKeys.NOTIFICATIONS_ENABLED] = enabled }
+        }
+    }
+
+    fun setSmsBgReceiver(enabled: Boolean) {
+        viewModelScope.launch {
+            appPreferences.update { it[PreferenceKeys.SMS_BG_RECEIVER] = enabled }
         }
     }
 

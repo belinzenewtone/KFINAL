@@ -152,7 +152,7 @@ fun MonthlyWrappedScreen(
                             modifier              = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text("${medals.getOrElse(i) { "#${i + 1}"}} ${cat.category.replaceFirstChar { it.uppercase() }}",
+                            Text("${medals.getOrElse(i) { "#${i + 1}"}} ${cat.category?.replaceFirstChar { it.uppercase() } ?: "Other"}",
                                 color = MaterialTheme.colorScheme.onBackground)
                             Text(compactCurrency(cat.total), fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onBackground)
@@ -171,7 +171,7 @@ fun MonthlyWrappedScreen(
                         FrostCard(modifier = Modifier.weight(1f)) {
                             Text("Top Merchant", style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onBackground.copy(0.55f))
-                            Text(top.merchant, fontWeight = FontWeight.SemiBold,
+                            Text(top.merchant ?: "Unknown", fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onBackground)
                             Text(compactCurrency(top.total), style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary)

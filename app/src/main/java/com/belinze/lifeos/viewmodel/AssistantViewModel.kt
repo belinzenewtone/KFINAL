@@ -157,12 +157,12 @@ class AssistantViewModel @Inject constructor(
         if (q.containsAny("hello", "hi", "hey", "sup", "yo", "good morning",
                            "good afternoon", "good evening", "howdy")) {
             return "👋 Hey there! Here's what I can help you with:\n\n" +
-                "• "How much did I spend this month?"\n" +
-                "• "What are my active tasks?"\n" +
-                "• "What's my budget status?"\n" +
-                "• "Compare this month to last month"\n" +
-                "• "What events do I have coming up?"\n" +
-                "• "Show my top spending categories"\n\n" +
+                "• \"How much did I spend this month?\"\n" +
+                "• \"What are my active tasks?\"\n" +
+                "• \"What's my budget status?\"\n" +
+                "• \"Compare this month to last month\"\n" +
+                "• \"What events do I have coming up?\"\n" +
+                "• \"Show my top spending categories\"\n\n" +
                 "All answers come from your local data — no internet needed. 🔒"
         }
 
@@ -278,8 +278,8 @@ class AssistantViewModel @Inject constructor(
 
         // ── Default ───────────────────────────────────────────────────────────
         return "I can help with spending totals, tasks, budgets, and events. " +
-               "Try asking: "How much did I spend this month?" or "What tasks are due?"\n\n" +
-               "Say "help" for a full list of query types."
+               "Try asking: \"How much did I spend this month?\" or \"What tasks are due?\"\n\n" +
+               "Say \"help\" for a full list of query types."
     }
 
     // ─── Intent handlers ──────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ class AssistantViewModel @Inject constructor(
         val catTops  = transactionDao.getCategoryTotals(startIso, endIso).take(3)
 
         val catLines = catTops.joinToString("\n") {
-            "  • ${it.category.replaceFirstChar { c -> c.uppercase() }}: ${kes(it.total)}"
+            "  • ${it.category?.replaceFirstChar { c -> c.uppercase() } ?: "Other"}: ${kes(it.total)}"
         }
         return buildString {
             append("📊 This month so far:\n")
@@ -383,7 +383,7 @@ class AssistantViewModel @Inject constructor(
                "• This month: ${kes(curSpend)}\n" +
                "• Last month: ${kes(prevSpend)}\n" +
                "• Difference: ${if (delta >= 0) "+" else ""}${kes(delta)} " +
-               "(${String.format("%.1f", Math.abs(pct))}% $dir)"
+               "(${String.format(java.util.Locale.US, "%.1f", Math.abs(pct))}% $dir)"
     }
 
     private suspend fun queryIncome(): String {
@@ -414,7 +414,7 @@ class AssistantViewModel @Inject constructor(
         }.joinToString("\n")
 
         val cLines = cats.mapIndexed { i, c ->
-            "  ${i + 1}. ${c.category.replaceFirstChar { it.uppercase() }}: ${kes(c.total)}"
+            "  ${i + 1}. ${c.category?.replaceFirstChar { it.uppercase() } ?: "Other"}: ${kes(c.total)}"
         }.joinToString("\n")
 
         return buildString {
@@ -481,7 +481,7 @@ class AssistantViewModel @Inject constructor(
             val (startIso, endIso) = isoRange(monthKey)
             val cats = transactionDao.getCategoryTotals(startIso, endIso)
             val lines = cats.take(5).joinToString("\n") {
-                "  • ${it.category.replaceFirstChar { c -> c.uppercase() }}: ${kes(it.total)}"
+                "  • ${it.category?.replaceFirstChar { c -> c.uppercase() } ?: "Other"}: ${kes(it.total)}"
             }
             return "🏷️ Spending by category this month:\n$lines"
         }
@@ -536,7 +536,7 @@ class AssistantViewModel @Inject constructor(
         if (rows.isEmpty()) return "🔍 No transactions found matching '$term'."
 
         val lines = rows.take(5).joinToString("\n") { tx ->
-            val date = tx.date.take(10)
+            val date = tx.date?.take(10) ?: ""
             val sign = if (tx.transactionType == "receive") "+" else "-"
             "  $date $sign${kes(tx.amount)} — ${tx.merchant ?: "Unknown"}"
         }
@@ -556,8 +556,7 @@ class AssistantViewModel @Inject constructor(
 
     /** Format as "KES 1,234" */
     private fun kes(amount: Double): String =
-        "KES ${String.format("%,.0f", amount)}"
-
+        "KES ${String.format(java.util.Locale.US, "%,.0f", amount)}"
     /** Check if the string contains any of the given keywords */
     private fun String.containsAny(vararg keywords: String): Boolean =
         keywords.any { this.contains(it) }
@@ -574,6 +573,6 @@ class AssistantViewModel @Inject constructor(
         id        = id,
         role      = role,
         content   = content,
-        createdAt = createdAt,
+        createdAt = createdAt ?: nowIso(),
     )
 }

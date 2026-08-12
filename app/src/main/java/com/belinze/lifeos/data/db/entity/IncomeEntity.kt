@@ -14,19 +14,19 @@ data class IncomeEntity(
     @ColumnInfo(name = "id")
     val id: String,
 
-    @ColumnInfo(name = "amount")                val amount: Double,
-    @ColumnInfo(name = "source")                val source: String?,
-    @ColumnInfo(name = "date")                  val date: String?,
-    @ColumnInfo(name = "note")                  val note: String?,
+    @ColumnInfo(name = "amount")                val amount: Double = 0.0,
+    @ColumnInfo(name = "source")                val source: String? = null,
+    @ColumnInfo(name = "date")                  val date: String? = null,
+    @ColumnInfo(name = "note")                  val note: String? = null,
     @ColumnInfo(name = "is_recurring", defaultValue = "0")
-                                                val isRecurring: Int,
-    @ColumnInfo(name = "frequency")             val frequency: String?,
-    @ColumnInfo(name = "created_at")            val createdAt: String?,
-    @ColumnInfo(name = "updated_at")            val updatedAt: String?,
-    @ColumnInfo(name = "sync_state")            val syncState: String?,
-    @ColumnInfo(name = "record_source")         val recordSource: String?,
-    @ColumnInfo(name = "deleted_at")            val deletedAt: String?,
+                                                val isRecurring: Int = 0,
+    @ColumnInfo(name = "frequency")             val frequency: String? = null,
+    @ColumnInfo(name = "created_at")            val createdAt: String? = null,
+    @ColumnInfo(name = "updated_at")            val updatedAt: String? = null,
+    @ColumnInfo(name = "sync_state")            val syncState: String? = null,
+    @ColumnInfo(name = "record_source")         val recordSource: String? = null,
+    @ColumnInfo(name = "deleted_at")            val deletedAt: String? = null,
     @ColumnInfo(name = "revision",  defaultValue = "1")
-                                                val revision: Int,
-    @ColumnInfo(name = "user_id")               val userId: String?,
+                                                val revision: Int = 1,
+    @ColumnInfo(name = "user_id")               val userId: String? = null,
 )

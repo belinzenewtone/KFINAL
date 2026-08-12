@@ -17,19 +17,37 @@ import kotlinx.coroutines.flow.asSharedFlow
  */
 object SmsEventBus {
 
+    /** Lightweight snapshot of an inserted transaction for heads-up alerts. */
+    data class NewTransactionEvent(
+        val mpesaCode: String,
+        val amount: Double,
+        val merchant: String?,
+        val transactionType: String,
+        val isFuliza: Boolean,
+    )
+
     // ── New transaction (any insert from the SMS parser) ──────────────────────
 
-    private val _newTransaction = MutableSharedFlow<Unit>(extraBufferCapacity = 32)
+    private val _newTransaction = MutableSharedFlow<NewTransactionEvent>(extraBufferCapacity = 32)
 
     /**
      * Collected by [TransactionViewModel] and [InsightsViewModel] to trigger a
-     * lightweight reload when the SMS parser inserts a new transaction row.
+     * lightweight reload when the SMS parser inserts a new transaction row, and
+     * by the notification layer to post a heads-up alert.
      */
-    val newTransaction: SharedFlow<Unit> = _newTransaction.asSharedFlow()
+    val newTransaction: SharedFlow<NewTransactionEvent> = _newTransaction.asSharedFlow()
 
     /** Called by [SmsReceiverModule] stub after every successful DB insert. */
-    fun notifyNewTransaction() {
-        _newTransaction.tryEmit(Unit)
+    fun notifyNewTransaction(tx: SmsParser.ParsedTransaction) {
+        _newTransaction.tryEmit(
+            NewTransactionEvent(
+                mpesaCode        = tx.mpesaCode,
+                amount           = tx.amount,
+                merchant         = tx.counterparty,
+                transactionType  = tx.transactionType,
+                isFuliza         = tx.category == SmsParserConfig.SmsCategory.FULIZA_CHARGE,
+            )
+        )
     }
 
     // ── Fuliza limit prompt ──────────────────────────────────────────────────

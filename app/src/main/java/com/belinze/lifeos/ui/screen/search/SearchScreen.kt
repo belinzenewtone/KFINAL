@@ -110,11 +110,11 @@ fun SearchScreen(
                         verticalAlignment     = Alignment.CenterVertically,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(tx.merchant.ifBlank { tx.description.take(40) },
+                            Text(tx.merchant?.ifBlank { null } ?: tx.description?.take(40) ?: "Unknown",
                                 fontWeight = FontWeight.Medium,
                                 color      = MaterialTheme.colorScheme.onBackground,
                                 maxLines   = 1, overflow = TextOverflow.Ellipsis)
-                            Text(tx.category, fontSize = 11.sp,
+                            Text(tx.category ?: "Uncategorized", fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onBackground.copy(0.50f))
                         }
                         Text(formatCurrency(tx.amount), fontWeight = FontWeight.SemiBold,

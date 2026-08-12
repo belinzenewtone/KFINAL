@@ -36,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 
 private val TX_TYPES = listOf("expense", "income", "transfer", "fuliza")
@@ -105,7 +106,10 @@ fun TransactionFormScreen(
                 CATEGORIES.forEach { cat ->
                     FilterChip(
                         selected = formState.category == cat,
-                        onClick  = { viewModel.updateFormCategory(cat) },
+                        onClick  = {
+                            viewModel.updateFormCategory(cat)
+                            Haptics.light()
+                        },
                         label    = { Text(cat.replaceFirstChar { it.uppercase() }) },
                     )
                 }

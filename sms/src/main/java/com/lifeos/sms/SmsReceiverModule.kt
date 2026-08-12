@@ -21,7 +21,7 @@ class SmsReceiverModule {
      */
     fun emitNewTransaction(tx: SmsParser.ParsedTransaction) {
         Log.d(TAG, "emitNewTransaction: ${tx.mpesaCode} amount=${tx.amount} cat=${tx.category}")
-        SmsEventBus.notifyNewTransaction()
+        SmsEventBus.notifyNewTransaction(tx)
     }
 
     /**

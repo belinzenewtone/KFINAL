@@ -146,7 +146,7 @@ fun InsightsScreen(
                 )
                 InsightRow(
                     label = "vs Last month",
-                    value = "${if (momPct >= 0) "+" else ""}${String.format("%.1f", momPct)}%",
+                    value = "${if (momPct >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", momPct)}%",
                     valueColor = if (momPct <= 0) Color(0xFF10B981) else Color(0xFFEF4444),
                     icon  = if (isTrending) Icons.Filled.TrendingDown else Icons.Filled.TrendingUp,
                     iconColor = if (isTrending) Color(0xFF10B981) else Color(0xFFEF4444),
@@ -169,7 +169,7 @@ fun InsightsScreen(
                 val maxCat = state.categoryTotals.maxOfOrNull { it.total } ?: 1.0
                 state.categoryTotals.take(5).forEach { cat ->
                     CategoryBar(
-                        label    = cat.category.replaceFirstChar { it.uppercase() },
+                        label    = cat.category?.replaceFirstChar { it.uppercase() } ?: "Other",
                         amount   = cat.total,
                         maxAmount = maxCat,
                     )
@@ -190,7 +190,7 @@ fun InsightsScreen(
                             Text("${i + 1}", fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onBackground.copy(0.40f),
                                 modifier = Modifier.width(20.dp))
-                            Text(m.merchant, color = MaterialTheme.colorScheme.onBackground,
+                            Text(m.merchant ?: "Unknown", color = MaterialTheme.colorScheme.onBackground,
                                 style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         }
                         Text(formatCurrency(m.total),

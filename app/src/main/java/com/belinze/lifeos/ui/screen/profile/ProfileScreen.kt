@@ -159,7 +159,7 @@ fun ProfileScreen(
                 )
                 StatItem(
                     label = "vs Last month",
-                    value = "${if (stats.momChangePct >= 0) "+" else ""}${String.format("%.0f", stats.momChangePct)}%",
+                    value = "${if (stats.momChangePct >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.0f", stats.momChangePct)}%",
                     valueColor = when {
                         stats.momChangePct > 0  -> Color(0xFFEF4444)  // spent more → red
                         stats.momChangePct < 0  -> Color(0xFF10B981)  // spent less → green

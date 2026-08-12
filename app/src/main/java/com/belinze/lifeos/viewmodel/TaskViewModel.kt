@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.entity.TaskEntity
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -134,10 +135,10 @@ class TaskViewModel @Inject constructor(
                 else TaskFormState(
                     id          = entity.id,
                     title       = entity.title,
-                    notes       = entity.notes ?: "",
+                    notes       = entity.description ?: "",
                     priority    = entity.priority,
                     deadline    = entity.deadline,
-                    alarmEnabled = entity.alarmEnabled,
+                    alarmEnabled = entity.alarmEnabled != 0,
                 )
             }
         }
@@ -168,10 +169,10 @@ class TaskViewModel @Inject constructor(
                     updatedAt = nowIso(),
                 )).copy(
                     title        = form.title,
-                    notes        = form.notes.ifBlank { null },
+                    description  = form.notes.ifBlank { null },
                     priority     = form.priority,
                     deadline     = form.deadline,
-                    alarmEnabled = form.alarmEnabled,
+                    alarmEnabled = if (form.alarmEnabled) 1 else 0,
                     updatedAt    = nowIso(),
                 )
                 dao.insert(entity)
@@ -188,6 +189,7 @@ class TaskViewModel @Inject constructor(
         viewModelScope.launch {
             val entity = dao.getById(id) ?: return@launch
             dao.update(entity.copy(status = "completed", updatedAt = nowIso()))
+            Haptics.success()
             loadPendingCount()
         }
     }
@@ -195,6 +197,7 @@ class TaskViewModel @Inject constructor(
     fun softDelete(id: String) {
         viewModelScope.launch {
             dao.softDelete(id, nowIso())
+            Haptics.warning()
             loadPendingCount()
         }
     }

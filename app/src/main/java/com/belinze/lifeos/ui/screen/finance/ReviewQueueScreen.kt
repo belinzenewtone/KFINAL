@@ -125,7 +125,7 @@ fun ReviewQueueScreen(
                     merchant    = tx.merchant ?: "Unknown",
                     amount      = tx.amount,
                     rawSms      = tx.notes?.take(140) ?: "",
-                    txType      = tx.transactionType,
+                    txType      = tx.transactionType ?: "expense",
                     onApprove   = { cat -> viewModel.updateCategory(tx.id, cat) },
                     onDismiss   = { viewModel.softDelete(tx.id) },
                 )

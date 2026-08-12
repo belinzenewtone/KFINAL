@@ -166,7 +166,14 @@ fun SettingsScreen(
             title            = { Text("Clear all data?") },
             text             = { Text("All transactions, tasks, events, and settings will be permanently deleted. This cannot be undone.") },
             confirmButton    = {
-                TextButton(onClick = { showClearDialog = false }) {
+                TextButton(onClick = {
+                    showClearDialog = false
+                    viewModel.clearAllData {
+                        // Return to the auth-guard root — DataStore is now empty,
+                        // so the guard renders Onboarding on next frame.
+                        navController.popBackStack(Route.MAIN, inclusive = false)
+                    }
+                }) {
                     Text("Clear", color = MaterialTheme.colorScheme.error)
                 }
             },

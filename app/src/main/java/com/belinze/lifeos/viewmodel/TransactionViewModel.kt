@@ -2,11 +2,15 @@ package com.belinze.lifeos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.CategoryTotal
 import com.belinze.lifeos.data.db.dao.MerchantTotal
 import com.belinze.lifeos.data.db.dao.MonthTotals
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.TransactionEntity
+import com.belinze.lifeos.services.BudgetAlertService
+import com.belinze.lifeos.services.NotificationScheduler
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
@@ -20,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -41,6 +46,7 @@ data class TransactionFilters(
     val category:  String  = "all",
     val type:      String? = null,    // "expense" | "receive" | "transfer" | "fuliza" | null
     val status:    String? = null,    // "completed" | "review" | null
+    val period:    String  = "all",   // "all" | "today" | "week" | "month"
     val startDate: String? = null,
     val endDate:   String? = null,
 )
@@ -71,12 +77,15 @@ data class TransactionFormState(
     val error:           String?  = null,
 )
 
-private const val PAGE_SIZE = 30
+private const val PAGE_SIZE = 50
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
     private val dao: TransactionDao,
+    private val budgetAlertService: BudgetAlertService,
+    private val prefs: AppPreferences,
+    private val notificationScheduler: NotificationScheduler,
 ) : ViewModel() {
 
     private val _uiState   = MutableStateFlow(TransactionUiState())
@@ -106,9 +115,28 @@ class TransactionViewModel @Inject constructor(
         // emits on SmsEventBus — we reload the current page and metrics so the
         // Finance screen shows the new row without the user having to pull-to-refresh.
         viewModelScope.launch {
-            SmsEventBus.newTransaction.collect {
+            SmsEventBus.newTransaction.collect { event ->
                 reload()
                 loadMetrics()
+                // Heads-up notification for the auto-imported transaction, gated by
+                // the user's notification preferences. Skip Fuliza fee/charge notices —
+                // they are service debits, not user-initiated transactions (mirrors RN).
+                runCatching {
+                    val state = prefs.state.first()
+                    if (state.notificationsEnabled && state.notifTxAlerts && !event.isFuliza && event.mpesaCode.isNotBlank()) {
+                        notificationScheduler.postTransactionAlert(
+                            mpesaCode = event.mpesaCode,
+                            amount    = event.amount,
+                            merchant  = event.merchant,
+                            type      = event.transactionType,
+                        )
+                    }
+                }
+                // Re-evaluate budget thresholds — spending just changed.
+                runCatching {
+                    val state = prefs.state.first()
+                    budgetAlertService.checkAllBudgetThresholds(state)
+                }
             }
         }
     }
@@ -156,6 +184,20 @@ class TransactionViewModel @Inject constructor(
 
     fun setSearch(q: String) =
         _uiState.update { it.copy(filters = it.filters.copy(search = q)) }
+
+    fun setPeriod(period: String) {
+        val now = java.time.LocalDate.now()
+        val (start, end) = when (period) {
+            "today" -> now.toString() to now.toString()
+            "week"  -> now.with(java.time.DayOfWeek.MONDAY).toString() to now.toString()
+            "month" -> now.withDayOfMonth(1).toString() to now.toString()
+            else    -> null to null
+        }
+        _uiState.update {
+            it.copy(filters = it.filters.copy(period = period, startDate = start, endDate = end))
+        }
+        reload()
+    }
 
     fun setCategory(cat: String) {
         _uiState.update { it.copy(filters = it.filters.copy(category = cat)) }
@@ -224,8 +266,8 @@ class TransactionViewModel @Inject constructor(
                         merchant        = entity.merchant ?: "",
                         amount          = entity.amount.toString(),
                         category        = entity.category ?: "uncategorized",
-                        transactionType = entity.transactionType,
-                        date            = entity.date,
+                        transactionType = entity.transactionType ?: "expense",
+                        date            = entity.date ?: nowIso(),
                         notes           = entity.notes ?: "",
                     )
                 }
@@ -251,7 +293,18 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val existing = form.id?.let { dao.getById(it) }
-                val entity = (existing ?: TransactionEntity(id = UUID.randomUUID().toString())).copy(
+                val entity = (existing ?: TransactionEntity(
+                    id              = UUID.randomUUID().toString(),
+                    amount          = 0.0,
+                    merchant        = null,
+                    category        = "uncategorized",
+                    date            = nowIso(),
+                    source          = "manual",
+                    transactionType = "expense",
+                    status          = "completed",
+                    createdAt       = nowIso(),
+                    updatedAt       = nowIso(),
+                )).copy(
                     merchant        = form.merchant.ifBlank { null },
                     amount          = amt,
                     category        = form.category,
@@ -264,8 +317,14 @@ class TransactionViewModel @Inject constructor(
                 dao.insert(entity)
                 reload()
                 refreshMetrics()
+                Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
                 onSuccess()
+                // Fire budget alerts for the transaction's category (mirrors RN).
+                runCatching {
+                    val state = prefs.state.first()
+                    budgetAlertService.checkBudgetThresholds(state, form.category)
+                }
             } catch (e: Exception) {
                 _formState.update { it.copy(isSaving = false, error = e.message) }
             }
@@ -275,6 +334,7 @@ class TransactionViewModel @Inject constructor(
     fun softDelete(id: String) {
         viewModelScope.launch {
             dao.softDelete(id, nowIso())
+            Haptics.warning()
             reload()
             refreshMetrics()
         }
@@ -284,6 +344,7 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             val entity = dao.getById(id) ?: return@launch
             dao.update(entity.copy(category = category, updatedAt = nowIso()))
+            Haptics.light()
             reload()
             refreshMetrics()
         }

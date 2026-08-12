@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.EventDao
 import com.belinze.lifeos.data.db.entity.EventEntity
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -107,7 +108,7 @@ class EventViewModel @Inject constructor(
                     description = entity.description ?: "",
                     date        = entity.date,
                     endDate     = entity.endDate,
-                    allDay      = entity.allDay,
+                    allDay      = entity.allDay != 0,
                     type        = entity.type,
                     repeatRule  = entity.repeatRule,
                     location    = entity.location ?: "",
@@ -148,9 +149,9 @@ class EventViewModel @Inject constructor(
                     description = form.description.ifBlank { null },
                     date        = form.date,
                     endDate     = form.endDate,
-                    allDay      = form.allDay,
+                    allDay      = if (form.allDay) 1 else 0,
                     type        = form.type,
-                    repeatRule  = form.repeatRule,
+                    repeatRule  = form.repeatRule ?: "none",
                     location    = form.location.ifBlank { null },
                     updatedAt   = nowIso(),
                 )
@@ -167,6 +168,7 @@ class EventViewModel @Inject constructor(
     fun softDelete(id: String) {
         viewModelScope.launch {
             dao.softDelete(id, nowIso())
+            Haptics.warning()
             loadNextEvent()
         }
     }

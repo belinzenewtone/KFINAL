@@ -52,6 +52,7 @@ fun LifeOsNavHost(
     val lifecycleOwner = LocalLifecycleOwner.current
     var armedForLock   by remember { mutableStateOf(false) }
     var backgroundedAt by remember { mutableLongStateOf(0L) }
+    var lastForegroundCheck by remember { mutableLongStateOf(0L) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -78,6 +79,13 @@ fun LifeOsNavHost(
                                 appViewModel.setAppLocked(true)
                             }
                         }
+                    }
+                    // Foreground re-check — throttled to 60s (mirrors RN AppState
+                    // 'active' handler running checkAllBudgetThresholds).
+                    val now = System.currentTimeMillis()
+                    if (now - lastForegroundCheck > 60_000L) {
+                        lastForegroundCheck = now
+                        appViewModel.refreshOnForeground()
                     }
                 }
                 else -> Unit
@@ -125,6 +133,7 @@ fun LifeOsNavHost(
         !uiState.prefs.hasCompletedOnboarding -> {
             OnboardingScreen(
                 onComplete = { appViewModel.completeOnboarding() },
+                viewModel  = appViewModel,
                 modifier   = modifier,
             )
         }
@@ -132,6 +141,7 @@ fun LifeOsNavHost(
         !uiState.prefs.isAuthenticated -> {
             AuthScreen(
                 onAuthenticated = { appViewModel.setAuthenticated(true) },
+                viewModel       = appViewModel,
                 modifier        = modifier,
             )
         }

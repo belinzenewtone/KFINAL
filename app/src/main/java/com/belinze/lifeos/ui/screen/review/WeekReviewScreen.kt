@@ -259,9 +259,9 @@ fun WeekReviewScreen(
                         )
                         Text(
                             text  = if (trendPositive)
-                                "Spending down ${String.format("%.1f", -momPct)}% vs last month"
+                                "Spending down ${String.format(java.util.Locale.US, "%.1f", -momPct)}% vs last month"
                             else
-                                "Spending up ${String.format("%.1f", momPct)}% vs last month",
+                                "Spending up ${String.format(java.util.Locale.US, "%.1f", momPct)}% vs last month",
                             color = if (trendPositive) Color(0xFF10B981) else Color(0xFFEF4444),
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -279,7 +279,7 @@ fun WeekReviewScreen(
                     // Top category
                     insState.categoryTotals.firstOrNull()?.let { top ->
                         Text(
-                            "🏷️ Top category: ${top.category.replaceFirstChar { it.uppercase() }} (${formatCurrency(top.total)})",
+                            "🏷️ Top category: ${top.category?.replaceFirstChar { it.uppercase() } ?: "Other"} (${formatCurrency(top.total)})",
                             color = MaterialTheme.colorScheme.onBackground,
                             style = MaterialTheme.typography.bodyMedium,
                         )

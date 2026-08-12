@@ -67,16 +67,17 @@ fun TransactionListItem(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         // ── Icon ────────────────────────────────────────────────────────────
+        val txType = tx.transactionType ?: "expense"
         Box(
             modifier        = Modifier
                 .size(40.dp)
-                .background(txIconBg(tx.transactionType), CircleShape),
+                .background(txIconBg(txType), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector        = txIcon(tx.transactionType),
-                contentDescription = tx.transactionType,
-                tint               = txIconTint(tx.transactionType),
+                imageVector        = txIcon(txType),
+                contentDescription = txType,
+                tint               = txIconTint(txType),
                 modifier           = Modifier.size(18.dp),
             )
         }
@@ -86,7 +87,7 @@ fun TransactionListItem(
         // ── Main text (merchant + category + time) ───────────────────────
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text       = tx.merchant.ifBlank { tx.description.take(40) },
+                text       = tx.merchant?.ifBlank { null } ?: tx.description?.take(40) ?: "Unknown",
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 14.sp,
                 color      = MaterialTheme.colorScheme.onBackground,
@@ -97,11 +98,11 @@ fun TransactionListItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (tx.category.isNotBlank()) {
-                    CategoryChip(tx.category)
+                if (tx.category?.isNotBlank() == true) {
+                    CategoryChip(tx.category ?: "")
                 }
                 Text(
-                    text  = isoToTime(tx.date),
+                    text  = tx.date?.let { isoToTime(it) } ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(0.45f),
                 )
@@ -209,9 +210,12 @@ private fun txIconTint(type: String): Color {
 
 private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
 
-private fun isoToTime(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19) ?: return "").format(TIME_FMT)
-} catch (_: Exception) { "" }
+private fun isoToTime(iso: String?): String {
+    if (iso == null) return ""
+    return try {
+        LocalDateTime.parse(iso.take(19)).format(TIME_FMT)
+    } catch (_: Exception) { "" }
+}
 
 private fun txIcon(type: String) = when (type) {
     "income"   -> Icons.Filled.ArrowDownward

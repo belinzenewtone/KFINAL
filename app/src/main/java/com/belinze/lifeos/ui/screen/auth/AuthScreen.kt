@@ -3,16 +3,31 @@ package com.belinze.lifeos.ui.screen.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,60 +35,147 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.GlassCardVariant
+import com.belinze.lifeos.ui.components.HeroSurface
+import com.belinze.lifeos.ui.components.TopBanner
+import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.viewmodel.AppViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthScreen (Phase 3 stub)
+// AuthScreen — 1:1 port of src/screens/auth/AuthScreen.tsx
 //
-// Phase 5 will implement the full auth flow matching AuthScreen.tsx:
-// PIN setup, profile name entry, SMS permission grant, etc.
-//
-// For now, a single "Continue" button calls onAuthenticated().
+// Hero (eyebrow "Welcome", title "Your PersonalOS", logo badge), a GlassCard
+// with Full Name + Username (optional) fields, "Get Started" CTA, and a
+// top banner for validation errors.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun AuthScreen(
     onAuthenticated: () -> Unit,
+    viewModel:       AppViewModel,
     modifier:        Modifier = Modifier,
 ) {
     val isDark  = isSystemInDarkTheme()
     val bgColor = if (isDark) Color(0xFF0A0A0B) else Color(0xFFE8EDF3)
 
-    Column(
-        modifier             = modifier
-            .fillMaxSize()
-            .background(bgColor)
-            .padding(32.dp),
-        verticalArrangement  = Arrangement.Center,
-        horizontalAlignment  = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text       = "Set Up Access",
-            fontSize   = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onBackground,
-            textAlign  = TextAlign.Center,
-        )
+    val uiState by viewModel.uiState.collectAsState()
+    val profileName   = uiState.prefs.profileName
+    val profileUser   = uiState.prefs.profileUsername
 
-        Spacer(Modifier.height(12.dp))
+    var fullName by remember { mutableStateOf(profileName) }
+    var username by remember { mutableStateOf(profileUser) }
+    var banner   by remember { mutableStateOf<String?>(null) }
 
-        Text(
-            text      = "Configure your PIN and biometric preferences.\n\nFull auth flow coming in Phase 5.",
-            fontSize  = 15.sp,
-            color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
-            textAlign = TextAlign.Center,
-        )
-
-        Spacer(Modifier.height(48.dp))
-
-        Button(
-            onClick  = onAuthenticated,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                text       = "Continue",
-                fontSize   = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
+    val handleSignUp = {
+        val trimmed = fullName.trim()
+        if (trimmed.isEmpty()) {
+            banner = "Please enter your full name to continue."
+        } else {
+            viewModel.setProfileName(trimmed)
+            viewModel.setProfileUsername(username.trim())
+            onAuthenticated()
         }
     }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(bgColor),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Spacing.screenHorizontal)
+                .padding(top = Spacing.lg, bottom = Spacing.x2l),
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
+        ) {
+            HeroSurface(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier          = Modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = Spacing.lg),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text       = "Welcome",
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color      = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 0.5.sp,
+                        )
+                        Text(
+                            text  = "Your PersonalOS",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text  = "All your tasks, calendar, and finances — stored locally on your device.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // Logo badge (40x40 surfaceVariant, icon glyph)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                CircleShape,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = null,
+                            tint               = MaterialTheme.colorScheme.primary,
+                            modifier           = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+
+            GlassCard(variant = GlassCardVariant.Default, modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    OutlinedTextField(
+                        value         = fullName,
+                        onValueChange = { v -> fullName = v; banner = null },
+                        label         = { Text("Full Name") },
+                        singleLine    = true,
+                        modifier      = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value         = username,
+                        onValueChange = { v -> username = v; banner = null },
+                        label         = { Text("Username (optional)") },
+                        singleLine    = true,
+                        modifier      = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick  = { handleSignUp() },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape    = CircleShape,
+                    ) {
+                        Text("Get Started", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Text(
+                        text      = "No account required. Your data stays on this device.",
+                        style     = MaterialTheme.typography.bodySmall,
+                        color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier  = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+    }
+
+    // Top banner for validation errors
+    TopBanner(
+        tone      = BannerTone.Info,
+        message   = banner ?: "",
+        visible   = banner != null,
+        onDismiss = { banner = null },
+    )
 }

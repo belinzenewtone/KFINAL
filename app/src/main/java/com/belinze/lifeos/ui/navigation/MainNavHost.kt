@@ -93,11 +93,11 @@ fun MainNavHost(
         }
 
         composable(Route.CATEGORIZE) {
-            PlaceholderScreen("Categorize", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.finance.CategorizeScreen(navController = navController)
         }
 
         composable(Route.FEE_ANALYTICS) {
-            PlaceholderScreen("Fee Analytics", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.finance.FeeAnalyticsScreen(navController = navController)
         }
 
         composable(
@@ -107,7 +107,7 @@ fun MainNavHost(
             val merchant = back.arguments?.getString("merchant")?.let {
                 java.net.URLDecoder.decode(it, "UTF-8")
             } ?: ""
-            PlaceholderScreen("Merchant: $merchant", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.finance.MerchantDetailScreen(merchant = merchant, navController = navController)
         }
 
         // ── Planner ───────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ fun MainNavHost(
             arguments = listOf(navArgument("budgetId") { type = NavType.StringType }),
         ) { back ->
             val id = back.arguments?.getString("budgetId") ?: ""
-            PlaceholderScreen("Budget Detail: $id", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.BudgetDetailScreen(budgetId = id, navController = navController)
         }
 
         composable(
@@ -136,7 +136,7 @@ fun MainNavHost(
         }
 
         composable(Route.INCOME) {
-            PlaceholderScreen("Income", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.IncomeScreen(navController = navController)
         }
 
         composable(
@@ -144,11 +144,11 @@ fun MainNavHost(
             arguments = listOf(navArgument("incomeId") { type = NavType.StringType; defaultValue = "" }),
         ) { back ->
             val id = back.arguments?.getString("incomeId")
-            PlaceholderScreen(if (id.isNullOrEmpty()) "Add Income" else "Edit Income", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.IncomeFormScreen(incomeId = id?.ifEmpty { null }, navController = navController)
         }
 
         composable(Route.RECURRING) {
-            PlaceholderScreen("Recurring", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.RecurringScreen(navController = navController)
         }
 
         composable(
@@ -156,11 +156,11 @@ fun MainNavHost(
             arguments = listOf(navArgument("ruleId") { type = NavType.StringType; defaultValue = "" }),
         ) { back ->
             val id = back.arguments?.getString("ruleId")
-            PlaceholderScreen(if (id.isNullOrEmpty()) "Add Recurring Rule" else "Edit Recurring Rule", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.RecurringFormScreen(ruleId = id?.ifEmpty { null }, navController = navController)
         }
 
         composable(Route.BILLS) {
-            PlaceholderScreen("Bills", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.BillsScreen(navController = navController)
         }
 
         composable(
@@ -168,11 +168,11 @@ fun MainNavHost(
             arguments = listOf(navArgument("billId") { type = NavType.StringType; defaultValue = "" }),
         ) { back ->
             val id = back.arguments?.getString("billId")
-            PlaceholderScreen(if (id.isNullOrEmpty()) "Add Bill" else "Edit Bill", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.BillFormScreen(billId = id?.ifEmpty { null }, navController = navController)
         }
 
         composable(Route.LOANS) {
-            PlaceholderScreen("Loans / Fuliza", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.LoansScreen(navController = navController)
         }
 
         composable(
@@ -180,11 +180,11 @@ fun MainNavHost(
             arguments = listOf(navArgument("loanId") { type = NavType.StringType; defaultValue = "" }),
         ) { back ->
             val id = back.arguments?.getString("loanId")
-            PlaceholderScreen(if (id.isNullOrEmpty()) "Add Loan" else "Edit Loan", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.LoanFormScreen(loanId = id?.ifEmpty { null }, navController = navController)
         }
 
         composable(Route.GOALS) {
-            PlaceholderScreen("Goals", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.GoalsScreen(navController = navController)
         }
 
         composable(
@@ -192,16 +192,16 @@ fun MainNavHost(
             arguments = listOf(navArgument("goalId") { type = NavType.StringType; defaultValue = "" }),
         ) { back ->
             val id = back.arguments?.getString("goalId")
-            PlaceholderScreen(if (id.isNullOrEmpty()) "Add Goal" else "Edit Goal", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.GoalFormScreen(goalId = id?.ifEmpty { null }, navController = navController)
         }
 
         composable(Route.EXPORT) {
-            PlaceholderScreen("Export", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.ExportScreen(navController = navController)
         }
 
         // sms_import
         composable(Route.IMPORT_SMS) {
-            PlaceholderScreen("Import SMS", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.finance.ImportSmsScreen(navController = navController)
         }
 
         composable(
@@ -211,7 +211,7 @@ fun MainNavHost(
                 navArgument("fileName") { type = NavType.StringType; defaultValue = "" },
             ),
         ) {
-            PlaceholderScreen("CSV Import", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.planner.CsvImportScreen(navController = navController)
         }
 
         // Review queue (uncategorized)
@@ -242,7 +242,7 @@ fun MainNavHost(
 
         // ── Events ────────────────────────────────────────────────────────────
         composable(Route.EVENTS) {
-            PlaceholderScreen("Events", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.calendar.EventsScreen(navController = navController)
         }
 
         composable(
@@ -284,11 +284,11 @@ fun MainNavHost(
         }
 
         composable(Route.SMS_IMPORT_HEALTH) {
-            PlaceholderScreen("SMS Import Health", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.settings.SmsImportHealthScreen(navController = navController)
         }
 
         composable(Route.CHANGELOG) {
-            PlaceholderScreen("Changelog", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.settings.ChangelogScreen(navController = navController)
         }
 
         composable(Route.SCREEN_LOCK) {
@@ -318,7 +318,7 @@ fun MainNavHost(
         }
 
         composable(Route.LEARNING) {
-            PlaceholderScreen("Learning", onBack = { navController.popBackStack() })
+            com.belinze.lifeos.ui.screen.learning.LearningScreen(navController = navController)
         }
     }
 }

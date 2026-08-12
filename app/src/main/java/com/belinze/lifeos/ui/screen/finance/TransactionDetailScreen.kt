@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.finance
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,7 +72,8 @@ fun TransactionDetailScreen(
                     contentDescription = "Edit",
                     modifier           = Modifier
                         .padding(end = 8.dp)
-                        .size(22.dp),
+                        .size(22.dp)
+                        .clickable { navController.navigate(NavTo.transactionForm(tx.id)) },
                     tint = MaterialTheme.colorScheme.onBackground.copy(0.70f),
                 )
             }
@@ -79,7 +81,9 @@ fun TransactionDetailScreen(
                 Icon(
                     imageVector        = Icons.Filled.Delete,
                     contentDescription = "Delete",
-                    modifier           = Modifier.size(22.dp),
+                    modifier           = Modifier
+                        .size(22.dp)
+                        .clickable { showDeleteDialog = true },
                     tint               = Color(0xFFEF4444),
                 )
             }
@@ -123,15 +127,16 @@ fun TransactionDetailScreen(
         }
 
         // ── Details list ─────────────────────────────────────────────────
-        listOf(
-            "Merchant"    to (tx.merchant.ifBlank { "—" }),
-            "Category"    to (tx.category.ifBlank { "Uncategorized" }),
-            "Type"        to tx.transactionType.replaceFirstChar { it.uppercase() },
-            "Status"      to tx.status.replaceFirstChar { it.uppercase() },
-            "Date"        to parseTxDate(tx.date),
-            "Reference"   to (tx.reference?.ifBlank { "—" } ?: "—"),
-            "Notes"       to (tx.notes?.ifBlank { "—" } ?: "—"),
-        ).forEach { (label, value) ->
+        val details = buildList<Pair<String, String>> {
+            add("Merchant" to (tx.merchant?.ifBlank { "—" } ?: "—"))
+            add("Category" to (tx.category?.ifBlank { "Uncategorized" } ?: "Uncategorized"))
+            add("Type" to (tx.transactionType?.replaceFirstChar { it.uppercase() } ?: "—"))
+            add("Status" to tx.status.replaceFirstChar { it.uppercase() })
+            add("Date" to (tx.date?.let { parseTxDate(it) } ?: "—"))
+            add("Reference" to (tx.mpesaCode?.ifBlank { "—" } ?: "—"))
+            add("Notes" to (tx.notes?.ifBlank { "—" } ?: "—"))
+        }
+        details.forEach { (label, value) ->
             Row(
                 modifier              = Modifier
                     .fillMaxWidth()

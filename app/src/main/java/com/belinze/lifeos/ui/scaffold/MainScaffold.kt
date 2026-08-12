@@ -1,15 +1,27 @@
 package com.belinze.lifeos.ui.scaffold
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.FloatingTabBar
 import com.belinze.lifeos.ui.components.LifeOsTab
@@ -20,6 +32,7 @@ import com.belinze.lifeos.ui.screen.home.HomeScreen
 import com.belinze.lifeos.ui.screen.profile.ProfileScreen
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.AppViewModel
+import com.lifeos.sms.SmsEventBus
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MainScaffold
@@ -52,6 +65,54 @@ fun MainScaffold(
     modifier:      Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(LifeOsTab.Home) }
+
+    // ── Fuliza limit prompt (mirrors AppNavigator.tsx listener) ───────────────
+    var showFulizaDialog by rememberSaveable { mutableStateOf(false) }
+    var fulizaInput by rememberSaveable { mutableDoubleStateOf(0.0) }
+
+    LaunchedEffect(Unit) {
+        SmsEventBus.fulizaLimitNeeded.collect { outstanding ->
+            val prefs = appViewModel.uiState.value.prefs
+            // Only prompt when the user hasn't configured a limit.
+            if (prefs.fulizaLimit <= 0) {
+                fulizaInput = outstanding
+                showFulizaDialog = true
+            }
+        }
+    }
+
+    if (showFulizaDialog) {
+        AlertDialog(
+            onDismissRequest = { showFulizaDialog = false },
+            title            = { Text("Set your Fuliza limit") },
+            text             = {
+                Column {
+                    Text("A Fuliza charge was detected but you haven't set your credit limit yet. Set it so your balances stay accurate.")
+                    Spacer(Modifier.height(Spacing.md))
+                    OutlinedTextField(
+                        value         = if (fulizaInput == 0.0) "" else fulizaInput.toInt().toString(),
+                        onValueChange = { fulizaInput = it.toDoubleOrNull() ?: 0.0 },
+                        label         = { Text("Fuliza limit (KES)") },
+                        singleLine    = true,
+                        modifier      = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showFulizaDialog = false
+                    appViewModel.updateFulizaLimit(fulizaInput)
+                }) {
+                    Text("Save", color = MaterialTheme.colorScheme.primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFulizaDialog = false }) {
+                    Text("Later")
+                }
+            },
+        )
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
 

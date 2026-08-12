@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace    = "com.belinze.lifeos"
-    compileSdk   = 37
+    compileSdk   = 35
 
     defaultConfig {
         applicationId   = "com.belinze.lifeos.compose"

@@ -97,9 +97,25 @@ class SmsService @Inject constructor(
     /**
      * Triggers a one-time historical SMS import from the device inbox.
      * Mirrors SmsReceiverModule.importHistoricalSms() from the RN app.
+     *
+     * @param fromMs start of the scan window (epoch millis)
+     * @param toMs   end of the scan window (epoch millis)
+     * @param filter "mpesa_only" | "banks_only" | "all" — which institutions to scan
      */
-    fun importHistoricalSms() {
-        val request = OneTimeWorkRequestBuilder<SmsImportWorker>().build()
+    fun importHistoricalSms(
+        fromMs: Long = 0L,
+        toMs:   Long = System.currentTimeMillis(),
+        filter: String = "all",
+    ) {
+        val request = OneTimeWorkRequestBuilder<SmsImportWorker>()
+            .setInputData(
+                androidx.work.Data.Builder()
+                    .putLong(SmsImportWorker.KEY_FROM_MS, fromMs)
+                    .putLong(SmsImportWorker.KEY_TO_MS, toMs)
+                    .putString(SmsImportWorker.KEY_FILTER, filter)
+                    .build()
+            )
+            .build()
         workManager.enqueueUniqueWork(
             "lifeos_historical_import",
             ExistingWorkPolicy.KEEP,

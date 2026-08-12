@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
+import com.belinze.lifeos.data.db.LifeOsDatabase
+import com.belinze.lifeos.util.Haptics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val prefs: AppPreferences,
+    private val db: LifeOsDatabase,
 ) : ViewModel() {
 
     /** The full prefs snapshot, shared with AppViewModel but scoped here. */
@@ -86,9 +89,34 @@ class SettingsViewModel @Inject constructor(
     fun setDateFormat(v: String)          = update { it[PreferenceKeys.DATE_FORMAT] = v }
     fun setTimeFormat(v: String)          = update { it[PreferenceKeys.TIME_FORMAT] = v }
     fun setDecimalPrecision(v: Int)       = update { it[PreferenceKeys.DECIMAL_PRECISION] = v }
-    fun setHapticFeedback(v: Boolean)     = update { it[PreferenceKeys.HAPTIC_FEEDBACK] = v }
+    fun setHapticFeedback(v: Boolean) {
+        Haptics.enabled = v
+        update { it[PreferenceKeys.HAPTIC_FEEDBACK] = v }
+        // Mirrors RN: a success pulse when the user enables haptics.
+        if (v) Haptics.success()
+    }
     fun setCalendarSwipe(v: Boolean)      = update { it[PreferenceKeys.CALENDAR_SWIPE] = v }
     fun setDefaultCategory(v: String)     = update { it[PreferenceKeys.DEFAULT_TX_CATEGORY] = v }
+
+    // ─── Danger zone ───────────────────────────────────────────────────────────
+
+    /**
+     * Wipe every local table and all preferences, returning the app to a
+     * fresh-install state (the auth guard will show Onboarding again).
+     */
+    fun clearAllData(onDone: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                db.clearAllTables()
+                prefs.clearAll()
+                onDone()
+            } catch (e: Exception) {
+                // Best-effort; still clear prefs so the app can restart cleanly.
+                prefs.clearAll()
+                onDone()
+            }
+        }
+    }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 

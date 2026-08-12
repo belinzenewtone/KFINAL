@@ -1,10 +1,10 @@
 /**
  * :sms — Android library module wrapping the existing Kotlin SMS parser.
  *
- * Source files are referenced IN-PLACE from modules/lifeos-sms/android/src/main/java/
- * so the parser files are NEVER copied — edits to the originals are reflected here
- * automatically. Only SmsReceiverModule.kt (the Expo bridge) is excluded; it is
- * replaced by SmsService.kt in this module's own source set.
+ * Parser sources are referenced IN-PLACE from modules/lifeos-sms and staged into
+ * a build directory at configuration time, so edits to the originals are
+ * reflected here automatically. Only SmsReceiverModule.kt (the Expo bridge) is
+ * excluded; it is replaced by SmsService.kt in this module's own source set.
  */
 plugins {
     alias(libs.plugins.android.library)
@@ -12,9 +12,25 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+/**
+ * Stage the SMS parser sources from modules/lifeos-sms into a build directory,
+ * excluding the Expo bridge stub (SmsReceiverModule.kt) which is replaced by
+ * SmsService.kt in this module's own source set.
+ */
+val parserStagingDir = layout.buildDirectory.dir("generated/sms-parser")
+
+val stageParserSources by tasks.registering(Copy::class) {
+    from("../../modules/lifeos-sms/android/src/main/java")
+    exclude("**/SmsReceiverModule.kt")
+    into(parserStagingDir)
+}
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(stageParserSources)
+}
+
 android {
     namespace  = "com.lifeos.sms"
-    compileSdk = 37
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
@@ -31,13 +47,8 @@ android {
 
     sourceSets {
         named("main") {
-            java.srcDirs(
-                // Parser source files — reference in-place; never copied
-                "../../modules/lifeos-sms/android/src/main/java",
-                // SmsService.kt (our bridge replacement) lives here
-                "src/main/java"
-            )
-            java.excludes.add("**/SmsReceiverModule.kt")
+            java.srcDir(parserStagingDir)
+            java.srcDir("src/main/java")
 
             manifest.srcFile("src/main/AndroidManifest.xml")
         }
@@ -56,4 +67,7 @@ dependencies {
 
     // Core Android
     implementation(libs.core.ktx)
+
+    // Hilt — SmsService.kt uses @Inject / @Singleton
+    implementation(libs.hilt.android)
 }

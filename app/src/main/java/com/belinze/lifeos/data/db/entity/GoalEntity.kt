@@ -10,21 +10,21 @@ data class GoalEntity(
     @ColumnInfo(name = "id")
     val id: String,
 
-    @ColumnInfo(name = "user_id")               val userId: String?,
-    @ColumnInfo(name = "title")                 val title: String,
-    @ColumnInfo(name = "description")           val description: String?,
-    @ColumnInfo(name = "target_value")          val targetValue: Double,
+    @ColumnInfo(name = "user_id")               val userId: String? = null,
+    @ColumnInfo(name = "title")                 val title: String = "",
+    @ColumnInfo(name = "description")           val description: String? = null,
+    @ColumnInfo(name = "target_value")          val targetValue: Double = 0.0,
     @ColumnInfo(name = "current_value", defaultValue = "0")
-                                                val currentValue: Double,
-    @ColumnInfo(name = "unit")                  val unit: String?,
-    @ColumnInfo(name = "category")              val category: String?,
-    @ColumnInfo(name = "deadline")              val deadline: String?,
+                                                val currentValue: Double = 0.0,
+    @ColumnInfo(name = "unit")                  val unit: String? = null,
+    @ColumnInfo(name = "category")              val category: String? = null,
+    @ColumnInfo(name = "deadline")              val deadline: String? = null,
     @ColumnInfo(name = "status",    defaultValue = "active")
-                                                val status: String,
-    @ColumnInfo(name = "created_at")            val createdAt: String?,
-    @ColumnInfo(name = "updated_at")            val updatedAt: String?,
-    @ColumnInfo(name = "sync_state")            val syncState: String?,
-    @ColumnInfo(name = "deleted_at")            val deletedAt: String?,
+                                                val status: String = "active",
+    @ColumnInfo(name = "created_at")            val createdAt: String? = null,
+    @ColumnInfo(name = "updated_at")            val updatedAt: String? = null,
+    @ColumnInfo(name = "sync_state")            val syncState: String? = null,
+    @ColumnInfo(name = "deleted_at")            val deletedAt: String? = null,
     @ColumnInfo(name = "revision",  defaultValue = "1")
-                                                val revision: Int,
+                                                val revision: Int = 1,
 )

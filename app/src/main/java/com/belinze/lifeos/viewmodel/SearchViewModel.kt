@@ -109,7 +109,7 @@ class SearchViewModel @Inject constructor(
                 val lq   = q.lowercase()
                 val hits = all.filter { t ->
                     t.title.lowercase().contains(lq) ||
-                    t.notes?.lowercase()?.contains(lq) == true
+                    t.description?.lowercase()?.contains(lq) == true
                 }.take(25)
                 _uiState.update { it.copy(tasks = hits) }
             }

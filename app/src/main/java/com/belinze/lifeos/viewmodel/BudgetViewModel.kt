@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.BudgetDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.BudgetEntity
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
@@ -170,6 +171,7 @@ class BudgetViewModel @Inject constructor(
                 )
                 budgetDao.insert(entity)
                 load()
+                Haptics.light()
                 _formState.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (e: Exception) {

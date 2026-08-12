@@ -10,6 +10,7 @@ import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
 import com.belinze.lifeos.data.db.entity.GoalEntity
 import com.belinze.lifeos.data.db.entity.IncomeEntity
 import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -135,6 +136,35 @@ class PlannerViewModel @Inject constructor(
 
     fun setTab(tab: PlannerTab) = _uiState.update { it.copy(activeTab = tab) }
 
+    // ─── Form field updates ───────────────────────────────────────────────────
+
+    fun updateRecurringName(v: String)      = _recurringForm.update { it.copy(name = v) }
+    fun updateRecurringAmount(v: String)    = _recurringForm.update { it.copy(amount = v) }
+    fun updateRecurringCategory(v: String)  = _recurringForm.update { it.copy(category = v) }
+    fun updateRecurringFrequency(v: String) = _recurringForm.update { it.copy(frequency = v) }
+    fun updateRecurringEnabled(v: Boolean)  = _recurringForm.update { it.copy(enabled = v) }
+    fun updateRecurringError(v: String?)    = _recurringForm.update { it.copy(error = v) }
+
+    fun updateBillName(v: String)       = _billForm.update { it.copy(name = v) }
+    fun updateBillAmount(v: String)     = _billForm.update { it.copy(amount = v) }
+    fun updateBillFrequency(v: String)  = _billForm.update { it.copy(frequency = v) }
+    fun updateBillActive(v: Boolean)    = _billForm.update { it.copy(isActive = v) }
+    fun updateBillError(v: String?)     = _billForm.update { it.copy(error = v) }
+
+    fun updateGoalName(v: String)         = _goalForm.update { it.copy(name = v) }
+    fun updateGoalTarget(v: String)       = _goalForm.update { it.copy(targetAmount = v) }
+    fun updateGoalSaved(v: String)        = _goalForm.update { it.copy(savedAmount = v) }
+    fun updateGoalDeadline(v: String?)    = _goalForm.update { it.copy(deadline = v) }
+    fun updateGoalError(v: String?)       = _goalForm.update { it.copy(error = v) }
+
+    fun updateLoanDrawCode(v: String)      = _loanForm.update { it.copy(drawCode = v) }
+    fun updateLoanDrawAmount(v: String)    = _loanForm.update { it.copy(drawAmountKes = v) }
+    fun updateLoanError(v: String?)        = _loanForm.update { it.copy(error = v) }
+
+    fun updateIncomeSource(v: String)  = _incomeForm.update { it.copy(source = v) }
+    fun updateIncomeAmount(v: String)  = _incomeForm.update { it.copy(amount = v) }
+    fun updateIncomeError(v: String?)  = _incomeForm.update { it.copy(error = v) }
+
     fun loadAll() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -155,7 +185,7 @@ class PlannerViewModel @Inject constructor(
                         loans             = loans,
                         income            = income,
                         exports           = exports,
-                        totalMonthlyBills = bills.filter { b -> b.isActive }.sumOf { b -> b.amount },
+                        totalMonthlyBills = bills.filter { b -> b.isActive != 0 }.sumOf { b -> b.amount ?: 0.0 },
                         totalActiveLoans  = loans.filter { l -> l.status == "active" }.sumOf { l -> l.drawAmountKes - l.totalRepaidKes },
                     )
                 }
@@ -173,9 +203,9 @@ class PlannerViewModel @Inject constructor(
             _recurringForm.update {
                 if (e == null) RecurringFormState()
                 else RecurringFormState(
-                    id = e.id, name = e.name, amount = e.amount.toString(),
-                    category = e.category, frequency = e.frequency,
-                    nextRunAt = e.nextRunAt, notes = e.notes ?: "", enabled = e.enabled,
+                    id = e.id, name = e.title, amount = e.amount?.toString() ?: "",
+                    category = e.category ?: "uncategorized", frequency = e.cadence ?: "monthly",
+                    nextRunAt = e.nextRunAt ?: nowIso(), notes = "", enabled = e.enabled != 0,
                 )
             }
         }
@@ -192,16 +222,17 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getRuleById(it) } ?: RecurringRuleEntity(
-                    id = UUID.randomUUID().toString(), name = "", amount = 0.0,
-                    category = "uncategorized", frequency = "monthly",
-                    nextRunAt = nowIso(), enabled = true, createdAt = nowIso(), updatedAt = nowIso(),
+                    id = UUID.randomUUID().toString(), title = "", type = "expense", cadence = "monthly",
+                    nextRunAt = nowIso(), amount = 0.0, category = "uncategorized", enabled = 1,
+                    createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
-                    name = form.name, amount = amt, category = form.category,
-                    frequency = form.frequency, nextRunAt = form.nextRunAt,
-                    notes = form.notes.ifBlank { null }, enabled = form.enabled, updatedAt = nowIso(),
+                    title = form.name, amount = amt, category = form.category,
+                    cadence = form.frequency, nextRunAt = form.nextRunAt,
+                    enabled = if (form.enabled) 1 else 0, updatedAt = nowIso(),
                 )
                 plannerDao.insertRule(e)
                 loadAll()
+                Haptics.success()
                 _recurringForm.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (ex: Exception) {
@@ -220,9 +251,9 @@ class PlannerViewModel @Inject constructor(
             _billForm.update {
                 if (e == null) BillFormState()
                 else BillFormState(
-                    id = e.id, name = e.name, amount = e.amount.toString(),
-                    category = e.category, frequency = e.frequency,
-                    nextDueDate = e.nextDueDate, notes = e.notes ?: "", isActive = e.isActive,
+                    id = e.id, name = e.title, amount = e.amount?.toString() ?: "",
+                    category = e.cycle ?: "bills", frequency = e.cycle ?: "monthly",
+                    nextDueDate = e.nextDueDate ?: nowIso(), notes = e.notes ?: "", isActive = e.isActive != 0,
                 )
             }
         }
@@ -239,16 +270,17 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getBillById(it) } ?: BillEntity(
-                    id = UUID.randomUUID().toString(), name = "", amount = 0.0,
-                    category = "bills", frequency = "monthly",
-                    nextDueDate = nowIso(), isActive = true, createdAt = nowIso(), updatedAt = nowIso(),
+                    id = UUID.randomUUID().toString(), title = "", amount = 0.0,
+                    cycle = "monthly", nextDueDate = nowIso(), isActive = 1,
+                    createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
-                    name = form.name, amount = amt, category = form.category,
-                    frequency = form.frequency, nextDueDate = form.nextDueDate,
-                    notes = form.notes.ifBlank { null }, isActive = form.isActive, updatedAt = nowIso(),
+                    title = form.name, amount = amt, cycle = form.frequency,
+                    nextDueDate = form.nextDueDate,
+                    notes = form.notes.ifBlank { null }, isActive = if (form.isActive) 1 else 0, updatedAt = nowIso(),
                 )
                 plannerDao.insertBill(e)
                 loadAll()
+                Haptics.success()
                 _billForm.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (ex: Exception) {
@@ -259,6 +291,46 @@ class PlannerViewModel @Inject constructor(
 
     fun deleteBill(id: String) = viewModelScope.launch { plannerDao.softDeleteBill(id, nowIso()); loadAll() }
 
+    /** Toggle a bill's paid status; advancing the due date for recurring cycles (mirrors BillsScreen.tsx). */
+    fun toggleBillPaid(id: String) {
+        viewModelScope.launch {
+            val bill = plannerDao.getBillById(id) ?: return@launch
+            val wasPaid = bill.paidStatus != 0
+            val updated = if (!wasPaid) {
+                val nextDue = advanceDueDate(bill.nextDueDate, bill.cycle)
+                bill.copy(
+                    paidStatus = 1,
+                    lastPaidAt = nowIso(),
+                    nextDueDate = nextDue ?: bill.nextDueDate,
+                    updatedAt = nowIso(),
+                )
+            } else {
+                bill.copy(paidStatus = 0, lastPaidAt = null, updatedAt = nowIso())
+            }
+            plannerDao.updateBill(updated)
+            Haptics.success()
+            loadAll()
+        }
+    }
+
+    /** Advance a due date by one cycle — mirrors advanceDueDate() in billCycle.ts. */
+    private fun advanceDueDate(due: String?, cycle: String?): String? {
+        if (due == null) return null
+        return try {
+            val date = java.time.LocalDate.parse(due.take(10))
+            val next = when (cycle?.lowercase()) {
+                "daily"   -> date.plusDays(1)
+                "weekly"  -> date.plusWeeks(1)
+                "monthly" -> date.plusMonths(1)
+                "yearly"  -> date.plusYears(1)
+                else      -> return null
+            }
+            next.toString()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     // ─── Goals ────────────────────────────────────────────────────────────────
 
     fun openGoalForm(goalId: String? = null) {
@@ -267,9 +339,9 @@ class PlannerViewModel @Inject constructor(
             _goalForm.update {
                 if (e == null) GoalFormState()
                 else GoalFormState(
-                    id = e.id, name = e.name, targetAmount = e.targetAmount.toString(),
-                    savedAmount = e.savedAmount.toString(), deadline = e.deadline,
-                    category = e.category, notes = e.notes ?: "",
+                    id = e.id, name = e.title, targetAmount = e.targetValue.toString(),
+                    savedAmount = e.currentValue.toString(), deadline = e.deadline,
+                    category = e.category ?: "savings", notes = "",
                 )
             }
         }
@@ -287,15 +359,16 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getGoalById(it) } ?: GoalEntity(
-                    id = UUID.randomUUID().toString(), name = "", targetAmount = 0.0,
-                    savedAmount = 0.0, category = "savings", createdAt = nowIso(), updatedAt = nowIso(),
+                    id = UUID.randomUUID().toString(), title = "", targetValue = 0.0,
+                    currentValue = 0.0, category = "savings", createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
-                    name = form.name, targetAmount = target, savedAmount = saved,
+                    title = form.name, targetValue = target, currentValue = saved,
                     deadline = form.deadline, category = form.category,
-                    notes = form.notes.ifBlank { null }, updatedAt = nowIso(),
+                    updatedAt = nowIso(),
                 )
                 plannerDao.insertGoal(e)
                 loadAll()
+                Haptics.success()
                 _goalForm.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (ex: Exception) {
@@ -309,7 +382,7 @@ class PlannerViewModel @Inject constructor(
     fun addToGoal(goalId: String, amount: Double) {
         viewModelScope.launch {
             val e = plannerDao.getGoalById(goalId) ?: return@launch
-            plannerDao.updateGoal(e.copy(savedAmount = e.savedAmount + amount, updatedAt = nowIso()))
+            plannerDao.updateGoal(e.copy(currentValue = e.currentValue + amount, updatedAt = nowIso()))
             loadAll()
         }
     }
@@ -322,15 +395,49 @@ class PlannerViewModel @Inject constructor(
             _loanForm.update {
                 if (e == null) LoanFormState()
                 else LoanFormState(
-                    id = e.id, drawCode = e.drawCode,
-                    drawAmountKes = e.drawAmountKes.toString(), drawDate = e.drawDate,
-                    notes = e.notes ?: "",
+                    id = e.id, drawCode = e.drawCode ?: "",
+                    drawAmountKes = e.drawAmountKes.toString(), drawDate = e.drawDate ?: nowIso(),
+                    notes = "",
                 )
             }
         }
     }
 
     fun deleteLoan(id: String) = viewModelScope.launch { plannerDao.hardDeleteLoan(id); loadAll() }
+
+    fun saveLoan(onSuccess: () -> Unit) {
+        val form = _loanForm.value
+        val amt  = form.drawAmountKes.toDoubleOrNull()
+        if (amt == null || amt <= 0) {
+            _loanForm.update { it.copy(error = "Enter a valid draw amount") }
+            return
+        }
+        _loanForm.update { it.copy(isSaving = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val e = (form.id?.let { plannerDao.getLoanById(it) } ?: FulizaLoanEntity(
+                    id = UUID.randomUUID().toString(),
+                    drawCode = form.drawCode.ifBlank { null },
+                    drawAmountKes = amt,
+                    status = "active",
+                    drawDate = form.drawDate,
+                    createdAt = nowIso(),
+                    updatedAt = nowIso(),
+                )).copy(
+                    drawCode = form.drawCode.ifBlank { null },
+                    drawAmountKes = amt,
+                    updatedAt = nowIso(),
+                )
+                plannerDao.insertLoan(e)
+                loadAll()
+                Haptics.success()
+                _loanForm.update { it.copy(isSaving = false) }
+                onSuccess()
+            } catch (ex: Exception) {
+                _loanForm.update { it.copy(isSaving = false, error = ex.message) }
+            }
+        }
+    }
 
     // ─── Income ───────────────────────────────────────────────────────────────
 
@@ -340,8 +447,8 @@ class PlannerViewModel @Inject constructor(
             _incomeForm.update {
                 if (e == null) IncomeFormState()
                 else IncomeFormState(
-                    id = e.id, source = e.source, amount = e.amount.toString(),
-                    date = e.date, category = e.category, notes = e.notes ?: "",
+                    id = e.id, source = e.source ?: "", amount = e.amount.toString(),
+                    date = e.date ?: nowIso(), category = "salary", notes = e.note ?: "",
                 )
             }
         }
@@ -359,13 +466,15 @@ class PlannerViewModel @Inject constructor(
             try {
                 val e = (form.id?.let { incomeDao.getById(it) } ?: IncomeEntity(
                     id = UUID.randomUUID().toString(), source = "", amount = 0.0,
-                    date = nowIso(), category = "salary", createdAt = nowIso(), updatedAt = nowIso(),
+                    date = nowIso(), note = null, isRecurring = 0,
+                    createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
                     source = form.source, amount = amt, date = form.date,
-                    category = form.category, notes = form.notes.ifBlank { null }, updatedAt = nowIso(),
+                    note = form.notes.ifBlank { null }, updatedAt = nowIso(),
                 )
                 incomeDao.insert(e)
                 loadAll()
+                Haptics.success()
                 _incomeForm.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (ex: Exception) {

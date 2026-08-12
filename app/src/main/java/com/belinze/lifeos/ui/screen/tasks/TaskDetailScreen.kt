@@ -133,13 +133,13 @@ fun TaskDetailScreen(
                 value = task.priority.replaceFirstChar { it.uppercase() },
                 valueColor = priorityColor)
 
-            if (task.alarmEnabled) {
+            if (task.alarmEnabled != 0) {
                 TaskDetailRow(icon = Icons.Filled.Alarm, label = "Alarm", value = "Enabled",
                     valueColor = MaterialTheme.colorScheme.primary)
             }
 
-            if (!task.notes.isNullOrBlank()) {
-                TaskDetailRow(icon = Icons.Filled.Notes, label = "Notes", value = task.notes!!)
+            if (!task.description.isNullOrBlank()) {
+                TaskDetailRow(icon = Icons.Filled.Notes, label = "Notes", value = task.description!!)
             }
 
             Spacer(Modifier.height(Spacing.md))

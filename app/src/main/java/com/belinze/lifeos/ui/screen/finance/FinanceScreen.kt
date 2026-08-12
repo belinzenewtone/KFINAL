@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -31,9 +32,11 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -59,6 +62,7 @@ import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.util.compactCurrency
+import com.belinze.lifeos.viewmodel.SmsImportViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -88,14 +92,16 @@ import java.util.Locale
 fun FinanceScreen(
     navController: NavHostController,
     viewModel:     TransactionViewModel = hiltViewModel(),
+    smsImportViewModel: SmsImportViewModel = hiltViewModel(),
 ) {
     val state   by viewModel.uiState.collectAsState()
+    val smsState by smsImportViewModel.uiState.collectAsState()
     val isDark  = isSystemInDarkTheme()
 
     // Group transactions by date
     val grouped = remember(state.transactions) {
         state.transactions
-            .groupBy { it.date.take(10) }
+            .groupBy { it.date?.take(10) ?: "" }
             .entries
             .sortedByDescending { it.key }
     }
@@ -107,12 +113,12 @@ fun FinanceScreen(
     val weekStartStr  = remember { java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).toString() }
     val todayExpense  = remember(state.transactions) {
         state.transactions
-            .filter { it.date.take(10) == todayStr && it.transactionType != "income" }
+            .filter { it.date?.take(10) == todayStr && it.transactionType != "income" }
             .sumOf { it.amount }
     }
     val weekExpense   = remember(state.transactions) {
         state.transactions
-            .filter { it.date.take(10) >= weekStartStr && it.transactionType != "income" }
+            .filter { (it.date?.take(10) ?: "") >= weekStartStr && it.transactionType != "income" }
             .sumOf { it.amount }
     }
 
@@ -130,6 +136,29 @@ fun FinanceScreen(
                 message  = state.error ?: "",
                 tone     = BannerTone.Error,
             )
+
+            // ── SMS import progress banner (mirrors FinanceScreen.tsx smsBanner) ─
+            if (smsState.isImporting) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Text(
+                        "Importing messages…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
 
             // ── Page header ───────────────────────────────────────────────────
             Row(
@@ -241,6 +270,55 @@ fun FinanceScreen(
                                 .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
                             action   = "Review",
                             onAction = { navController.navigate(Route.UNCATEGORIZED) },
+                        )
+                    }
+                }
+
+                // ── Period selector + search ──────────────────────────────────
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        listOf("all", "today", "week", "month").forEach { period ->
+                            val selected = state.filters.period == period
+                            PeriodChip(
+                                label    = period.replaceFirstChar { it.uppercase() },
+                                selected = selected,
+                                onClick  = { viewModel.setPeriod(period) },
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    OutlinedTextField(
+                        value         = state.filters.search,
+                        onValueChange = { viewModel.setSearch(it) },
+                        placeholder   = { Text("Name, ref code…") },
+                        singleLine    = true,
+                        modifier      = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
+                    )
+                }
+
+                // ── Insights row (Budget / Fuliza / Fees) ─────────────────────
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        InsightCard(
+                            label = "Service Charges",
+                            amount = state.feeTotal,
+                            sub = "Airtime, Fuliza & subs",
                         )
                     }
                 }
@@ -379,6 +457,58 @@ private fun HeroSubMetric(label: String, amount: Double, isCredit: Boolean = fal
             fontWeight = FontWeight.SemiBold,
             fontSize   = 14.sp,
             color      = if (isCredit) Color(0xFF10B981) else MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
+// ─── Period chip ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun PeriodChip(
+    label:    String,
+    selected: Boolean,
+    onClick:  () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick  = onClick,
+        label    = { Text(label) },
+    )
+}
+
+// ─── Insight card (Budget / Fuliza / Fees row) ───────────────────────────────
+
+@Composable
+private fun InsightCard(
+    label:  String,
+    amount: Double,
+    sub:    String,
+) {
+    Column(
+        modifier = Modifier
+            .width(200.dp)
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                MaterialTheme.shapes.medium,
+            )
+            .padding(Spacing.sm),
+    ) {
+        Text(
+            text  = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+        )
+        Text(
+            text       = compactCurrency(amount),
+            style      = MaterialTheme.typography.headlineSmall,
+            color      = MaterialTheme.colorScheme.onBackground,
+            maxLines   = 1,
+        )
+        Text(
+            text  = sub,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+            maxLines = 1,
         )
     }
 }

@@ -45,6 +45,13 @@ interface TransactionDao {
 
     @Query("""
         SELECT * FROM transactions
+        WHERE merchant = :merchant AND deleted_at IS NULL
+        ORDER BY date DESC
+    """)
+    suspend fun getByMerchant(merchant: String): List<TransactionEntity>
+
+    @Query("""
+        SELECT * FROM transactions
         WHERE deleted_at IS NULL
           AND status = 'completed'
           AND transaction_type NOT IN ('topup')
@@ -100,12 +107,50 @@ interface TransactionDao {
     suspend fun countUncategorized(): Int
 
     @Query("""
+        SELECT * FROM transactions
+        WHERE deleted_at IS NULL
+          AND (category IS NULL OR category = 'uncategorized')
+          AND status = 'completed'
+        ORDER BY date DESC
+    """)
+    suspend fun getUncategorized(): List<TransactionEntity>
+
+    @Query("""
+        UPDATE transactions
+        SET category = :category, updated_at = :ts
+        WHERE deleted_at IS NULL
+          AND merchant = :merchant
+    """)
+    suspend fun updateCategoryForMerchant(merchant: String, category: String, ts: String)
+
+    @Query("""
         SELECT SUM(fee) FROM transactions
         WHERE deleted_at IS NULL
           AND date >= :startDate AND date <= :endDate
           AND fee IS NOT NULL AND fee > 0
     """)
     suspend fun getFeeTotal(startDate: String, endDate: String): Double?
+
+    @Query("""
+        SELECT category, SUM(fee) AS total, COUNT(*) AS count
+        FROM transactions
+        WHERE deleted_at IS NULL
+          AND fee IS NOT NULL AND fee > 0
+          AND date >= :startDate AND date <= :endDate
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    suspend fun getFeeByCategory(startDate: String, endDate: String): List<FeeCategoryTotal>
+
+    @Query("""
+        SELECT * FROM transactions
+        WHERE deleted_at IS NULL
+          AND fee IS NOT NULL AND fee > 0
+          AND date >= :startDate AND date <= :endDate
+        ORDER BY date DESC
+        LIMIT 50
+    """)
+    suspend fun getFeeTransactions(startDate: String, endDate: String): List<TransactionEntity>
 
     // ─── Live queries (Flow) ──────────────────────────────────────────────────
 
@@ -145,3 +190,4 @@ interface TransactionDao {
 data class MonthTotals(val income: Double?, val expense: Double?)
 data class CategoryTotal(val category: String?, val total: Double)
 data class MerchantTotal(val merchant: String?, val total: Double)
+data class FeeCategoryTotal(val category: String?, val total: Double, val count: Int)

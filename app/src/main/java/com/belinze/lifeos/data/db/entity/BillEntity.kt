@@ -14,21 +14,21 @@ data class BillEntity(
     @ColumnInfo(name = "id")
     val id: String,
 
-    @ColumnInfo(name = "user_id")               val userId: String?,
-    @ColumnInfo(name = "title")                 val title: String,
-    @ColumnInfo(name = "amount")                val amount: Double?,
-    @ColumnInfo(name = "cycle")                 val cycle: String?,
-    @ColumnInfo(name = "next_due_date")         val nextDueDate: String?,
-    @ColumnInfo(name = "last_paid_at")          val lastPaidAt: String?,
-    @ColumnInfo(name = "notes")                 val notes: String?,
+    @ColumnInfo(name = "user_id")               val userId: String? = null,
+    @ColumnInfo(name = "title")                 val title: String = "",
+    @ColumnInfo(name = "amount")                val amount: Double? = null,
+    @ColumnInfo(name = "cycle")                 val cycle: String? = null,
+    @ColumnInfo(name = "next_due_date")         val nextDueDate: String? = null,
+    @ColumnInfo(name = "last_paid_at")          val lastPaidAt: String? = null,
+    @ColumnInfo(name = "notes")                 val notes: String? = null,
     @ColumnInfo(name = "is_active", defaultValue = "1")
-                                                val isActive: Int,
+                                                val isActive: Int = 1,
     @ColumnInfo(name = "paid_status", defaultValue = "0")
-                                                val paidStatus: Int,
-    @ColumnInfo(name = "created_at")            val createdAt: String?,
-    @ColumnInfo(name = "updated_at")            val updatedAt: String?,
-    @ColumnInfo(name = "sync_state")            val syncState: String?,
-    @ColumnInfo(name = "deleted_at")            val deletedAt: String?,
+                                                val paidStatus: Int = 0,
+    @ColumnInfo(name = "created_at")            val createdAt: String? = null,
+    @ColumnInfo(name = "updated_at")            val updatedAt: String? = null,
+    @ColumnInfo(name = "sync_state")            val syncState: String? = null,
+    @ColumnInfo(name = "deleted_at")            val deletedAt: String? = null,
     @ColumnInfo(name = "revision",  defaultValue = "1")
-                                                val revision: Int,
+                                                val revision: Int = 1,
 )
