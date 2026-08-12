@@ -15,7 +15,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -68,7 +67,7 @@ fun MainScaffold(
 
     // ── Fuliza limit prompt (mirrors AppNavigator.tsx listener) ───────────────
     var showFulizaDialog by rememberSaveable { mutableStateOf(false) }
-    var fulizaInput by rememberSaveable { mutableDoubleStateOf(0.0) }
+    var fulizaInput by rememberSaveable { mutableStateOf(0.0) }
 
     LaunchedEffect(Unit) {
         SmsEventBus.fulizaLimitNeeded.collect { outstanding ->

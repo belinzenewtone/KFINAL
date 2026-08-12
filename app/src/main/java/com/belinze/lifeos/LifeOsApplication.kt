@@ -1,6 +1,7 @@
 package com.belinze.lifeos
 
 import android.app.Application
+import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.belinze.lifeos.data.datastore.AppPreferences
@@ -14,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -51,6 +53,7 @@ class LifeOsApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        installCrashLogger()
 
         // Seed the haptics gate from the persisted preference (mirrors the RN
         // haptic() helper reading useAppStore.settings.hapticFeedback).
@@ -65,13 +68,41 @@ class LifeOsApplication : Application(), Configuration.Provider {
                 // Re-evaluate budget thresholds on cold start in case spending
                 // crossed a threshold while the app was closed (mirrors RN).
                 budgetAlertService.checkAllBudgetThresholds(state)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("LifeOS/App", "Startup sync failed", e)
                 Haptics.enabled = true
             }
         }
 
         // Arm the background SMS BroadcastReceiver, ensure the SmsReceiverModule
         // Compose stub is live, and schedule the periodic ingest sweep worker.
-        smsService.initialize()
+        try {
+            smsService.initialize()
+        } catch (e: Exception) {
+            Log.e("LifeOS/App", "SMS service init failed", e)
+        }
+    }
+
+    /**
+     * Writes uncaught exceptions to filesDir/crash.log so crashes on a physical
+     * device can be captured without logcat. Debug aid; harmless in release.
+     */
+    private fun installCrashLogger() {
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val file = File(filesDir, "crash.log")
+                val sw = java.io.StringWriter()
+                throwable.printStackTrace(java.io.PrintWriter(sw))
+                file.appendText(
+                    "=== ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())} ===\n" +
+                    "Thread: ${thread.name}\n$sw\n\n"
+                )
+                Log.e("LifeOS/Crash", "Uncaught on ${thread.name}", throwable)
+            } catch (_: Exception) {
+            } finally {
+                defaultHandler?.uncaughtException(thread, throwable)
+            }
+        }
     }
 }
