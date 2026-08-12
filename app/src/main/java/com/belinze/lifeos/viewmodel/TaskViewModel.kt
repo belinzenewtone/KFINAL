@@ -7,6 +7,8 @@ import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +38,10 @@ data class TaskUiState(
     val sort:       TaskSort          = TaskSort.Deadline,
     val pendingCount: Int             = 0,
     val error:      String?           = null,
+    // ── Countdown timer ──────────────────────────────────────────────────────
+    val activeTimerTaskId: String?    = null,
+    val timerSeconds: Int             = 0,        // live elapsed seconds (resets on start)
+    val timerBaseSeconds: Int         = 0,        // time_spent_seconds already saved in DB
 )
 
 data class TaskFormState(
@@ -59,6 +65,9 @@ class TaskViewModel @Inject constructor(
 
     private val _formState = MutableStateFlow(TaskFormState())
     val formState: StateFlow<TaskFormState> = _formState.asStateFlow()
+
+    /** Running coroutine that ticks timerSeconds once per second. */
+    private var timerJob: Job? = null
 
     init {
         // Observe live changes from DB (e.g. from notification-triggered status change)
@@ -200,5 +209,64 @@ class TaskViewModel @Inject constructor(
             Haptics.warning()
             loadPendingCount()
         }
+    }
+
+    // ─── Countdown timer ──────────────────────────────────────────────────────
+
+    /**
+     * Toggle the timer for [taskId].
+     * ‣ If this task's timer is running → stop it and persist total elapsed seconds to DB.
+     * ‣ If a different task's timer is running → persist that one first, then start this one.
+     * ‣ If no timer is running → start a new one, reading existing time_spent_seconds as base.
+     */
+    fun toggleTimer(taskId: String) {
+        val current = _uiState.value
+
+        if (current.activeTimerTaskId == taskId) {
+            // Stop this timer
+            timerJob?.cancel()
+            timerJob = null
+            val total = current.timerBaseSeconds + current.timerSeconds
+            viewModelScope.launch {
+                dao.getById(taskId)?.let { dao.update(it.copy(timeSpentSeconds = total, updatedAt = nowIso())) }
+            }
+            _uiState.update { it.copy(activeTimerTaskId = null, timerSeconds = 0, timerBaseSeconds = 0) }
+        } else {
+            // Persist any running timer first
+            if (current.activeTimerTaskId != null) {
+                val total = current.timerBaseSeconds + current.timerSeconds
+                viewModelScope.launch {
+                    dao.getById(current.activeTimerTaskId)
+                        ?.let { dao.update(it.copy(timeSpentSeconds = total, updatedAt = nowIso())) }
+                }
+                timerJob?.cancel()
+                timerJob = null
+            }
+            // Start timer for taskId
+            viewModelScope.launch {
+                val base = dao.getById(taskId)?.timeSpentSeconds ?: 0
+                _uiState.update { it.copy(activeTimerTaskId = taskId, timerSeconds = 0, timerBaseSeconds = base) }
+                timerJob = viewModelScope.launch {
+                    while (true) {
+                        delay(1_000L)
+                        _uiState.update { it.copy(timerSeconds = it.timerSeconds + 1) }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Total displayed seconds for a task — live if timer is active, saved otherwise. */
+    fun displaySeconds(task: TaskEntity): Int {
+        val s = _uiState.value
+        return if (s.activeTimerTaskId == task.id) s.timerBaseSeconds + s.timerSeconds
+        else task.timeSpentSeconds
+    }
+
+    /** Format seconds as m:ss (e.g. "5:03"). */
+    fun formatTimer(totalSeconds: Int): String {
+        val m = totalSeconds / 60
+        val s = totalSeconds % 60
+        return "$m:${s.toString().padStart(2, '0')}"
     }
 }

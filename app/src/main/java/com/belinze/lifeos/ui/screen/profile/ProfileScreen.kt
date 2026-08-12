@@ -59,6 +59,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.FrostCard
@@ -184,6 +187,30 @@ fun ProfileScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(0.45f),
                 )
+            }
+
+            // ── Member since badge ────────────────────────────────────────────
+            val memberSince = remember(prefState.profileCreatedAt) {
+                runCatching {
+                    val d = LocalDate.parse(prefState.profileCreatedAt)
+                    DateTimeFormatter.ofPattern("MMM yyyy", Locale.getDefault()).format(d)
+                }.getOrNull()
+            }
+            if (memberSince != null) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color  = MaterialTheme.colorScheme.surfaceVariant,
+                            shape  = MaterialTheme.shapes.extraLarge,
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text  = "Member since $memberSince",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
 

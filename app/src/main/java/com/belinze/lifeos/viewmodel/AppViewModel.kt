@@ -73,7 +73,14 @@ class AppViewModel @Inject constructor(
 
     fun completeOnboarding() {
         viewModelScope.launch {
-            appPreferences.update { it[PreferenceKeys.HAS_COMPLETED_ONBOARDING] = true }
+            val today = java.time.LocalDate.now().toString()   // ISO yyyy-MM-dd
+            appPreferences.update {
+                it[PreferenceKeys.HAS_COMPLETED_ONBOARDING] = true
+                // Stamp member-since date once; never overwrite once set.
+                if (it[PreferenceKeys.PROFILE_CREATED_AT].isNullOrBlank()) {
+                    it[PreferenceKeys.PROFILE_CREATED_AT] = today
+                }
+            }
         }
     }
 

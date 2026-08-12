@@ -70,6 +70,7 @@ object PreferenceKeys {
     val PROFILE_PHONE            = stringPreferencesKey("profile_phone")
     val PROFILE_AVATAR_URI       = stringPreferencesKey("profile_avatar_uri")
     val PROFILE_USERNAME         = stringPreferencesKey("profile_username")
+    val PROFILE_CREATED_AT       = stringPreferencesKey("profile_created_at")
 
     // Fired budget alerts — JSON map of "category|level|yearMonth" → ISO timestamp
     val FIRED_BUDGET_ALERTS      = stringPreferencesKey("fired_budget_alerts")
@@ -114,6 +115,7 @@ data class AppPreferenceState(
     val profilePhone: String            = "",
     val profileAvatarUri: String        = "",
     val profileUsername: String         = "",
+    val profileCreatedAt: String        = "",   // ISO date set on first onboarding completion
     val firedBudgetAlerts: Map<String, String> = emptyMap(),
 )
 
@@ -184,6 +186,7 @@ class AppPreferences @Inject constructor(
         profilePhone           = this[PreferenceKeys.PROFILE_PHONE]            ?: "",
         profileAvatarUri       = this[PreferenceKeys.PROFILE_AVATAR_URI]       ?: "",
         profileUsername        = this[PreferenceKeys.PROFILE_USERNAME]         ?: "",
+        profileCreatedAt       = this[PreferenceKeys.PROFILE_CREATED_AT]       ?: "",
         firedBudgetAlerts      = parseFiredAlerts(this[PreferenceKeys.FIRED_BUDGET_ALERTS]),
     )
 

@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -153,10 +155,14 @@ fun TasksScreen(
                                     },
                                 ) {
                                     TaskItem(
-                                        task     = task,
-                                        onToggle = { viewModel.complete(task.id) },
-                                        onDelete = { viewModel.softDelete(task.id) },
-                                        onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
+                                        task            = task,
+                                        onToggle        = { viewModel.complete(task.id) },
+                                        onDelete        = { viewModel.softDelete(task.id) },
+                                        onTimer         = { viewModel.toggleTimer(task.id) },
+                                        onClick         = { navController.navigate(NavTo.taskDetail(task.id)) },
+                                        isTimerActive   = state.activeTimerTaskId == task.id,
+                                        timerDisplay    = viewModel.formatTimer(viewModel.displaySeconds(task)),
+                                        showTimer       = viewModel.displaySeconds(task) > 0 || state.activeTimerTaskId == task.id,
                                     )
                                 }
                             }
@@ -183,10 +189,14 @@ fun TasksScreen(
 
 @Composable
 private fun TaskItem(
-    task:     TaskEntity,
-    onToggle: () -> Unit,
-    onDelete: () -> Unit,
-    onClick:  () -> Unit,
+    task:           TaskEntity,
+    onToggle:       () -> Unit,
+    onDelete:       () -> Unit,
+    onTimer:        () -> Unit,
+    onClick:        () -> Unit,
+    isTimerActive:  Boolean = false,
+    timerDisplay:   String  = "0:00",
+    showTimer:      Boolean = false,
 ) {
     val isDone            = task.status == "completed"
     val primary           = MaterialTheme.colorScheme.primary
@@ -218,7 +228,10 @@ private fun TaskItem(
                 maxLines        = 2,
                 overflow        = TextOverflow.Ellipsis,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
                 // Priority indicator
                 val priorityColor = when (task.priority) {
                     "high"   -> Color(0xFFEF4444)
@@ -226,19 +239,39 @@ private fun TaskItem(
                     else     -> MaterialTheme.colorScheme.onBackground.copy(0.35f)
                 }
                 Text(
-                    text  = task.priority?.replaceFirstChar { it.uppercase() } ?: "Low",
+                    text     = task.priority?.replaceFirstChar { it.uppercase() } ?: "Low",
                     fontSize = 11.sp,
-                    color = priorityColor,
+                    color    = priorityColor,
                 )
                 if (task.deadline != null) {
                     Text("·", color = MaterialTheme.colorScheme.onBackground.copy(0.35f), fontSize = 11.sp)
                     Text(
-                        text  = task.deadline.take(10),
+                        text     = task.deadline.take(10),
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(0.45f),
+                        color    = MaterialTheme.colorScheme.onBackground.copy(0.45f),
+                    )
+                }
+                // Timer display (when timer has been used on this task)
+                if (showTimer) {
+                    Text("·", color = MaterialTheme.colorScheme.onBackground.copy(0.35f), fontSize = 11.sp)
+                    Text(
+                        text     = timerDisplay,
+                        fontSize = 11.sp,
+                        color    = if (isTimerActive) primary else MaterialTheme.colorScheme.onBackground.copy(0.45f),
+                        fontWeight = if (isTimerActive) FontWeight.SemiBold else FontWeight.Normal,
                     )
                 }
             }
+        }
+
+        // Timer toggle button
+        IconButton(onClick = onTimer, modifier = Modifier.size(32.dp)) {
+            Icon(
+                imageVector        = if (isTimerActive) Icons.Filled.Stop else Icons.Filled.Timer,
+                contentDescription = if (isTimerActive) "Stop timer" else "Start timer",
+                tint               = if (isTimerActive) primary else MaterialTheme.colorScheme.onBackground.copy(0.30f),
+                modifier           = Modifier.size(18.dp),
+            )
         }
 
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
