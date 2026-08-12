@@ -1,0 +1,1146 @@
+<!doctype html><html><head><!-- frame-runtime --><script>window.__FRAME_PREAMBLE={"capabilities":{"assets":"assets.hcOK0ALv.js","comments":"comments.BKZ3qutA.js","db":"db.C8ehi_0m.js","downloads":"downloads.BXsoAvg9.js","mcp":"mcp.D3B2EyQu.js","permissions":"permissions.DdITF2Mk.js","room":"room.BgXZkiYR.js","sample":"sample.DpdXn9di.js","self":"self.BN4be5De.js","user":"user.o5zdRedj.js"},"transforms":"_transforms.VaITkagF.js","comments":"_comments.CNSvmFji.js","translate":"_translate.BOzFH2D9.js"}</script><script>(function(){"use strict";var le=["light","dark","system"],ue=/^[A-Za-z0-9_-]{1,64}$/,H=/^[a-zA-Z_:][a-zA-Z0-9_:.-]{0,127}$/,fe=new Set(["class","hidden"]);function de(e){const t=e.toLowerCase();return t.startsWith("data-")||t.startsWith("aria-")||fe.has(t)}function me(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_patch;if(t===null||typeof t!="object")return!1;const{seq:n,elements:a}=t;if(typeof n!="number"||!Number.isSafeInteger(n)||!Array.isArray(a)||a.length===0||a.length>64)return!1;for(const s of a){if(s===null||typeof s!="object")return!1;const r=s;if(typeof r.target!="string"||!ue.test(r.target)||r.text!==void 0&&typeof r.text!="string")return!1;if(r.attrsSet!==void 0){if(r.attrsSet===null||typeof r.attrsSet!="object")return!1;for(const[o,i]of Object.entries(r.attrsSet))if(!H.test(o)||typeof i!="string")return!1}if(r.attrsRemoved!==void 0){if(!Array.isArray(r.attrsRemoved))return!1;for(const o of r.attrsRemoved)if(typeof o!="string"||!H.test(o))return!1}}return!0}function pe(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_init;return t!==null&&typeof t=="object"}function Y(e){return e!==null&&typeof e=="object"&&e.__frame_size_poke===!0}function ge(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_theme;if(t===null||typeof t!="object")return!1;const n=t.theme;return typeof n=="string"&&le.includes(n)}function he(e){try{typeof reportError=="function"?reportError(e):setTimeout(()=>{throw e},0)}catch{}}var K=["#62744c","#b04e72","#5b7596","#a3651f","#7a6ba8","#3f7a75"],J=e=>{let t=0;for(let n=0;n<e.length;n++)t=t*31+e.charCodeAt(n)>>>0;return K[t%K.length]??"#788c5d"},V="#c7c9d1",X=e=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1' fill='"+encodeURIComponent(e)+"'/%3E%3C/svg%3E",ve=Object.freeze({id:null,name:"",avatarUrl:X(V),color:V,email:null,isOwner:!1,canEdit:!1}),_e=(...e)=>{const t=e[0],n=typeof t=="string"?[t]:Array.isArray(t)?t.filter(s=>typeof s=="string"):[],a=Object.create(null);for(const s of n)a[s]={id:s,name:"",avatarUrl:X(J(s)),color:J(s),email:null,isMe:!1};return a},Z=Object.freeze(Object.assign(Object.create(null),{user:Object.freeze(Object.assign(Object.create(null),{id:null,isOwner:!1,canEdit:!1,me:ve,profiles:_e,name:"",avatarUrl:null,search:Object.freeze([]),email:null}))})),ye={sample:"sample"};function G(){const e=new Uint8Array(20);try{crypto.getRandomValues(e)}catch{for(let n=0;n<e.length;n++)e[n]=Math.floor(Math.random()*256)}let t="";for(const n of e)t+=(n%36).toString(36);return t}function be(e,t){const n=r=>{const o={path:r},i=r.split("/");return{id:i[i.length-1],path:r,get:()=>t("get",[o]),set:g=>t("set",[o,g]),update:g=>t("update",[o,g]),delete:()=>t("delete",[o]),acquire:g=>t("acquire",[o,g]),onSnapshot:(g,y)=>t("subscribe",[o,g,y]),collection:g=>s(r+"/"+String(g))}},a=r=>({where:(o,i,g)=>a({...r,where:[...r.where??[],{f:String(o),op:String(i),v:g}]}),orderBy:(o,i)=>a({...r,orderBy:{f:String(o),dir:i===void 0?"asc":String(i)}}),limit:o=>a({...r,limit:Number(o)}),get:()=>t("query",[r]),onSnapshot:(o,i)=>t("subscribe",[r,o,i])}),s=r=>({...a({collection:r}),path:r,doc:o=>n(r+"/"+(o===void 0?G():String(o))),add:o=>{const i=n(r+"/"+G());return Promise.resolve(i.set(o)).then(()=>i)}});e.doc=r=>n(String(r)),e.collection=r=>s(String(r))}function Q(e){if(window===top||e.type==="auxclick"&&e.button!==1)return;const t=e.composedPath?e.composedPath():[e.target];let n=null;for(let o=0;o<t.length;o++){const i=t[o];if(i&&i.matches&&i.matches("a[href],area[href]")){n=i;break}}if(!n&&e.target&&e.target.closest&&(n=e.target.closest("a[href],area[href]")),!n)return;const a=n.getAttribute("href");if(!a)return;let s,r;try{s=new URL(a,document.baseURI),r=new URL(document.baseURI).origin}catch{return}if((s.protocol==="http:"||s.protocol==="https:")&&s.origin!==r){e.preventDefault();const o=(n.getAttribute("target")??document.querySelector("base[target]")?.getAttribute("target")??"").toLowerCase(),i=e.type==="auxclick"||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||!["","_self","_top","_parent"].includes(o);parent.postMessage({__frame_nav:!0,url:s.href,newTab:i},"*")}}var ee={};function I(e){if(window===top)return;const t=Date.now();t-(ee[e]||0)<500||(ee[e]=t,parent.postMessage({__frame_engaged:!0,kind:e},"*"))}var Ee=2e3,te=["wheel","touchstart","touchmove","keydown","pointerdown"],re=0;function we(e){e.isTrusted&&(re=Date.now())}function Ae(){addEventListener("click",Q,!0),addEventListener("auxclick",Q,!0)}function Se(){for(let e=0;e<te.length;e++)addEventListener(te[e],we,{capture:!0,passive:!0});addEventListener("scroll",e=>{e.isTrusted&&Date.now()-re<Ee&&I("scroll")},{capture:!0,passive:!0}),addEventListener("pointermove",e=>{e.isTrusted&&I("pointer")},{capture:!0,passive:!0}),addEventListener("click",e=>{e.isTrusted&&I("click")},{capture:!0,passive:!0})}var je=Object.freeze([]);function Oe(e,t){let n=null,a=null;const s=()=>e.__settled;e.peers=()=>je,e.connected=()=>!1,e.emit=()=>s()?.()??Promise.resolve(),e.presence=r=>{const o=s();if(o)return o();let i=null;if(r!==null&&typeof r=="object")try{Array.isArray(r)||(i={...r})}catch{}return i===null?Promise.reject({code:"invalid_argument",message:"presence takes an object"}):(n===null&&(n=Object.create(null),a=Promise.resolve(t("presence",[n]))),Object.assign(n,i),a)}}var U="__frame_scroll",Re=150,Pe=310,Me=160,Le=3e4;function Te(){let e=0,t=!1,n=!1,a=!1,s=0,r=null;const o=d=>{try{sessionStorage.setItem(U,JSON.stringify({y:d}))}catch{}},i=()=>{if(clearTimeout(e),r===null)return;const d=r;r=null,o(d)},g=()=>{if(t){t=!1;return}n=!0,r=scrollY,clearTimeout(e),e=setTimeout(i,Re)};try{addEventListener("scroll",g,{passive:!0}),addEventListener("pagehide",i)}catch{}const y=()=>{let d;try{d=sessionStorage.getItem(U)}catch{return null}if(d===null)return null;let u;try{u=JSON.parse(d)}catch{u=null}const p=u?.y;if(!(typeof p=="number"&&Number.isFinite(p)&&p>=0)){try{sessionStorage.removeItem(U)}catch{}return null}return p};let l=!1;const f=d=>{try{const u=scrollY;scrollTo({top:d,left:0,behavior:"instant"}),s=d,a=!0,clearTimeout(e),r=null,o(d);const p=scrollY;p!==u&&(t=!0),p!==d&&!l&&(l=!0,addEventListener("load",()=>{try{if(scrollY===p){const _=y();f(_!==null?_:s)}}catch{}},{once:!0}))}catch{}},m=()=>{try{return!!location.hash}catch{return!0}};let h=!1;const v=()=>{try{if(h||innerWidth>Pe||innerHeight>Me)return;h=!0;const d=Date.now(),u=()=>{try{removeEventListener("resize",u)}catch{}if(Date.now()-d>Le||n||m())return;const p=y();f(p!==null?p:s)};addEventListener("resize",u)}catch{}};let w=!1,A=!1;return{restore(){if(w||(w=!0,m()))return;const d=y();d!==null&&(f(d),v())},promoted(){if(A||(A=!0,m()))return;const d=y();d!==null?(f(d),v()):a&&f(s)}}}function Ce(e,t,n){const a=[...t.values()].filter(s=>s.targets.some(r=>r.startsWith(e+".")));return{wrap(s,r){const o=`${e}.${s}`,i=a.filter(g=>g.targets.includes(o));return i.length===0?(...g)=>{try{return r(...g)}catch(y){return Promise.reject(y)}}:(...g)=>{let y=g;for(const f of i){const m=f.module.parameters;if(m)try{y=m(y)}catch{return Promise.reject({code:"transform_error",id:f.id,scope:e,message:"parameters transform failed"})}}let l;try{l=r(...y)}catch(f){l=Promise.reject(f)}return l.then(f=>{for(let m=i.length-1;m>=0;m--){const h=i[m],v=h.module.returns;if(v)try{f=v(f)}catch{return n({id:h.id,scope:e,leg:"returns"}),f}}return f},f=>{for(let m=i.length-1;m>=0;m--){const h=i[m],v=h.module.throws;if(v)try{f=v(f)}catch{return n({id:h.id,scope:e,leg:"throws"}),Promise.reject(f)}}return Promise.reject(f)})}}}}function ke(e,t,n,a=()=>{}){const s=new Set(e.changes??[]),r=new Map;for(const o of s){const i=t[o];i&&r.set(o,i)}return{contract:e.contract,changes:s,flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:r,shellOrigin:n.shellOrigin,mount:n.mount,pipe:o=>Ce(o,r,a)}}var $e="modulepreload",Fe=function(e){return"/"+e},xe={},Ne=function(t,n,a){let s=Promise.resolve();function r(o){const i=new Event("vite:preloadError",{cancelable:!0});if(i.payload=o,window.dispatchEvent(i),!i.defaultPrevented)throw o}return s.then(o=>{for(const i of o||[])i.status==="rejected"&&r(i.reason);return t().catch(r)})};(function(){const e=Object.defineProperty,t=globalThis,n=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let a=0;for(let s=0;s<n.length;s++){const r=n[s];try{e(t,r,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[r]}catch{}try{e(t,r,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[r]=="function"&&a++}if(a&&window!==top)try{parent.postMessage({__frame_rtc_lockdown_failed:a},"*")}catch{}})();var qe=1e4,Ie=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function ne(e){for(const t of Ie)if(t.endsWith(":*"))try{const n=new URL(e);if(`${n.protocol}//${n.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}var C=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities}),D=window.__FRAME_PREAMBLE?.transforms,z=window.__FRAME_PREAMBLE?.comments,B=window.__FRAME_PREAMBLE?.translate,k=/^[\w.-]+\.js$/,Ue=/^[a-z][a-z0-9_-]{0,63}$/,se=null,P=null;function $(e,t,n){try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!0,enumerable:!0})}catch{}}}var F=!1;function De(e,t){const n=[];for(const a of e.elements){const s=document.querySelector(`[data-id="${a.target}"]`);if(!s){parent.postMessage({__frame_patch_miss:{seq:e.seq}},t);return}if([...Object.keys(a.attrsSet??{}),...a.attrsRemoved??[]].some(r=>!de(r))){parent.postMessage({__frame_patch_miss:{seq:e.seq}},t);return}for(const[r,o]of Object.entries(a.attrsSet??{}))if(r.toLowerCase()!=="data-id")try{s.setAttribute(r,o)}catch{}for(const r of a.attrsRemoved??[])r.toLowerCase()!=="data-id"&&s.removeAttribute(r);typeof a.text=="string"&&(s.textContent=a.text),n.push(a.target)}try{document.dispatchEvent(new CustomEvent("claude:edit",{detail:{seq:e.seq,targets:n}}))}catch{}}function oe(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,F=!0):F&&(delete t.dataset.theme,t.style.colorScheme="",F=!1)}var ae=256,M=Object.assign(Object.create(null),{mcp:Object.assign(Object.create(null),{watchTool:{handlerArg:3}}),db:Object.assign(Object.create(null),{subscribe:{handlerArg:1,errArg:2}}),room:Object.assign(Object.create(null),{on:{handlerArg:1,errArg:2},onPeers:{handlerArg:0,errArg:1},onConnection:{handlerArg:0,errArg:1}})}),ze=Object.assign(Object.create(null),{db:(e,t)=>be(e,t),room:(e,t,n)=>Oe(e,n)}),L=new Map;function ie(e,t){const n=L.get(e);if(!n)return;const a=Object.assign(Object.create(null),t);Object.assign(n.impl,a),n.impl.__settled=()=>Promise.reject({code:"capability_removed",message:`${e}: method not in this runtime`});const s=n.queue;n.queue=[];for(const r of s){const o=a[r.method];if(o)if(M[e]?.[r.method])try{r.resolve(o(...r.args))}catch{T(r,M[e][r.method],{code:"transform_error",message:`${e}.${r.method} rejected its arguments`})}else o(...r.args).then(r.resolve,r.reject);else{const i={code:"capability_removed",message:`${e}.${r.method} is not in this runtime`},g=M[e]?.[r.method];if(g){T(r,g,i);continue}r.reject(i)}}}function Be(e,t){const n=L.get(e);if(!n)return;n.impl.__settled=()=>Promise.reject(t);const a=n.queue;n.queue=[];for(const s of a){const r=M[e]?.[s.method];if(r){T(s,r,t);continue}s.reject(t)}}function ce(e,t){if(typeof e=="function")try{return e(...t)}catch{return Object.create(null)}return Array.isArray(e)?[...e]:e!==null&&typeof e=="object"?{...e}:e}function N(e,t){const n=Z[e];if(!n){Be(e,t);return}ie(e,Object.fromEntries(Object.entries(n).map(([a,s])=>[a,(...r)=>Promise.resolve(ce(s,r))])))}function T(e,t,n){if(e.syncState?.dead)return;const a=t.errArg===void 0?void 0:e.args[t.errArg],s=t.errArg===void 0?e.args[t.handlerArg]:a;typeof s=="function"&&queueMicrotask(()=>{if(!e.syncState?.dead)try{s(t.errArg===void 0?{type:"error",error:n}:n)}catch(r){he(r)}})}var x=Object.getOwnPropertyDescriptor(window,"claude");if(window!==top&&!(x&&x.writable===!1)){Ae(),Se();let e=null;try{e=Te()}catch{}const t=x?.value??{};$(window,"claude",t);const n=l=>{const f={impl:Object.create(null),queue:[]};L.set(l,f);const m=f.impl,h=d=>({code:"queue_overflow",message:`${l}.${d}: pre-init call queue is full`}),v=(d,u)=>{if(f.queue.length>=ae){const p=Z[l];return p&&d in p?Promise.resolve(ce(p[d],u)):Promise.reject(h(d))}return new Promise((p,_)=>{f.queue.push({method:d,args:u,resolve:p,reject:_})})},w=ye[l],A=new Proxy(w===void 0?m:(()=>{}),{apply:(d,u,p)=>{const _=w,E=m[_]??m.__settled;return E?E(...p):v(_,p)},get:(d,u)=>{if(typeof u!="string"||u==="then"||u==="toJSON"||u==="valueOf")return;if(u==="toString")return Object.prototype.toString;if(w!==void 0&&(u==="call"||u==="apply"||u==="bind"))return Function.prototype[u];const p=M[l]?.[u];return p?(..._)=>{if(typeof _[p.handlerArg]!="function")throw new TypeError(`${l}.${u} requires a handler function`);const E=m[u];if(E)return E(..._);if(m.__settled){const b={dead:!1},q={args:[..._],syncState:b};return m.__settled().catch(c=>T(q,p,c)),()=>{b.dead=!0}}if(f.queue.length>=ae){const b={dead:!1};return T({args:[..._],syncState:b},p,h(u)),()=>{b.dead=!0}}let S=null;const O={dead:!1};return f.queue.push({method:u,args:_,resolve:b=>{S=typeof b=="function"?b:null,O.dead&&S?.()},reject:()=>{},syncState:O}),()=>{O.dead=!0,S?.()}}:(..._)=>{const E=m[u]??m.__settled;return E?E(..._):v(u,_)}},set:()=>!1});ze[l]?.(m,(d,u)=>A[d](...u),v),$(t,l,A)};for(const l of Object.keys(C)){if(t[l]!==void 0){$(t,l,t[l]);continue}n(l)}let a=null,s=null,r=0;const o=l=>{l.source!==parent||!ne(l.origin)||pe(l.data)&&(a=l.data.__frame_init,P=l.origin,removeEventListener("message",o),clearTimeout(r),s?.())};addEventListener("message",o),parent.postMessage({__frame_connect:!0},"*");const i=new Promise(l=>{s=l,r=setTimeout(()=>{removeEventListener("message",o),l()},qe)}),g=document.readyState==="loading"?new Promise(l=>document.addEventListener("DOMContentLoaded",()=>l(),{once:!0})):Promise.resolve();g.then(()=>{try{e?.restore()}catch{}});const y=l=>{if(!(l.source!==parent||!ne(l.origin))&&Y(l.data)){removeEventListener("message",y);try{e?.promoted()}catch{}}};addEventListener("message",y),i.then(async()=>{if(!a||!P){for(const c of L.keys())N(c,{code:"not_granted",message:"frame initialization did not arrive - capability unavailable"});return}oe(a.theme);const l=P;let f=!1,m=!1;addEventListener("message",c=>{if(c.source!==parent||c.origin!==l)return;ge(c.data)&&oe(c.data.__frame_theme.theme),me(c.data)&&De(c.data.__frame_patch,l);const j=c.data?.__fc_mode;j&&typeof j=="object"&&!f&&z&&k.test(z)&&(f=!0,h(z).then(W=>W.install?.(l,j.on===!0)).catch(()=>{}));const R=c.data?.__ft_cmd;R&&typeof R=="object"&&!m&&B&&k.test(B)&&(m=!0,h(B).then(W=>W.install?.(l,R)).catch(()=>{}))});const h=c=>Ne(()=>import("/_runtime/"+c),void 0),v=Object.keys(a.capabilities??{});for(const c of v)Object.hasOwn(C,c)||Ue.test(c)&&t[c]===void 0&&(n(c),N(c,{code:"capability_disabled",message:"capability not in this runtime generation"}));const w=v.filter(c=>Object.hasOwn(C,c)).map(c=>[c,C[c]]).filter(c=>typeof c[1]=="string"&&k.test(c[1])),[A,...d]=await Promise.allSettled([D&&k.test(D)?h(D):Promise.resolve({}),...w.map(([,c])=>h(c))]),u=P;se=ke(a,A.status==="fulfilled"&&A.value?.TRANSFORMS||{},{shellOrigin:u,mount:ie},c=>parent.postMessage({__frame_cap_telemetry:c},u));const p=c=>parent.postMessage({__frame_cap_telemetry:{kind:"cap-load-error",cap:c}},u),_=se;d.forEach((c,j)=>{const R=w[j][0];if(c.status!=="fulfilled"){p(R);return}try{c.value?.install?.(_)}catch{p(R)}});for(const[c,j]of L)if(j.impl.__settled===void 0){if(v.includes(c)){N(c,{code:"capability_disabled",message:"capability not available in this session"});continue}N(c,{code:"not_granted",message:"capability not available in this session"})}await g,parent.postMessage({__frame_ready:!0},P);let E=-1,S=0;const O=()=>{S=0;const c=Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0);c!==E&&(E=c,parent.postMessage({__frame_size:!0,h:c},u))},b=()=>{S||(S=setTimeout(O,200))},q=new ResizeObserver(b);q.observe(document.documentElement),document.body&&q.observe(document.body),document.addEventListener("load",b,!0),document.fonts?.ready.then(b,()=>{}),addEventListener("beforeprint",()=>{E=-1,O()}),b(),addEventListener("message",c=>{if(!(c.source!==parent||c.origin!==u)&&Y(c.data)){try{e?.promoted()}catch{}E=-1,b()}})})}})();</script><!-- /frame-runtime --><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+
+<title>LifeOS → Jetpack Compose Migration Plan</title>
+<style>
+  /* ─── Design tokens — light ground (default) ─── */
+  :root {
+    --bg:          #F6F8FA;
+    --bg-2:        #FFFFFF;
+    --bg-3:        #EEF2F7;
+    --border:      #D0D7DE;
+    --border-sub:  #E8EDF4;
+    --text-1:      #1F2328;
+    --text-2:      #57606A;
+    --text-3:      #8C959F;
+    --accent:      #0A6BC9;
+    --accent-dim:  #E3F0FC;
+    --accent-2:    #7C3AED;
+    --success:     #1A7F37;
+    --success-dim: #DCFCE7;
+    --warn:        #9A6700;
+    --warn-dim:    #FEF9C3;
+    --danger:      #CF222E;
+    --danger-dim:  #FFE4E6;
+    --code-bg:     #0D1117;
+    --code-text:   #E6EDF3;
+    --phase-num:   #0A6BC9;
+    --tag-bg:      #EEF2F7;
+    --tag-text:    #57606A;
+  }
+
+  /* ─── Dark: system preference (un-stamped doc) ─── */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:          #0D1117;
+      --bg-2:        #161B22;
+      --bg-3:        #1C2128;
+      --border:      #30363D;
+      --border-sub:  #21262D;
+      --text-1:      #E6EDF3;
+      --text-2:      #8B949E;
+      --text-3:      #6E7681;
+      --accent:      #4DB8FF;
+      --accent-dim:  #0D2035;
+      --accent-2:    #A78BFA;
+      --success:     #34D399;
+      --success-dim: #052E16;
+      --warn:        #F59E0B;
+      --warn-dim:    #1C1400;
+      --danger:      #FF6B6B;
+      --danger-dim:  #2D0A0A;
+      --code-bg:     #0D1117;
+      --code-text:   #E6EDF3;
+      --phase-num:   #4DB8FF;
+      --tag-bg:      #1C2128;
+      --tag-text:    #8B949E;
+    }
+  }
+
+  /* ─── Dark: explicit toggle ─── */
+  :root[data-theme="dark"] {
+    --bg:          #0D1117;
+    --bg-2:        #161B22;
+    --bg-3:        #1C2128;
+    --border:      #30363D;
+    --border-sub:  #21262D;
+    --text-1:      #E6EDF3;
+    --text-2:      #8B949E;
+    --text-3:      #6E7681;
+    --accent:      #4DB8FF;
+    --accent-dim:  #0D2035;
+    --accent-2:    #A78BFA;
+    --success:     #34D399;
+    --success-dim: #052E16;
+    --warn:        #F59E0B;
+    --warn-dim:    #1C1400;
+    --danger:      #FF6B6B;
+    --danger-dim:  #2D0A0A;
+    --code-bg:     #0D1117;
+    --code-text:   #E6EDF3;
+    --phase-num:   #4DB8FF;
+    --tag-bg:      #1C2128;
+    --tag-text:    #8B949E;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── Layout ─── */
+  .doc {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 120px;
+  }
+
+  /* ─── Header ─── */
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 36px;
+    margin-bottom: 48px;
+  }
+
+  .doc-eyebrow {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .doc-title {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text-1);
+    text-wrap: balance;
+    margin-bottom: 12px;
+  }
+
+  .doc-subtitle {
+    font-size: 16px;
+    color: var(--text-2);
+    max-width: 560px;
+    line-height: 1.55;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    font-size: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-sub);
+  }
+
+  .meta-chip.accent { background: var(--accent-dim); color: var(--accent); border-color: transparent; }
+  .meta-chip.success { background: var(--success-dim); color: var(--success); border-color: transparent; }
+  .meta-chip.warn { background: var(--warn-dim); color: var(--warn); border-color: transparent; }
+
+  /* ─── Section headings ─── */
+  .section {
+    margin-bottom: 56px;
+  }
+
+  .section-title {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-sub);
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin: 32px 0 14px;
+    text-wrap: balance;
+  }
+
+  h2:first-child { margin-top: 0; }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-1);
+    margin: 24px 0 10px;
+  }
+
+  p {
+    color: var(--text-2);
+    margin-bottom: 14px;
+    max-width: 68ch;
+  }
+
+  p:last-child { margin-bottom: 0; }
+
+  /* ─── Phase cards ─── */
+  .phase {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  .phase-num {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--phase-num);
+    line-height: 1;
+    opacity: 0.25;
+    min-width: 36px;
+    user-select: none;
+  }
+
+  .phase-info { flex: 1; }
+
+  .phase-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 4px;
+  }
+
+  .phase-dur {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: .06em;
+  }
+
+  .phase-body {
+    padding-left: 54px;
+  }
+
+  .phase-body p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* ─── Task list inside phases ─── */
+  .task-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .task-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+
+  .task-list li::before {
+    content: '─';
+    color: var(--border);
+    font-family: monospace;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ─── Decision callout ─── */
+  .decision {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .decision-label {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .decision p {
+    font-size: 13.5px;
+    color: var(--text-1);
+    max-width: none;
+    margin: 0;
+  }
+
+  .warn-box {
+    background: var(--warn-dim);
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .warn-box .decision-label { color: var(--warn); }
+  .warn-box p { color: var(--text-1); font-size: 13.5px; max-width: none; margin: 0; }
+
+  /* ─── Tables ─── */
+  .table-wrap { overflow-x: auto; margin-bottom: 24px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    min-width: 480px;
+  }
+
+  thead tr {
+    background: var(--bg-3);
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-sub);
+    color: var(--text-2);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--text-1); font-weight: 500; }
+
+  td code, th code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    background: var(--bg-3);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-family: 'SF Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+
+  .pill.keep   { background: var(--success-dim); color: var(--success); }
+  .pill.new    { background: var(--accent-dim);  color: var(--accent);  }
+  .pill.drop   { background: var(--danger-dim);  color: var(--danger);  }
+  .pill.warn   { background: var(--warn-dim);    color: var(--warn);    }
+
+  /* ─── Code blocks ─── */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    padding: 18px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border: 1px solid #30363D;
+  }
+
+  .kw  { color: #FF7B72; }
+  .fn  { color: #D2A8FF; }
+  .str { color: #A5D6FF; }
+  .cm  { color: #6E7681; font-style: italic; }
+  .num { color: #F2CC60; }
+  .ty  { color: #7EE787; }
+
+  /* ─── Screen inventory grid ─── */
+  .screen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .screen-item {
+    background: var(--bg-2);
+    border: 1px solid var(--border-sub);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .screen-item .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot.auth   { background: var(--warn); }
+  .dot.core   { background: var(--accent); }
+  .dot.plan   { background: var(--accent-2); }
+  .dot.util   { background: var(--success); }
+  .dot.review { background: var(--danger); }
+
+  .screen-name {
+    font-size: 12.5px;
+    color: var(--text-2);
+    font-family: 'SF Mono', monospace;
+  }
+
+  /* ─── Timeline bar ─── */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .tl-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+    position: relative;
+  }
+
+  .tl-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    margin-left: 11px;
+  }
+
+  .tl-label {
+    font-size: 13px;
+    color: var(--text-2);
+    flex: 1;
+  }
+
+  .tl-label strong {
+    color: var(--text-1);
+    font-weight: 600;
+  }
+
+  .tl-weeks {
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+
+  /* ─── Token swatch ─── */
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--border-sub);
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-width: 180px;
+  }
+
+  .swatch-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,.1);
+  }
+
+  .swatch-info { display: flex; flex-direction: column; }
+  .swatch-name { font-family: 'SF Mono', monospace; font-size: 11px; color: var(--text-1); font-weight: 600; }
+  .swatch-val  { font-family: 'SF Mono', monospace; font-size: 10px; color: var(--text-3); }
+
+  /* ─── Risk table severity ─── */
+  .sev-h { color: var(--danger); font-weight: 700; }
+  .sev-m { color: var(--warn);   font-weight: 700; }
+  .sev-l { color: var(--success); font-weight: 700; }
+
+  /* ─── Divider ─── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border-sub);
+    margin: 48px 0;
+  }
+
+  /* ─── Misc ─── */
+  strong { color: var(--text-1); }
+  em { color: var(--text-2); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  @media (max-width: 600px) {
+    .doc { padding: 28px 16px 80px; }
+    .phase-body { padding-left: 0; }
+    .phase-num { display: none; }
+    .screen-grid { grid-template-columns: 1fr 1fr; }
+    .swatch { min-width: 0; width: 100%; }
+    .swatches { flex-direction: column; }
+  }
+</style>
+
+<div class="doc">
+
+  <!-- Header -->
+  <header class="doc-header">
+    <div class="doc-eyebrow">Migration Blueprint · 2026</div>
+    <h1 class="doc-title">LifeOS → Jetpack Compose</h1>
+    <p class="doc-subtitle">
+      Full Android rewrite: 47 screens, 10 stores, 15 database tables. 1:1 UI fidelity — every animation, every colour, every touch interaction reproduced in Compose. The Kotlin SMS parser ships untouched.
+    </p>
+    <div class="doc-meta">
+      <span class="meta-chip accent">47 screens</span>
+      <span class="meta-chip accent">~32 k TS → Kotlin</span>
+      <span class="meta-chip success">SMS parser: zero changes</span>
+      <span class="meta-chip warn">~20–22 weeks total</span>
+      <span class="meta-chip">Android-only target</span>
+    </div>
+  </header>
+
+  <!-- Decision log -->
+  <section class="section">
+    <div class="section-title">Decision Log</div>
+
+    <div class="decision">
+      <div class="decision-label">Why not Flutter</div>
+      <p>Flutter adds Dart as a third language. The SMS parser is Kotlin; bridging it through platform channels would add complexity, not remove it. Every screen rewritten in Dart is a screen that could instead be written in the same language as the parser.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Why not Compose Multiplatform</div>
+      <p>The app has zero iOS-specific features. The SMS pipeline is Android-only and always will be. "Multiplatform" adds a shared-module split and commonMain/androidMain indirection with no user-facing payoff. Target: <strong>Jetpack Compose (Android)</strong>, same Gradle project that already hosts the parser.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">What is kept verbatim</div>
+      <p>The entire <code>modules/lifeos-sms/</code> directory — all 24 Kotlin files, all 5 test files, all WorkManager workers, the BroadcastReceiver, the SQLite writer, the parser pipeline. The Compose app becomes the UI shell around a parser that already exists and already works.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Database continuity</div>
+      <p>Both the existing SMS parser and the new Compose UI will share the same <code>lifeos.db</code> file using WAL mode — exactly as the current RN app does today. No migration scripts, no data loss. Room is configured to open the same file path the parser's <code>DbWriter.kt</code> already writes to.</p>
+    </div>
+  </section>
+
+  <!-- Tech stack -->
+  <section class="section">
+    <div class="section-title">Tech Stack — Old vs New</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Concern</th>
+            <th>React Native / Expo (current)</th>
+            <th>Jetpack Compose (new)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>UI framework</td><td>React Native 0.86 + Expo SDK 57</td><td>Jetpack Compose (stable)</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>Language</td><td>TypeScript 6</td><td>Kotlin</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>Navigation</td><td>React Navigation v7</td><td>Navigation-Compose (type-safe)</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>State</td><td>Zustand 5 (10 stores)</td><td>ViewModel + StateFlow + Hilt</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>Database</td><td>expo-sqlite (WAL mode)</td><td>Room (WAL mode) — same file</td><td><span class="pill warn">same file, new ORM</span></td></tr>
+          <tr><td>Persistence</td><td>Zustand persist + custom fileStorage</td><td>DataStore (Preferences)</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>Charts</td><td>react-native-gifted-charts</td><td>Vico (Compose-native)</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>Design system</td><td>React Native Paper (MD3) + custom tokens</td><td>Material 3 Compose + same tokens</td><td><span class="pill warn">port tokens</span></td></tr>
+          <tr><td>Biometrics</td><td>expo-local-authentication</td><td>BiometricPrompt API</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>Notifications</td><td>expo-notifications</td><td>NotificationManager + AlarmManager</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>CSV parsing</td><td>PapaParse</td><td>OpenCSV or Apache Commons CSV</td><td><span class="pill new">replace</span></td></tr>
+          <tr><td>SMS parser</td><td>lifeos-sms Expo Module (Kotlin)</td><td>lifeos-sms (same module)</td><td><span class="pill keep">keep — zero changes</span></td></tr>
+          <tr><td>AI assistant</td><td>Local rule engine (no API calls)</td><td>Port to Kotlin — same logic + SQL</td><td><span class="pill warn">port</span></td></tr>
+          <tr><td>DI</td><td>none (manual imports)</td><td>Hilt</td><td><span class="pill new">new</span></td></tr>
+          <tr><td>List rendering</td><td>@shopify/flash-list</td><td>LazyColumn with keys</td><td><span class="pill new">replace</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Project structure -->
+  <section class="section">
+    <div class="section-title">Project Structure</div>
+    <p>The Compose app lives inside the existing Android Gradle project — no new repo, no new top-level module. The SMS parser stays exactly where it is.</p>
+
+    <pre><code>android/
+  <span class="cm">── app/src/main/java/com/lifeos/</span>
+  │   <span class="kw">ui/</span>
+  │   ├── theme/          <span class="cm"># Color tokens, Typography, Shapes (ported from src/theme/)</span>
+  │   ├── components/     <span class="cm"># GlassCard, FrostCard, FloatingTabBar, PageScaffold…</span>
+  │   ├── screens/        <span class="cm"># All 47 screens (Composables)</span>
+  │   └── navigation/     <span class="cm"># AppNavHost, MainTabNav, auth guard, transitions</span>
+  │   <span class="kw">viewmodel/</span>          <span class="cm"># 10 ViewModels (1:1 with Zustand stores)</span>
+  │   <span class="kw">data/</span>
+  │   ├── db/             <span class="cm"># Room database, all 15 entities + DAOs</span>
+  │   ├── repository/     <span class="cm"># Repository layer (mirrors src/database/repositories/)</span>
+  │   └── datastore/      <span class="cm"># Preferences DataStore (replaces Zustand persist)</span>
+  │   <span class="kw">domain/</span>
+  │   ├── assistant/      <span class="cm"># AssistantEngine.kt (ported from TS)</span>
+  │   └── sms/            <span class="cm"># Bridge to existing lifeos-sms module</span>
+  │   <span class="kw">di/</span>                 <span class="cm"># Hilt modules</span>
+
+  <span class="cm">── modules/lifeos-sms/   ← UNTOUCHED</span></code></pre>
+  </section>
+
+  <!-- Design tokens -->
+  <section class="section">
+    <div class="section-title">Design Token Migration</div>
+    <p>The existing <code>src/theme/index.ts</code> and <code>src/theme/paperTheme.ts</code> define the authoritative palette. Every value is carried into Compose exactly — no colour changes, no rounding of values.</p>
+
+    <h3>Color roles → MaterialTheme.colorScheme (dark)</h3>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-dot" style="background:#0B0E14"></div><div class="swatch-info"><span class="swatch-name">bgPrimary</span><span class="swatch-val">#0B0E14 → background</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#1A1E26"></div><div class="swatch-info"><span class="swatch-name">bgSecondary</span><span class="swatch-val">#1A1E26 → surface</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#1E232D"></div><div class="swatch-info"><span class="swatch-name">bgElevated</span><span class="swatch-val">#1E232D → surfaceVariant</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#4DB8FF"></div><div class="swatch-info"><span class="swatch-name">accentPrimary</span><span class="swatch-val">#4DB8FF → primary</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#8B5CF6"></div><div class="swatch-info"><span class="swatch-name">accentSecondary</span><span class="swatch-val">#8B5CF6 → secondary</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#34D399"></div><div class="swatch-info"><span class="swatch-name">success</span><span class="swatch-val">#34D399 → tertiary</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#FF6B6B"></div><div class="swatch-info"><span class="swatch-name">danger</span><span class="swatch-val">#FF6B6B → error</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#2A303C"></div><div class="swatch-info"><span class="swatch-name">border</span><span class="swatch-val">#2A303C → outline</span></div></div>
+    </div>
+
+    <h3>Typography scale → Compose TextStyle</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Token</th><th>sp</th><th>Weight</th><th>Compose role</th></tr></thead>
+        <tbody>
+          <tr><td>headlineLarge</td><td>30sp</td><td>700</td><td><code>MaterialTheme.typography.headlineLarge</code></td></tr>
+          <tr><td>headlineMedium</td><td>24sp</td><td>700</td><td><code>MaterialTheme.typography.headlineMedium</code></td></tr>
+          <tr><td>headlineSmall</td><td>20sp</td><td>700</td><td><code>MaterialTheme.typography.headlineSmall</code></td></tr>
+          <tr><td>titleLarge</td><td>18sp</td><td>600</td><td><code>MaterialTheme.typography.titleLarge</code></td></tr>
+          <tr><td>titleMedium</td><td>16sp</td><td>600</td><td><code>MaterialTheme.typography.titleMedium</code></td></tr>
+          <tr><td>bodyLarge</td><td>16sp</td><td>400</td><td><code>MaterialTheme.typography.bodyLarge</code></td></tr>
+          <tr><td>bodyMedium</td><td>15sp</td><td>400</td><td><code>MaterialTheme.typography.bodyMedium</code></td></tr>
+          <tr><td>labelSmall</td><td>11sp</td><td>500</td><td><code>MaterialTheme.typography.labelSmall</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Motion tokens → Compose AnimationSpec</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Token</th><th>RN value</th><th>Compose equivalent</th></tr></thead>
+        <tbody>
+          <tr><td><code>motion.fast</code></td><td>100 ms</td><td><code>tween(durationMillis = 100)</code></td></tr>
+          <tr><td><code>motion.standard</code></td><td>180 ms</td><td><code>tween(durationMillis = 180)</code></td></tr>
+          <tr><td><code>motion.slow</code></td><td>260 ms</td><td><code>tween(durationMillis = 260)</code></td></tr>
+          <tr><td>Tab scale spring</td><td>friction=7, tension=90</td><td><code>spring(dampingRatio=0.43f, stiffness=375f)</code></td></tr>
+          <tr><td>NavStack slide</td><td>slide_from_right, 100ms</td><td><code>slideInHorizontally + tween(100)</code></td></tr>
+          <tr><td>Shimmer pulse</td><td>opacity 0.35↔0.85, 900ms per half</td><td><code>infiniteRepeatable(tween(900), RepeatMode.Reverse)</code></td></tr>
+          <tr><td>TopBanner enter</td><td>opacity + translateY(-10→0), 220ms</td><td><code>fadeIn + slideInVertically, tween(220)</code></td></tr>
+          <tr><td>TopBanner exit</td><td>opacity + translateY, 180ms</td><td><code>fadeOut + slideOutVertically, tween(180)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Components -->
+  <section class="section">
+    <div class="section-title">Component Mapping — RN → Compose</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>RN Component</th><th>Compose approach</th><th>Critical detail</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>GlassCard</td>
+            <td>Box with <code>drawBehind</code> — LinearGradient brush + tint + frost overlays stacked as <code>Modifier</code> layers</td>
+            <td>No native blur. All opacity layers are pure View alpha compositing, same as RN. Use <code>drawRect</code> on a <code>Canvas</code>.</td>
+          </tr>
+          <tr>
+            <td>FrostCard</td>
+            <td>Box with LinearGradient background + 3 glow circles drawn via <code>Canvas { drawCircle() }</code></td>
+            <td>Glow ring positions are <em>fixed pixel offsets</em> (not relative) — must convert from RN dp values exactly.</td>
+          </tr>
+          <tr>
+            <td>FloatingTabBar</td>
+            <td>Custom <code>BottomAppBar</code> composable, <code>align(Alignment.BottomCenter)</code> in a <code>Box</code> scaffold, <code>WindowInsets.navigationBars</code> for safe-area offset</td>
+            <td>Height 58dp, borderRadius 24dp, left/right inset 12dp, elevation 12dp. Spring animation on active-tab scale and pill opacity.</td>
+          </tr>
+          <tr>
+            <td>PageScaffold</td>
+            <td>Compose <code>Scaffold</code> with custom <code>TopAppBar</code>, <code>LazyColumn</code> or <code>Column</code> inside</td>
+            <td>Header height exactly 52dp. Back button 36×36dp placeholder when absent. Eyebrow text: 11sp, uppercase, <code>accent</code> color.</td>
+          </tr>
+          <tr>
+            <td>ShimmerLoadingState</td>
+            <td><code>InfiniteTransition</code> animating <code>alpha</code> on a <code>Box</code> with <code>surfaceVariant</code> background</td>
+            <td>Opacity oscillates 0.35↔0.85, NOT a sweeping gradient. 900ms per direction. All rows pulse in unison (same animated value).</td>
+          </tr>
+          <tr>
+            <td>HeroSurface</td>
+            <td>Box with bottom-only rounded corners (<code>RoundedCornerShape(bottomStart=28.dp, bottomEnd=28.dp)</code>), LinearGradient + frost overlay</td>
+            <td>Padding: horizontal 20dp, top 6dp, bottom 14dp.</td>
+          </tr>
+          <tr>
+            <td>TopBanner</td>
+            <td><code>AnimatedVisibility</code> wrapping a <code>Surface</code>, position absolute via <code>Box + align(TopCenter)</code></td>
+            <td>Enter: <code>fadeIn + slideInVertically(-10dp, 220ms)</code>. zIndex 50 via <code>Modifier.zIndex(50f)</code>.</td>
+          </tr>
+          <tr>
+            <td>FlashList (lists)</td>
+            <td><code>LazyColumn</code> with <code>key = { item.id }</code> on every item type</td>
+            <td>BOTTOM_NAV_SAFE_AREA = 100dp must be <code>contentPadding(bottom=100.dp)</code> on every scrollable screen.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>GlassCard — Compose structure</h3>
+    <pre><code><span class="kw">@Composable</span>
+<span class="kw">fun</span> <span class="fn">GlassCard</span>(
+    variant: GlassVariant = GlassVariant.Default,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    <span class="kw">val</span> gradient = <span class="fn">Brush.linearGradient</span>(
+        colors = listOf(Color(<span class="num">0xFF101014</span>), Color(<span class="num">0xFF0E1B2E</span>), Color(<span class="num">0xFF101014</span>)),
+        start = Offset(<span class="num">0f</span>, <span class="num">0f</span>), end = Offset(<span class="num">1f</span>, <span class="num">1f</span>)  <span class="cm">// direction (0,0)→(1,1)</span>
+    )
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(<span class="num">20</span>.dp))          <span class="cm">// borderRadius.lg</span>
+            .background(gradient)
+            .drawBehind {
+                <span class="cm">// tint overlay: accent → primary22, else rgba(30,35,45,.55)</span>
+                drawRect(color = tintColor, blendMode = BlendMode.SrcOver)
+                <span class="cm">// frost film</span>
+                drawRect(color = Color(<span class="num">0x74141C1C</span>))
+                <span class="cm">// hairline border (drawn as inner stroke)</span>
+                drawRoundRect(color = Color(<span class="num">0x14FFFFFF</span>), style = Stroke(<span class="num">1</span>.dp.toPx()), …)
+            }
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+    ) { content() }
+}</code></pre>
+  </section>
+
+  <!-- Phases -->
+  <section class="section">
+    <div class="section-title">Migration Phases</div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 1</strong> — Foundation</div><div class="tl-weeks">wk 1–3</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 2</strong> — Design system &amp; components</div><div class="tl-weeks">wk 4–5</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 3</strong> — Navigation &amp; auth guard</div><div class="tl-weeks">wk 6</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 4</strong> — ViewModels &amp; data layer</div><div class="tl-weeks">wk 7–8</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 5</strong> — All 47 screens</div><div class="tl-weeks">wk 9–16</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 6</strong> — AssistantEngine port</div><div class="tl-weeks">wk 17</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 7</strong> — SMS module wiring</div><div class="tl-weeks">wk 18</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-label"><strong>Phase 8</strong> — 1:1 polish &amp; verification</div><div class="tl-weeks">wk 19–22</div></div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">01</div>
+        <div class="phase-info">
+          <div class="phase-title">Foundation — Gradle, Room, Hilt, Theme</div>
+          <div class="phase-dur">Weeks 1–3 · ~3 weeks</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>Set up the Compose project skeleton inside the existing Android module. Nothing user-visible yet — this phase is the plumbing that everything else depends on.</p>
+        <ul class="task-list">
+          <li>Add Compose BOM, Navigation-Compose, Hilt, Room, DataStore, Vico to <code>app/build.gradle</code></li>
+          <li>Create <code>LifeOsDatabase</code> as a Room <code>@Database</code> opening <code>lifeos.db</code> with <code>.setJournalMode(WAL)</code> — same file path as <code>DbWriter.kt</code></li>
+          <li>Define all 15 Room <code>@Entity</code> classes, matching every column, index, and constraint from <code>schema.ts</code> exactly</li>
+          <li>Write all DAOs with <code>@Query</code>s covering every query in the 13 TS repository classes</li>
+          <li>Create <code>LifeOsTheme</code> composable: <code>darkColorScheme()</code> and <code>lightColorScheme()</code> using the token values from <code>paperTheme.ts</code></li>
+          <li>Port all typography values to <code>Typography</code> object (30/24/20/18/16/15sp, weights 700/600/500/400)</li>
+          <li>Port all spacing, radius, and motion tokens to a <code>Dimens</code> / <code>Motion</code> Kotlin object</li>
+          <li>Set up Hilt <code>AppModule</code> providing the Room database, repositories, and DataStore</li>
+          <li>Wire DataStore Preferences to mirror all fields in <code>AppSettings</code> + <code>UserProfile</code></li>
+        </ul>
+        <div class="decision">
+          <div class="decision-label">Critical — database file path</div>
+          <p>The parser's <code>DbWriter.kt</code> calls <code>context.getDatabasePath("lifeos.db")</code>. Room must open the exact same path: <code>Room.databaseBuilder(context, LifeOsDatabase::class.java, "lifeos.db")</code>. No rename, no copy.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">02</div>
+        <div class="phase-info">
+          <div class="phase-title">Design System — All shared components</div>
+          <div class="phase-dur">Weeks 4–5 · ~2 weeks</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>Build every shared composable before touching any screen. Screens composed from verified primitives stay consistent automatically.</p>
+        <ul class="task-list">
+          <li><code>GlassCard</code> — 3 variants (default, elevated, accent), layered Box + LinearGradient brush + drawBehind overlays</li>
+          <li><code>FrostCard</code> — 2 glow variants (blue, teal), 3 stacked Canvas glow rings at exact pixel offsets</li>
+          <li><code>FloatingTabBar</code> — absolutely positioned, 58dp height, 24dp radius, spring animation on scale + pill opacity</li>
+          <li><code>PageScaffold</code> — TopAppBar (52dp), back action, eyebrow/title/subtitle, actions slot, scrollable/fixed toggle</li>
+          <li><code>HeroSurface</code> — bottom-only 28dp radius, gradient + frost overlay, leading/action/footer slots</li>
+          <li><code>ShimmerLoadingState</code> — InfiniteTransition, alpha 0.35↔0.85, 900ms, all rows in unison</li>
+          <li><code>TopBanner</code> — AnimatedVisibility, zIndex 50, 4 tones, enter 220ms / exit 180ms</li>
+          <li><code>InlineBanner</code> — static, 3 tones, icon + text + optional trailing</li>
+          <li><code>SectionHeader</code> — label + optional action (TouchableRipple → <code>clickable</code>)</li>
+          <li><code>TransactionListItem</code> — category icon, merchant, amount, date, status chip</li>
+          <li><code>MetricCard</code> — FrostCard wrapper, label + headlineMedium amount</li>
+          <li>All Chip, Dropdown, SearchFilterBar equivalents</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">03</div>
+        <div class="phase-info">
+          <div class="phase-title">Navigation — NavHost, auth guard, transitions</div>
+          <div class="phase-dur">Week 6 · ~1 week</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <ul class="task-list">
+          <li>Create sealed <code>Route</code> hierarchy covering all 35+ routes with typed params</li>
+          <li>Implement auth guard as a render-conditional in <code>LifeOsNavHost</code> — same 3-branch logic: Loading → AppLock → Onboarding → Auth → Main</li>
+          <li>Global nav transition: <code>enterTransition = slideInHorizontally(tween(100))</code>, <code>exitTransition = slideOutHorizontally(tween(100))</code></li>
+          <li>Tab navigator with custom <code>FloatingTabBar</code> and 5 tabs (Home, Finance, Calendar, AI, Profile)</li>
+          <li>App-lock logic with <code>LifecycleEventObserver</code> — arm on <code>ON_STOP</code>, check on <code>ON_START</code> with same grace-period logic</li>
+          <li><code>BiometricPrompt</code> integration for fingerprint unlock (replaces <code>expo-local-authentication</code>)</li>
+          <li>Cold-start lock check in DataStore <code>onEach</code> collector, before first frame renders</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">04</div>
+        <div class="phase-info">
+          <div class="phase-title">Data Layer — 10 ViewModels, repositories, DataStore</div>
+          <div class="phase-dur">Weeks 7–8 · ~2 weeks</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>One ViewModel per Zustand store. State exposed as <code>StateFlow&lt;UiState&gt;</code>. Events (one-shot effects) on <code>Channel&lt;UiEvent&gt;</code>.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Zustand store</th><th>ViewModel</th><th>Persistence</th></tr></thead>
+            <tbody>
+              <tr><td>useAppStore</td><td>AppViewModel</td><td>DataStore Preferences</td></tr>
+              <tr><td>useDashboardStore</td><td>DashboardViewModel</td><td>none (derived)</td></tr>
+              <tr><td>useTransactionStore</td><td>TransactionViewModel</td><td>Room + pagination</td></tr>
+              <tr><td>useBudgetStore</td><td>BudgetViewModel</td><td>Room</td></tr>
+              <tr><td>useAssistantStore</td><td>AssistantViewModel</td><td>Room (assistant_messages)</td></tr>
+              <tr><td>useAnalyticsStore</td><td>AnalyticsViewModel</td><td>none (computed)</td></tr>
+              <tr><td>useCalendarStore</td><td>CalendarViewModel</td><td>Room</td></tr>
+              <tr><td>usePlannerStore</td><td>PlannerViewModel</td><td>Room</td></tr>
+              <tr><td>useSearchStore</td><td>SearchViewModel</td><td>DataStore (recent searches)</td></tr>
+              <tr><td>useDataVersion</td><td>SharedFlow event bus</td><td>none</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="task-list">
+          <li>Implement <code>DataVersionBus</code> as a <code>SharedFlow</code> singleton — replaces <code>useDataVersion</code> Zustand store</li>
+          <li>Port all 13 TS repository classes to Kotlin with identical method signatures</li>
+          <li>Implement the <code>FulizaProjection</code> balance computation in Kotlin (currently <code>FulizaProjection.kt</code> already exists in the SMS module — move to shared domain layer)</li>
+          <li>Port transaction pagination (page size 50, offset-based) to Paging 3 or manual offset in DAO</li>
+          <li>Port recurring event expansion (<code>expandEventOccurrences</code>) — same rules: daily/weekly/monthly/yearly/none, 400-iteration cap, 366-day span cap</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Phase 5 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">05</div>
+        <div class="phase-info">
+          <div class="phase-title">All 47 Screens</div>
+          <div class="phase-dur">Weeks 9–16 · ~8 weeks</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>Screens built in dependency order — auth flow first, then high-traffic tabs, then all supporting screens. Each screen is built against a snapshot of the RN original and pixel-checked before moving on.</p>
+
+        <h3>Group A — Auth &amp; app shell <span style="color:var(--text-3);font-weight:400;font-size:13px;">(wk 9)</span></h3>
+        <div class="screen-grid">
+          <div class="screen-item"><div class="dot auth"></div><span class="screen-name">LoadingScreen</span></div>
+          <div class="screen-item"><div class="dot auth"></div><span class="screen-name">OnboardingScreen</span></div>
+          <div class="screen-item"><div class="dot auth"></div><span class="screen-name">AuthScreen</span></div>
+          <div class="screen-item"><div class="dot auth"></div><span class="screen-name">AppLockScreen</span></div>
+          <div class="screen-item"><div class="dot auth"></div><span class="screen-name">ScreenLockScreen</span></div>
+        </div>
+
+        <h3>Group B — Core tabs <span style="color:var(--text-3);font-weight:400;font-size:13px;">(wk 10–12)</span></h3>
+        <div class="screen-grid">
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">HomeScreen</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">FinanceScreen</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">CalendarScreen</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">AssistantScreen</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">ProfileScreen</span></div>
+        </div>
+
+        <h3>Group C — Transaction cluster <span style="color:var(--text-3);font-weight:400;font-size:13px;">(wk 12–13)</span></h3>
+        <div class="screen-grid">
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">TransactionForm</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">TransactionDetail</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">CategorizeScreen</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">ReviewQueueScreen</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">MerchantDetail</span></div>
+          <div class="screen-item"><div class="dot core"></div><span class="screen-name">FeeAnalytics</span></div>
+        </div>
+
+        <h3>Group D — Planner hub <span style="color:var(--text-3);font-weight:400;font-size:13px;">(wk 13–15)</span></h3>
+        <div class="screen-grid">
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">PlannerHub</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">BudgetsScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">BudgetFormScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">IncomeScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">IncomeFormScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">RecurringScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">RecurringFormScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">BillsScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">BillFormScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">LoansScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">LoanFormScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">GoalsScreen</span></div>
+          <div class="screen-item"><div class="dot plan"></div><span class="screen-name">GoalFormScreen</span></div>
+        </div>
+
+        <h3>Group E — Calendar detail, Tasks, Events <span style="color:var(--text-3);font-weight:400;font-size:13px;">(wk 15)</span></h3>
+        <div class="screen-grid">
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">TasksScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">TaskDetail</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">TaskFormScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">EventsScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">EventDetail</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">EventFormScreen</span></div>
+        </div>
+
+        <h3>Group F — Utility &amp; review <span style="color:var(--text-3);font-weight:400;font-size:13px;">(wk 15–16)</span></h3>
+        <div class="screen-grid">
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">AnalyticsScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">SearchScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">ExportScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">CsvImportScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">SettingsScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">NotificationsScreen</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">PersonalInfo</span></div>
+          <div class="screen-item"><div class="dot util"></div><span class="screen-name">SmsImportHealth</span></div>
+          <div class="screen-item"><div class="dot review"></div><span class="screen-name">WeekReviewScreen</span></div>
+          <div class="screen-item"><div class="dot review"></div><span class="screen-name">MonthlyWrapped</span></div>
+          <div class="screen-item"><div class="dot review"></div><span class="screen-name">LearningScreen</span></div>
+          <div class="screen-item"><div class="dot review"></div><span class="screen-name">ChangelogScreen</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 6 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">06</div>
+        <div class="phase-info">
+          <div class="phase-title">AssistantEngine — Port to Kotlin</div>
+          <div class="phase-dur">Week 17 · ~1 week</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>The TS AssistantEngine is a pure keyword-router + SQLite engine with no external API calls. It ports to Kotlin with minimal friction since the SQL already runs on the same Room database.</p>
+        <ul class="task-list">
+          <li>Port all 19 intent handlers as Kotlin <code>suspend fun</code>s, calling Room DAOs directly</li>
+          <li>Port <code>extractPeriod()</code> and <code>extractCategory()</code> string matchers exactly (same keyword lists)</li>
+          <li>Port follow-up resolution (prefix detection + recursive re-run with no history)</li>
+          <li>Port the top-merchant raw SQL query as a Room <code>@RawQuery</code></li>
+          <li>Port ASCII progress bar rendering (<code>█░</code>) for goals output</li>
+          <li>Wire to <code>AssistantViewModel</code>: user message → engine → Room save → UI update</li>
+        </ul>
+        <div class="decision">
+          <div class="decision-label">No LLM involved</div>
+          <p>The Anthropic SDK listed in <code>package.json</code> as a dev dependency is never called at runtime. The engine is entirely local. No API key needed in the Compose app.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 7 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">07</div>
+        <div class="phase-info">
+          <div class="phase-title">SMS Module Wiring</div>
+          <div class="phase-dur">Week 18 · ~1 week</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>The SMS module exposes its API through the Expo Modules system, which is a React Native bridge. In the Compose app, you call the underlying Kotlin classes directly — no bridge needed.</p>
+        <ul class="task-list">
+          <li>Call <code>SmsReceiverModule</code>'s Kotlin methods directly from <code>SmsViewModel</code> (no bridge layer)</li>
+          <li>Register <code>SmsReceiver</code> BroadcastReceiver in the app's <code>AndroidManifest.xml</code> (already done in the module's manifest)</li>
+          <li>Replace <code>onNewTransaction</code> JS event with a Room <code>Flow</code> on the transactions table — the <code>DbWriter.kt</code> inserts into the same Room-managed database, so changes propagate automatically</li>
+          <li>Replace <code>onFulizaLimitNeeded</code> JS event with a <code>LocalBroadcastManager</code> or <code>EventBus</code> internal to the app</li>
+          <li>Port app-startup calls: <code>enableBackgroundReceiver</code>, <code>setFulizaLimit</code>, <code>ensureIngestSweep</code> to direct Kotlin calls in <code>Application.onCreate()</code></li>
+          <li>Replace foreground WAL checkpoint (<code>PRAGMA wal_checkpoint(FULL)</code>) with Room's built-in WAL management — Room handles this natively</li>
+        </ul>
+        <div class="warn-box">
+          <div class="decision-label">Important</div>
+          <p>Because the Compose app and the SMS parser share the same Room database instance (via Hilt singleton), the <code>DbWriter.kt</code> in the parser must be updated to use the same Room <code>SupportSQLiteDatabase</code> connection rather than opening its own raw SQLite connection. This is the one change required to the SMS module — but it is internal only (no public API change) and eliminates the need for WAL checkpointing entirely.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 8 -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">08</div>
+        <div class="phase-info">
+          <div class="phase-title">1:1 Polish &amp; Verification</div>
+          <div class="phase-dur">Weeks 19–22 · ~4 weeks</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <p>Go screen by screen with the RN app running side-by-side. Measure, compare, fix. This phase is as long as it needs to be.</p>
+        <ul class="task-list">
+          <li>Animation timing: record both apps at 60fps, compare frame-by-frame for spring curves and duration</li>
+          <li>Haptic feedback: <code>HapticFeedbackConstants.VIRTUAL_KEY</code> (light) and <code>LONG_PRESS</code> (warning) mapping to all existing haptic call sites</li>
+          <li>Dark / light theme: verify every surface, every text role, every border on both themes</li>
+          <li>Category color palette: all 14 hex values used for chart coloring, icons, and progress bars</li>
+          <li>Bottom safe area: verify 100dp bottom padding on every scrollable screen</li>
+          <li>FloatingTabBar spring: A/B the spring curve against the original until visually identical</li>
+          <li>SMS import state machine: verify all 7 actions and all phase transitions in <code>ImportSmsSheet</code></li>
+          <li>Budget alert logic: verify alert threshold tiers (high 90%, medium 75%, low 50%) and the <code>firedBudgetAlerts</code> dedup logic</li>
+          <li>Fuliza limit flow: reproduce the <code>onFulizaLimitNeeded</code> dialog path end-to-end</li>
+          <li>Offline behavior: all screens must function with no network (app is 100% offline-first)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Risk register -->
+  <section class="section">
+    <div class="section-title">Risk Register</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Severity</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>DbWriter.kt uses raw SQLite connection alongside Room</td>
+            <td><span class="sev-h">HIGH</span></td>
+            <td>Phase 7 change: pass Room's <code>SupportSQLiteDatabase</code> into <code>DbWriter</code>. Eliminates dual-connection conflict entirely. This is the only SMS-module code change.</td>
+          </tr>
+          <tr>
+            <td>Room entity schema drift from actual <code>lifeos.db</code></td>
+            <td><span class="sev-h">HIGH</span></td>
+            <td>In Phase 1, dump the live schema with <code>PRAGMA table_info</code> for all 15 tables and validate every Room entity against it before writing any screen.</td>
+          </tr>
+          <tr>
+            <td>Glassmorphism visual drift (no native blur)</td>
+            <td><span class="sev-m">MED</span></td>
+            <td>The RN version uses no native blur either — all opacity layers. The Compose Canvas <code>drawBehind</code> approach produces identical output. Record both at 4K and compare.</td>
+          </tr>
+          <tr>
+            <td>FloatingTabBar spring feels different</td>
+            <td><span class="sev-m">MED</span></td>
+            <td>The RN spring (friction=7, tension=90) maps approximately to Compose <code>spring(dampingRatio=0.43f, stiffness=375f)</code>. Fine-tune in Phase 8 with side-by-side 120fps comparison.</td>
+          </tr>
+          <tr>
+            <td>Paging 3 API differences vs. manual offset pagination</td>
+            <td><span class="sev-m">MED</span></td>
+            <td>The RN app uses manual offset pagination (page size 50, offset integer). Implement the same pattern first with a manual offset DAO query; migrate to Paging 3 only if needed.</td>
+          </tr>
+          <tr>
+            <td>Recurring event expansion performance</td>
+            <td><span class="sev-l">LOW</span></td>
+            <td>The TS version caps at 400 iterations and 366-day spans. Port the same caps. Run on a background coroutine via <code>Dispatchers.IO</code>.</td>
+          </tr>
+          <tr>
+            <td>CSV import (PapaParse → JVM CSV lib)</td>
+            <td><span class="sev-l">LOW</span></td>
+            <td>OpenCSV handles all formats PapaParse covers. The CSV import is a relatively small, self-contained screen.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr>
+
+  <section class="section">
+    <div class="section-title">Final Note</div>
+    <p>The most important constraint in this migration is the database. Get Phase 1 right — particularly the Room entity schema and WAL configuration — and the rest follows naturally. Every other challenge in this plan is well-understood Compose work. The parser, which is the actual hard part of this app, ships on day one exactly as it is today.</p>
+  </section>
+
+</div>
+
+</body></html>
