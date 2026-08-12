@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +29,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -125,22 +133,48 @@ fun AssistantScreen(
         ) {
             if (state.messages.isEmpty()) {
                 item {
-                    // Empty state
-                    Box(
-                        modifier         = Modifier.fillMaxWidth().padding(top = 80.dp),
-                        contentAlignment = Alignment.Center,
+                    // Empty state with sparkles + suggested prompts
+                    Column(
+                        modifier            = Modifier.fillMaxWidth().padding(top = 60.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🤖", fontSize = 48.sp, textAlign = TextAlign.Center)
-                            Spacer(Modifier.height(Spacing.md))
-                            Text(
-                                "Ask me about your finances,\ntasks, or upcoming events.",
-                                style     = MaterialTheme.typography.bodyLarge,
-                                textAlign = TextAlign.Center,
-                                color     = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+                        Text("✨", fontSize = 48.sp, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(Spacing.md))
+                        Text(
+                            "Ask me about your finances,\ntasks, or upcoming events.",
+                            style     = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color     = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+                        )
+                        Spacer(Modifier.height(Spacing.lg))
+                    }
+                }
+                item {
+                    // Suggested prompts
+                    val prompts = listOf(
+                        "How much did I spend this month?",
+                        "What are my upcoming tasks?",
+                        "Show me my top spending categories",
+                        "Any events this week?",
+                        "What's my budget status?",
+                        "Summarise my finances",
+                    )
+                    LazyRow(
+                        modifier              = Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        items(prompts) { prompt ->
+                            AssistChip(
+                                onClick = {
+                                    viewModel.updateInput(prompt)
+                                    viewModel.sendMessage()
+                                },
+                                label = { Text(prompt, fontSize = 12.sp, maxLines = 1) },
+                                modifier = Modifier.wrapContentWidth(),
                             )
                         }
                     }
+                    Spacer(Modifier.height(Spacing.md))
                 }
             } else {
                 items(state.messages, key = { it.id }) { message ->
@@ -246,10 +280,24 @@ private fun ChatBubble(message: ChatMessage) {
     }
 }
 
-// ─── Typing indicator ─────────────────────────────────────────────────────────
+// ─── Typing indicator (3-dot bounce) ─────────────────────────────────────────
 
 @Composable
 private fun TypingIndicator() {
+    val infinite = rememberInfiniteTransition(label = "typing")
+    // Stagger three dots: 0ms, 160ms, 320ms
+    val offsets = (0..2).map { i ->
+        infinite.animateFloat(
+            initialValue = 0f,
+            targetValue  = -6f,
+            animationSpec = infiniteRepeatable(
+                animation  = tween(400, delayMillis = i * 160, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "dot$i",
+        )
+    }
+
     Row(horizontalArrangement = Arrangement.Start) {
         Box(
             modifier         = Modifier
@@ -257,14 +305,22 @@ private fun TypingIndicator() {
                     color = if (isSystemInDarkTheme()) Color(0xFF1E1E2A) else Color(0xFFF0F4F8),
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 4.dp),
                 )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            CircularProgressIndicator(
-                modifier  = Modifier.size(16.dp),
-                color     = MaterialTheme.colorScheme.primary,
-                strokeWidth = 2.dp,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                offsets.forEach { anim ->
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = CircleShape,
+                            )
+                            .then(Modifier.offset(y = anim.value.dp)),
+                    )
+                }
+            }
         }
     }
 }

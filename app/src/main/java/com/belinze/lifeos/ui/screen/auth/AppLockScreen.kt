@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.belinze.lifeos.data.datastore.AppPreferenceState
-import com.belinze.lifeos.ui.theme.ShapeMd
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -156,11 +155,11 @@ fun AppLockScreen(
     }
 
     fun onDigit(digit: String) {
-        if (enteredPin.length >= 4) return
+        if (enteredPin.length >= 6) return
         errorMsg = ""
         val newPin = enteredPin + digit
         enteredPin = newPin
-        if (newPin.length == 4) {
+        if (newPin.length == 6) {
             if (newPin == prefs.pinCode) {
                 onUnlock()
             } else {
@@ -251,15 +250,15 @@ fun AppLockScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // 4-dot PIN indicator (with shake + error colouring)
+        // 6-dot PIN indicator (with shake + error colouring)
         val dotColor  = if (isError) MaterialTheme.colorScheme.error else primary
         val emptyDot  = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.40f)
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.offset { IntOffset(shakeOffset.value.roundToInt(), 0) },
         ) {
-            repeat(4) { idx ->
+            repeat(6) { idx ->
                 val filled = idx < enteredPin.length
                 Box(
                     modifier = Modifier
@@ -343,7 +342,7 @@ private fun PinKey(
                     "bio", "del" -> Color.Transparent
                     else         -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f)
                 },
-                shape = ShapeMd,
+                shape = CircleShape,
             )
             .clickable(
                 interactionSource = interactionSource,

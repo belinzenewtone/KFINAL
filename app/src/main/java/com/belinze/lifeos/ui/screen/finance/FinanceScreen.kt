@@ -62,6 +62,7 @@ import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.util.compactCurrency
+import com.belinze.lifeos.viewmodel.BudgetViewModel
 import com.belinze.lifeos.viewmodel.SmsImportViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDate
@@ -90,13 +91,20 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceScreen(
-    navController: NavHostController,
-    viewModel:     TransactionViewModel = hiltViewModel(),
+    navController:     NavHostController,
+    viewModel:         TransactionViewModel = hiltViewModel(),
     smsImportViewModel: SmsImportViewModel = hiltViewModel(),
+    budgetViewModel:   BudgetViewModel     = hiltViewModel(),
 ) {
-    val state   by viewModel.uiState.collectAsState()
-    val smsState by smsImportViewModel.uiState.collectAsState()
-    val isDark  = isSystemInDarkTheme()
+    val state        by viewModel.uiState.collectAsState()
+    val smsState     by smsImportViewModel.uiState.collectAsState()
+    val budgetState  by budgetViewModel.uiState.collectAsState()
+    val isDark       = isSystemInDarkTheme()
+
+    // Top budget alert — mirrors RN Finance hero: show banner if any budget ≥ 80%
+    val alertBudget = remember(budgetState.budgets) {
+        budgetState.budgets.firstOrNull { it.pct >= 0.80f }
+    }
 
     // Group transactions by date
     val grouped = remember(state.transactions) {
@@ -259,6 +267,21 @@ fun FinanceScreen(
                     }
                 }
 
+                // ── Budget alert banner (≥ 80% of any budget used) ───────────
+                if (alertBudget != null) {
+                    item {
+                        InlineBanner(
+                            message  = "${alertBudget.budget.category.replaceFirstChar { it.uppercase() }} budget at ${(alertBudget.pct * 100).toInt()}% — ${formatCurrency(alertBudget.remaining)} remaining",
+                            tone     = BannerTone.Warning,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
+                            action   = "View",
+                            onAction = { navController.navigate(Route.BUDGETS) },
+                        )
+                    }
+                }
+
                 // ── Uncategorized banner ──────────────────────────────────────
                 if (state.uncategorized > 0) {
                     item {
@@ -315,10 +338,30 @@ fun FinanceScreen(
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
+                        // Budget remaining card
+                        val budgetRemaining = budgetState.budgets.sumOf { it.remaining }
                         InsightCard(
-                            label = "Service Charges",
+                            label  = "Budget Left",
+                            amount = budgetRemaining,
+                            sub    = "${budgetState.budgets.size} active budgets",
+                            onClick = { navController.navigate(Route.BUDGETS) },
+                        )
+                        // Fuliza outstanding — transactions of type "fuliza"
+                        val fulizaOutstanding = remember(state.transactions) {
+                            state.transactions
+                                .filter { it.transactionType == "fuliza" }
+                                .sumOf { it.amount }
+                        }
+                        InsightCard(
+                            label  = "Fuliza",
+                            amount = fulizaOutstanding,
+                            sub    = "Outstanding balance",
+                        )
+                        // Service charges / fees
+                        InsightCard(
+                            label  = "Service Charges",
                             amount = state.feeTotal,
-                            sub = "Airtime, Fuliza & subs",
+                            sub    = "Airtime, Fuliza & subs",
                         )
                     }
                 }
@@ -480,16 +523,27 @@ private fun PeriodChip(
 
 @Composable
 private fun InsightCard(
-    label:  String,
-    amount: Double,
-    sub:    String,
+    label:   String,
+    amount:  Double,
+    sub:     String,
+    onClick: (() -> Unit)? = null,
 ) {
+    val primary           = MaterialTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
+
     Column(
         modifier = Modifier
             .width(200.dp)
             .background(
                 MaterialTheme.colorScheme.surfaceVariant,
                 MaterialTheme.shapes.medium,
+            )
+            .then(
+                if (onClick != null) Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication        = ripple(color = primary.copy(0.12f)),
+                    onClick           = onClick,
+                ) else Modifier
             )
             .padding(Spacing.sm),
     ) {
@@ -499,15 +553,15 @@ private fun InsightCard(
             color = MaterialTheme.colorScheme.onBackground.copy(0.55f),
         )
         Text(
-            text       = compactCurrency(amount),
-            style      = MaterialTheme.typography.headlineSmall,
-            color      = MaterialTheme.colorScheme.onBackground,
-            maxLines   = 1,
+            text     = compactCurrency(amount),
+            style    = MaterialTheme.typography.headlineSmall,
+            color    = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
         )
         Text(
-            text  = sub,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+            text     = sub,
+            style    = MaterialTheme.typography.bodySmall,
+            color    = MaterialTheme.colorScheme.onBackground.copy(0.55f),
             maxLines = 1,
         )
     }

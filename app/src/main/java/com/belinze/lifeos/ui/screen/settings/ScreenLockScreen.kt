@@ -138,7 +138,7 @@ fun ScreenLockScreen(
                     OutlinedTextField(
                         value            = newPin,
                         onValueChange    = { if (it.length <= 6) newPin = it },
-                        label            = { Text("New PIN (4-6 digits)") },
+                        label            = { Text("New PIN (6 digits)") },
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions  = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         modifier         = Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal),
@@ -163,7 +163,7 @@ fun ScreenLockScreen(
                         onClick  = {
                             pinError = null
                             when {
-                                newPin.length < 4    -> pinError = "PIN must be at least 4 digits"
+                                newPin.length < 6    -> pinError = "PIN must be exactly 6 digits"
                                 newPin != confirmPin -> pinError = "PINs do not match"
                                 else -> {
                                     pinSaving = true

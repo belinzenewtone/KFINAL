@@ -1,9 +1,9 @@
 package com.belinze.lifeos.ui.screen.tasks
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,19 +16,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -52,6 +54,7 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.TaskFilter
 import com.belinze.lifeos.viewmodel.TaskViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
     navController: NavHostController,
@@ -61,10 +64,10 @@ fun TasksScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         PageScaffold(
-            eyebrow = "Manage",
-            title   = "Tasks",
-            onBack  = { navController.popBackStack() },
-            scrollable = true,
+            eyebrow    = "Manage",
+            title      = "Tasks",
+            onBack     = { navController.popBackStack() },
+            scrollable = false,   // LazyColumn owns scrolling
         ) {
             // ── Filter chips ──────────────────────────────────────────────
             Row(
@@ -80,7 +83,7 @@ fun TasksScreen(
                 }
             }
 
-            // ── Task list ─────────────────────────────────────────────────
+            // ── Task list with swipe-to-delete ────────────────────────────
             if (state.tasks.isEmpty()) {
                 Box(
                     modifier         = Modifier.fillMaxWidth().padding(Spacing.x2l),
@@ -92,18 +95,51 @@ fun TasksScreen(
                     )
                 }
             } else {
-                state.tasks.forEach { task ->
-                    TaskItem(
-                        task     = task,
-                        onToggle = { viewModel.complete(task.id) },
-                        onDelete = { viewModel.softDelete(task.id) },
-                        onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
-                    )
-                    Spacer(Modifier.height(2.dp))
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(state.tasks, key = { it.id }) { task ->
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { newValue ->
+                                if (newValue == SwipeToDismissBoxValue.EndToStart) {
+                                    viewModel.softDelete(task.id)
+                                    true
+                                } else false
+                            },
+                        )
+                        SwipeToDismissBox(
+                            state              = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            backgroundContent  = {
+                                val color by animateColorAsState(
+                                    targetValue = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
+                                        Color(0xFFEF4444) else Color.Transparent,
+                                    label = "swipe_bg",
+                                )
+                                Box(
+                                    modifier         = Modifier
+                                        .fillMaxSize()
+                                        .background(color)
+                                        .padding(end = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
+                                    Icon(
+                                        imageVector        = Icons.Filled.Delete,
+                                        contentDescription = "Delete",
+                                        tint               = Color.White,
+                                    )
+                                }
+                            },
+                        ) {
+                            TaskItem(
+                                task     = task,
+                                onToggle = { viewModel.complete(task.id) },
+                                onDelete = { viewModel.softDelete(task.id) },
+                                onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
+                            )
+                        }
+                    }
+                    item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                 }
             }
-
-            Spacer(Modifier.height(Spacing.bottomNavSafeArea))
         }
 
         // FAB

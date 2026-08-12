@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,10 +23,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.AutoAwesomeMotion
 import androidx.compose.material.icons.filled.DataObject
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.RateReview
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -171,7 +177,53 @@ fun ProfileScreen(
 
         Spacer(Modifier.height(Spacing.xl))
 
-        // ── Quick links ───────────────────────────────────────────────────────
+        // ── Tool Hub — 3-column icon-tile grid matching RN ────────────────────
+        SectionHeader(label = "Tool Hub")
+        Spacer(Modifier.height(Spacing.sm))
+
+        FrostCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.screenHorizontal),
+        ) {
+            // Tool tiles: 3 per row
+            val toolTiles = listOf(
+                Triple("Analytics", Icons.Filled.Analytics,        Color(0xFF6366F1)) to Route.INSIGHTS,
+                Triple("Review",    Icons.Filled.RateReview,       Color(0xFFF59E0B)) to Route.UNCATEGORIZED,
+                Triple("Search",    Icons.Filled.Search,           Color(0xFF10B981)) to Route.CATEGORIZE,
+                Triple("Recurring", Icons.Filled.AutoAwesomeMotion,Color(0xFF8B5CF6)) to Route.RECURRING,
+                Triple("Export",    Icons.Filled.FileUpload,       Color(0xFF3B82F6)) to Route.EXPORT_DATA,
+                Triple("Budgets",   Icons.Filled.Wallet,           Color(0xFFEF4444)) to Route.BUDGETS,
+                Triple("Wrapped",   Icons.Filled.Stars,            Color(0xFFEC4899)) to Route.INSIGHTS,
+            )
+            val rows = toolTiles.chunked(3)
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                rows.forEach { rowItems ->
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        rowItems.forEach { (tile, route) ->
+                            ToolHubTile(
+                                label   = tile.first,
+                                icon    = tile.second,
+                                color   = tile.third,
+                                onClick = { navController.navigate(route) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        // Fill remaining cells so rows of < 3 stay aligned
+                        repeat(3 - rowItems.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(Spacing.xl))
+
+        // ── Account links ─────────────────────────────────────────────────────
         SectionHeader(label = "Account")
 
         ProfileLink(
@@ -189,19 +241,6 @@ fun ProfileScreen(
             label   = "Security",
             onClick = { navController.navigate(Route.SECURITY) },
         )
-
-        SectionHeader(label = "Data", modifier = Modifier.padding(top = Spacing.sm))
-
-        ProfileLink(
-            icon    = Icons.Filled.Analytics,
-            label   = "Insights & Analytics",
-            onClick = { navController.navigate(Route.INSIGHTS) },
-        )
-        ProfileLink(
-            icon    = Icons.Filled.Wallet,
-            label   = "Budgets & Planner",
-            onClick = { navController.navigate(Route.BUDGETS) },
-        )
         ProfileLink(
             icon    = Icons.Filled.DataObject,
             label   = "Export Data",
@@ -209,6 +248,51 @@ fun ProfileScreen(
         )
 
         Spacer(Modifier.height(Spacing.bottomNavSafeArea))
+    }
+}
+
+// ─── Tool Hub tile ────────────────────────────────────────────────────────────
+
+@Composable
+private fun ToolHubTile(
+    label:    String,
+    icon:     ImageVector,
+    color:    Color,
+    onClick:  () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Column(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication        = ripple(color = color.copy(0.20f)),
+                onClick           = onClick,
+            )
+            .padding(vertical = Spacing.sm),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            modifier         = Modifier
+                .size(48.dp)
+                .background(color.copy(alpha = 0.15f), MaterialTheme.shapes.medium),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector        = icon,
+                contentDescription = label,
+                tint               = color,
+                modifier           = Modifier.size(22.dp),
+            )
+        }
+        Text(
+            text      = label,
+            style     = MaterialTheme.typography.labelSmall,
+            color     = MaterialTheme.colorScheme.onBackground.copy(0.75f),
+            maxLines  = 1,
+        )
     }
 }
 

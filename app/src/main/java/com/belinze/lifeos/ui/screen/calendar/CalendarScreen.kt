@@ -25,9 +25,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,11 +56,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.EventEntity
+import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.CalendarView
 import com.belinze.lifeos.viewmodel.EventViewModel
+import com.belinze.lifeos.viewmodel.TaskFilter
+import com.belinze.lifeos.viewmodel.TaskViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -73,22 +82,31 @@ import java.util.Locale
 //   Agenda — flat chronological list of upcoming events
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Outer tab: Calendar grid/agenda, Tasks list, or Events feed */
+private enum class CalendarOuterTab { Calendar, Tasks, Events }
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
-    viewModel:     EventViewModel = hiltViewModel(),
+    eventViewModel: EventViewModel = hiltViewModel(),
+    taskViewModel:  TaskViewModel  = hiltViewModel(),
 ) {
-    val state  by viewModel.uiState.collectAsState()
-    val isDark = isSystemInDarkTheme()
+    val eventState by eventViewModel.uiState.collectAsState()
+    val taskState  by taskViewModel.uiState.collectAsState()
+    val isDark     = isSystemInDarkTheme()
 
-    // Local UI state
-    var selectedDate   by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    // Outer tab state
+    var outerTab by rememberSaveable { mutableStateOf(CalendarOuterTab.Calendar) }
+
+    // Calendar inner state
+    var selectedDate     by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
     var currentYearMonth by remember { mutableStateOf(YearMonth.now()) }
-    val activeView     = state.calendarView
+    val activeView       = eventState.calendarView
 
     // Events on selected day
-    val selectedDayEvents = remember(state.events, selectedDate) {
-        state.events.filter { it.date.take(10) == selectedDate }
+    val selectedDayEvents = remember(eventState.events, selectedDate) {
+        eventState.events.filter { it.date.take(10) == selectedDate }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -113,59 +131,194 @@ fun CalendarScreen(
                 )
             }
 
-            // ── View selector (Month / Week / Agenda) ─────────────────────────
-            Row(
-                modifier              = Modifier
+            // ── Outer tab: Calendar / Tasks / Events ──────────────────────────
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.screenHorizontal),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
             ) {
-                CalendarView.values().forEach { view ->
-                    FilterChip(
-                        selected = activeView == view,
-                        onClick  = { viewModel.setCalendarView(view) },
-                        label    = { Text(view.name) },
+                CalendarOuterTab.values().forEachIndexed { idx, tab ->
+                    SegmentedButton(
+                        selected = outerTab == tab,
+                        onClick  = { outerTab = tab },
+                        shape    = SegmentedButtonDefaults.itemShape(index = idx, count = CalendarOuterTab.values().size),
+                        label    = { Text(tab.name) },
                     )
                 }
             }
 
-            Spacer(Modifier.height(Spacing.sm))
+            Spacer(Modifier.height(Spacing.xs))
 
-            when (activeView) {
-                CalendarView.Month  -> MonthView(
-                    yearMonth        = currentYearMonth,
-                    events           = state.events,
-                    selectedDate     = selectedDate,
-                    onDaySelect      = { selectedDate = it },
-                    onPrevMonth      = { currentYearMonth = currentYearMonth.minusMonths(1) },
-                    onNextMonth      = { currentYearMonth = currentYearMonth.plusMonths(1) },
-                    navController    = navController,
-                    selectedDayEvents = selectedDayEvents,
-                )
-                CalendarView.Week   -> WeekView(
-                    events        = state.events,
-                    selectedDate  = selectedDate,
-                    onDaySelect   = { selectedDate = it },
-                    navController = navController,
-                )
-                CalendarView.Agenda -> AgendaView(
-                    events        = state.events.filter { it.date.take(10) >= LocalDate.now().toString() },
-                    navController = navController,
-                )
+            when (outerTab) {
+                CalendarOuterTab.Calendar -> {
+                    // ── Inner view selector (Month / Week / Agenda) ───────────
+                    Row(
+                        modifier              = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.screenHorizontal),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        CalendarView.values().forEach { view ->
+                            FilterChip(
+                                selected = activeView == view,
+                                onClick  = { eventViewModel.setCalendarView(view) },
+                                label    = { Text(view.name) },
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(Spacing.sm))
+
+                    when (activeView) {
+                        CalendarView.Month  -> MonthView(
+                            yearMonth         = currentYearMonth,
+                            events            = eventState.events,
+                            selectedDate      = selectedDate,
+                            onDaySelect       = { selectedDate = it },
+                            onPrevMonth       = { currentYearMonth = currentYearMonth.minusMonths(1) },
+                            onNextMonth       = { currentYearMonth = currentYearMonth.plusMonths(1) },
+                            navController     = navController,
+                            selectedDayEvents = selectedDayEvents,
+                        )
+                        CalendarView.Week   -> WeekView(
+                            events        = eventState.events,
+                            selectedDate  = selectedDate,
+                            onDaySelect   = { selectedDate = it },
+                            navController = navController,
+                        )
+                        CalendarView.Agenda -> AgendaView(
+                            events        = eventState.events.filter { it.date.take(10) >= LocalDate.now().toString() },
+                            navController = navController,
+                        )
+                    }
+                }
+
+                CalendarOuterTab.Tasks -> {
+                    // ── Tasks tab ─────────────────────────────────────────────
+                    Row(
+                        modifier              = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.screenHorizontal),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        TaskFilter.values().forEach { filter ->
+                            FilterChip(
+                                selected = taskState.filter == filter,
+                                onClick  = { taskViewModel.setFilter(filter) },
+                                label    = { Text(filter.name) },
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                    if (taskState.tasks.isEmpty()) {
+                        Box(
+                            modifier         = Modifier.fillMaxWidth().padding(Spacing.x2l),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("No tasks", color = MaterialTheme.colorScheme.onBackground.copy(0.40f))
+                        }
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(taskState.tasks, key = { it.id }) { task ->
+                                CalendarTaskItem(
+                                    task     = task,
+                                    onToggle = { taskViewModel.complete(task.id) },
+                                    onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
+                                )
+                            }
+                            item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
+                        }
+                    }
+                }
+
+                CalendarOuterTab.Events -> {
+                    // ── Events tab — flat chronological list ──────────────────
+                    val upcoming = remember(eventState.events) {
+                        eventState.events
+                            .filter { it.date.take(10) >= LocalDate.now().toString() }
+                            .sortedBy { it.date }
+                    }
+                    if (upcoming.isEmpty()) {
+                        Box(
+                            modifier         = Modifier.fillMaxWidth().padding(Spacing.x2l),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("No upcoming events", color = MaterialTheme.colorScheme.onBackground.copy(0.40f))
+                        }
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(upcoming, key = { it.id }) { event ->
+                                EventListItem(event, onClick = { navController.navigate(NavTo.eventDetail(event.id)) })
+                            }
+                            item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
+                        }
+                    }
+                }
             }
         }
 
-        // ── FAB ───────────────────────────────────────────────────────────────
+        // ── FAB — context-sensitive ───────────────────────────────────────────
         ExtendedFloatingActionButton(
-            onClick          = { navController.navigate(Route.EVENT_FORM) },
-            text             = { Text("Add Event") },
-            icon             = { Icon(Icons.Filled.Add, contentDescription = null) },
-            containerColor   = MaterialTheme.colorScheme.primary,
-            contentColor     = MaterialTheme.colorScheme.onPrimary,
-            modifier         = Modifier
+            onClick = {
+                when (outerTab) {
+                    CalendarOuterTab.Tasks  -> navController.navigate(Route.TASK_FORM)
+                    else                   -> navController.navigate(Route.EVENT_FORM)
+                }
+            },
+            text  = { Text(if (outerTab == CalendarOuterTab.Tasks) "Add Task" else "Add Event") },
+            icon  = { Icon(Icons.Filled.Add, contentDescription = null) },
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor   = MaterialTheme.colorScheme.onPrimary,
+            modifier       = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = Spacing.lg, bottom = Spacing.bottomNavSafeArea + Spacing.md),
         )
+    }
+}
+
+// ─── Calendar task item (lightweight, in-line row) ───────────────────────────
+
+@Composable
+private fun CalendarTaskItem(
+    task:     TaskEntity,
+    onToggle: () -> Unit,
+    onClick:  () -> Unit,
+) {
+    val isDone            = task.status == "completed"
+    val primary           = MaterialTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(interactionSource = interactionSource, indication = ripple(color = primary.copy(0.12f)), onClick = onClick)
+            .padding(horizontal = Spacing.screenHorizontal, vertical = 10.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        Icon(
+            imageVector        = if (isDone) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+            contentDescription = null,
+            tint               = if (isDone) Color(0xFF10B981) else MaterialTheme.colorScheme.onBackground.copy(0.40f),
+            modifier           = Modifier
+                .size(22.dp)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onToggle),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text           = task.title,
+                style          = MaterialTheme.typography.bodyMedium,
+                color          = if (isDone) MaterialTheme.colorScheme.onBackground.copy(0.40f) else MaterialTheme.colorScheme.onBackground,
+                maxLines       = 1,
+            )
+            if (task.deadline != null) {
+                Text(
+                    text  = task.deadline.take(10),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.45f),
+                )
+            }
+        }
     }
 }
 

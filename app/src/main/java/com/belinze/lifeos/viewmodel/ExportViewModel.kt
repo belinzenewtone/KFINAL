@@ -22,9 +22,11 @@ import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 
+enum class ExportFormat { JSON, CSV }
+
 /**
- * ExportViewModel — writes a JSON export of the selected domains to the app's
- * external files directory and records it in the exports table.
+ * ExportViewModel — writes a JSON or CSV export of the selected domains to
+ * the app's external files directory and records it in the exports table.
  * Mirrors ExportScreen.tsx.
  */
 @HiltViewModel
@@ -165,6 +167,109 @@ class ExportViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isLoading  = false,
                     lastExport = "Exported ${recordCount} records to ${file.name}",
+                )
+                loadHistory()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+            }
+        }
+    }
+
+    fun exportCsv(
+        includeTransactions: Boolean,
+        includeTasks:        Boolean,
+        includeEvents:       Boolean,
+        includeBudgets:      Boolean,
+        includeIncomes:      Boolean,
+        includeRecurring:    Boolean,
+        includeGoals:        Boolean,
+    ) {
+        if (_uiState.value.isLoading) return
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        viewModelScope.launch {
+            try {
+                val sb = StringBuilder()
+                var totalRecords = 0
+
+                if (includeTransactions) {
+                    sb.appendLine("# transactions")
+                    sb.appendLine("id,amount,merchant,category,date,transaction_type,status")
+                    transactionDao.getPage(10000, 0).forEach { tx ->
+                        sb.appendLine("${tx.id},${tx.amount},\"${tx.merchant ?: ""}\",\"${tx.category ?: ""}\",\"${tx.date ?: ""}\",\"${tx.transactionType ?: ""}\",\"${tx.status}\"")
+                        totalRecords++
+                    }
+                    sb.appendLine()
+                }
+                if (includeTasks) {
+                    sb.appendLine("# tasks")
+                    sb.appendLine("id,title,status,deadline,priority")
+                    taskDao.getAll().forEach { t ->
+                        sb.appendLine("${t.id},\"${t.title}\",\"${t.status}\",\"${t.deadline ?: ""}\",\"${t.priority}\"")
+                        totalRecords++
+                    }
+                    sb.appendLine()
+                }
+                if (includeEvents) {
+                    sb.appendLine("# events")
+                    sb.appendLine("id,title,date,type")
+                    eventDao.getAll().forEach { e ->
+                        sb.appendLine("${e.id},\"${e.title}\",\"${e.date}\",\"${e.type}\"")
+                        totalRecords++
+                    }
+                    sb.appendLine()
+                }
+                if (includeBudgets) {
+                    sb.appendLine("# budgets")
+                    sb.appendLine("id,category,limit_amount,period")
+                    budgetDao.getAll().forEach { b ->
+                        sb.appendLine("${b.id},\"${b.category}\",${b.limitAmount},\"${b.period}\"")
+                        totalRecords++
+                    }
+                    sb.appendLine()
+                }
+                if (includeIncomes) {
+                    sb.appendLine("# incomes")
+                    sb.appendLine("id,amount,source,date")
+                    incomeDao.getAll().forEach { i ->
+                        sb.appendLine("${i.id},${i.amount},\"${i.source ?: ""}\",\"${i.date ?: ""}\"")
+                        totalRecords++
+                    }
+                    sb.appendLine()
+                }
+                if (includeRecurring) {
+                    sb.appendLine("# recurring_rules")
+                    sb.appendLine("id,title,cadence,amount,enabled")
+                    plannerDao.getAllRules().forEach { r ->
+                        sb.appendLine("${r.id},\"${r.title}\",\"${r.cadence ?: ""}\",${r.amount ?: 0.0},${r.enabled}")
+                        totalRecords++
+                    }
+                    sb.appendLine()
+                }
+                if (includeGoals) {
+                    sb.appendLine("# goals")
+                    sb.appendLine("id,title,target_value,current_value")
+                    plannerDao.getAllGoals().forEach { g ->
+                        sb.appendLine("${g.id},\"${g.title}\",${g.targetValue},${g.currentValue}")
+                        totalRecords++
+                    }
+                }
+
+                val dir  = File(context.getExternalFilesDir(null), "exports").apply { mkdirs() }
+                val file = File(dir, "lifeos-export-${System.currentTimeMillis()}.csv")
+                file.writeText(sb.toString())
+
+                plannerDao.insertExport(ExportEntity(
+                    id          = UUID.randomUUID().toString(),
+                    filePath    = file.absolutePath,
+                    fileSize    = file.length(),
+                    format      = "csv",
+                    createdAt   = nowIso(),
+                    recordCount = totalRecords,
+                ))
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading  = false,
+                    lastExport = "Exported $totalRecords records to ${file.name}",
                 )
                 loadHistory()
             } catch (e: Exception) {

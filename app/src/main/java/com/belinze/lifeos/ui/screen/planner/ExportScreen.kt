@@ -12,7 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,15 +35,16 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.SectionHeader
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.viewmodel.ExportFormat
 import com.belinze.lifeos.viewmodel.ExportViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ExportScreen — 1:1 port of ExportScreen.tsx (JSON export + history)
 // ─────────────────────────────────────────────────────────────────────────────
 
-private data class DomainOption(val label: String, val default: Boolean)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExportScreen(
     navController: NavHostController,
@@ -46,13 +52,14 @@ fun ExportScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    var tx by remember { mutableStateOf(true) }
-    var tasks by remember { mutableStateOf(true) }
-    var events by remember { mutableStateOf(true) }
-    var budgets by remember { mutableStateOf(true) }
-    var incomes by remember { mutableStateOf(true) }
+    var format    by rememberSaveable { mutableStateOf(ExportFormat.JSON) }
+    var tx        by remember { mutableStateOf(true) }
+    var tasks     by remember { mutableStateOf(true) }
+    var events    by remember { mutableStateOf(true) }
+    var budgets   by remember { mutableStateOf(true) }
+    var incomes   by remember { mutableStateOf(true) }
     var recurring by remember { mutableStateOf(true) }
-    var goals by remember { mutableStateOf(true) }
+    var goals     by remember { mutableStateOf(true) }
 
     PageScaffold(
         eyebrow = "Planner",
@@ -72,6 +79,19 @@ fun ExportScreen(
                 InlineBanner(tone = BannerTone.Success, message = state.lastExport ?: "")
             }
 
+            // ── Format picker ─────────────────────────────────────────────────
+            SectionHeader(label = "Format")
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                ExportFormat.values().forEachIndexed { idx, fmt ->
+                    SegmentedButton(
+                        selected = format == fmt,
+                        onClick  = { format = fmt },
+                        shape    = SegmentedButtonDefaults.itemShape(index = idx, count = ExportFormat.values().size),
+                        label    = { Text(fmt.name) },
+                    )
+                }
+            }
+
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     Text("Include", fontWeight = FontWeight.SemiBold,
@@ -88,7 +108,10 @@ fun ExportScreen(
 
             Button(
                 onClick  = {
-                    viewModel.exportJson(tx, tasks, events, budgets, incomes, recurring, goals)
+                    when (format) {
+                        ExportFormat.JSON -> viewModel.exportJson(tx, tasks, events, budgets, incomes, recurring, goals)
+                        ExportFormat.CSV  -> viewModel.exportCsv(tx, tasks, events, budgets, incomes, recurring, goals)
+                    }
                 },
                 enabled  = !state.isLoading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -97,7 +120,7 @@ fun ExportScreen(
                     CircularProgressIndicator(modifier = Modifier.height(18.dp), strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Export as JSON")
+                    Text("Export as ${format.name}")
                 }
             }
 
