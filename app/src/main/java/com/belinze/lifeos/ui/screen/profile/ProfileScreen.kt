@@ -1,5 +1,11 @@
 package com.belinze.lifeos.ui.screen.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,12 +46,16 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +67,7 @@ import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.compactCurrency
 import com.belinze.lifeos.viewmodel.ProfileViewModel
+import com.belinze.lifeos.viewmodel.SettingsViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileScreen
@@ -71,12 +82,35 @@ import com.belinze.lifeos.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
-    navController: NavHostController,
-    viewModel:     ProfileViewModel = hiltViewModel(),
+    navController:   NavHostController,
+    viewModel:       ProfileViewModel  = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val prefState by viewModel.prefState.collectAsState()
     val uiState   by viewModel.uiState.collectAsState()
     val stats      = uiState.stats
+    val context    = LocalContext.current
+
+    // Image picker — updates profileAvatarUri in DataStore on selection
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri: Uri? ->
+        uri?.let { settingsViewModel.setProfileAvatarUri(it.toString()) }
+    }
+
+    // Decode avatar bitmap off the main thread whenever the URI changes
+    val avatarBitmap: Bitmap? by produceState<Bitmap?>(
+        initialValue = null,
+        key1         = prefState.profileAvatarUri,
+    ) {
+        value = if (prefState.profileAvatarUri.isNotEmpty()) {
+            runCatching {
+                context.contentResolver
+                    .openInputStream(Uri.parse(prefState.profileAvatarUri))
+                    ?.use { stream -> BitmapFactory.decodeStream(stream) }
+            }.getOrNull()
+        } else null
+    }
 
     Column(
         modifier = Modifier
@@ -101,22 +135,32 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
-            // Avatar circle
+            // Avatar circle — tap to pick a photo from the gallery
             Box(
                 modifier         = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(0.15f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(0.15f))
+                    .clickable { imagePickerLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center,
             ) {
-                val initials = prefState.profileName
-                    .split(" ")
-                    .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                    .take(2)
-                    .joinToString("")
-                    .ifEmpty { "?" }
-                Text(initials, fontSize = 28.sp, fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary)
+                if (avatarBitmap != null) {
+                    Image(
+                        bitmap             = avatarBitmap!!.asImageBitmap(),
+                        contentDescription = "Profile photo",
+                        contentScale       = ContentScale.Crop,
+                        modifier           = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    val initials = prefState.profileName
+                        .split(" ")
+                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                        .take(2)
+                        .joinToString("")
+                        .ifEmpty { "?" }
+                    Text(initials, fontSize = 28.sp, fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary)
+                }
             }
 
             Spacer(Modifier.height(Spacing.sm))

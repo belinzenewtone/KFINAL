@@ -95,46 +95,71 @@ fun TasksScreen(
                     )
                 }
             } else {
+                // Group tasks by priority for section headers
+                val grouped = remember(state.tasks) {
+                    state.tasks.groupBy { it.priority ?: "low" }
+                }
+                val priorityOrder = listOf("high", "medium", "low")
+
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(state.tasks, key = { it.id }) { task ->
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = { newValue ->
-                                if (newValue == SwipeToDismissBoxValue.EndToStart) {
-                                    viewModel.softDelete(task.id)
-                                    true
-                                } else false
-                            },
-                        )
-                        SwipeToDismissBox(
-                            state              = dismissState,
-                            enableDismissFromStartToEnd = false,
-                            backgroundContent  = {
-                                val color by animateColorAsState(
-                                    targetValue = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
-                                        Color(0xFFEF4444) else Color.Transparent,
-                                    label = "swipe_bg",
+                    priorityOrder.forEach { priority ->
+                        val priorityTasks = grouped[priority] ?: emptyList()
+                        if (priorityTasks.isNotEmpty()) {
+                            item(key = "header_$priority") {
+                                val headerColor = when (priority) {
+                                    "high"   -> Color(0xFFEF4444)
+                                    "medium" -> Color(0xFFF59E0B)
+                                    else     -> MaterialTheme.colorScheme.onBackground.copy(0.45f)
+                                }
+                                Text(
+                                    text     = priority.replaceFirstChar { it.uppercase() },
+                                    style    = MaterialTheme.typography.labelMedium,
+                                    color    = headerColor,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(top = Spacing.md, bottom = 4.dp),
                                 )
-                                Box(
-                                    modifier         = Modifier
-                                        .fillMaxSize()
-                                        .background(color)
-                                        .padding(end = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd,
+                            }
+                            items(priorityTasks, key = { it.id }) { task ->
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { newValue ->
+                                        if (newValue == SwipeToDismissBoxValue.EndToStart) {
+                                            viewModel.softDelete(task.id)
+                                            true
+                                        } else false
+                                    },
+                                )
+                                SwipeToDismissBox(
+                                    state              = dismissState,
+                                    enableDismissFromStartToEnd = false,
+                                    backgroundContent  = {
+                                        val color by animateColorAsState(
+                                            targetValue = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
+                                                Color(0xFFEF4444) else Color.Transparent,
+                                            label = "swipe_bg",
+                                        )
+                                        Box(
+                                            modifier         = Modifier
+                                                .fillMaxSize()
+                                                .background(color)
+                                                .padding(end = 20.dp),
+                                            contentAlignment = Alignment.CenterEnd,
+                                        ) {
+                                            Icon(
+                                                imageVector        = Icons.Filled.Delete,
+                                                contentDescription = "Delete",
+                                                tint               = Color.White,
+                                            )
+                                        }
+                                    },
                                 ) {
-                                    Icon(
-                                        imageVector        = Icons.Filled.Delete,
-                                        contentDescription = "Delete",
-                                        tint               = Color.White,
+                                    TaskItem(
+                                        task     = task,
+                                        onToggle = { viewModel.complete(task.id) },
+                                        onDelete = { viewModel.softDelete(task.id) },
+                                        onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
                                     )
                                 }
-                            },
-                        ) {
-                            TaskItem(
-                                task     = task,
-                                onToggle = { viewModel.complete(task.id) },
-                                onDelete = { viewModel.softDelete(task.id) },
-                                onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
-                            )
+                            }
                         }
                     }
                     item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }

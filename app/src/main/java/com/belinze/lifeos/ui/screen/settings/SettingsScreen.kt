@@ -14,10 +14,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,6 +67,10 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     var showClearDialog by remember { mutableStateOf(false) }
+    var fulizaInput by remember(settings.fulizaLimit) {
+        mutableStateOf(if (settings.fulizaLimit > 0) settings.fulizaLimit.toLong().toString() else "")
+    }
+    val focusManager = LocalFocusManager.current
 
     PageScaffold(
         eyebrow = "App",
@@ -83,6 +93,21 @@ fun SettingsScreen(
                         selected = settings.theme == theme,
                         onClick  = { viewModel.setTheme(theme) },
                         label    = { Text(theme.replaceFirstChar { it.uppercase() }) },
+                    )
+                }
+            }
+
+            // ── Currency ─────────────────────────────────────────────────
+            SectionHeader(label = "Currency")
+            Row(
+                modifier              = Modifier.fillMaxWidth().padding(bottom = Spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                listOf("KES", "USD", "GBP", "EUR").forEach { currency ->
+                    FilterChip(
+                        selected = settings.currency == currency,
+                        onClick  = { viewModel.setCurrency(currency) },
+                        label    = { Text(currency) },
                     )
                 }
             }
@@ -122,6 +147,24 @@ fun SettingsScreen(
                 label   = "Budgets & Planner",
                 desc    = "Manage budgets, goals, loans",
                 onClick = { navController.navigate(Route.BUDGETS) },
+            )
+            OutlinedTextField(
+                value         = fulizaInput,
+                onValueChange = { fulizaInput = it },
+                label         = { Text("Fuliza credit limit (KES)") },
+                placeholder   = { Text("e.g. 2000") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction    = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = {
+                    fulizaInput.toDoubleOrNull()?.let { viewModel.setFulizaLimit(it) }
+                    focusManager.clearFocus()
+                }),
+                singleLine = true,
+                modifier   = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
             )
 
             // ── SMS Import ────────────────────────────────────────────────

@@ -84,6 +84,14 @@ class SettingsViewModel @Inject constructor(
 
     fun setFulizaLimit(limit: Double)     = update { it[PreferenceKeys.FULIZA_LIMIT] = limit }
 
+    // ── Currency ──────────────────────────────────────────────────────────────
+
+    fun setCurrency(v: String)            = update { it[PreferenceKeys.CURRENCY] = v }
+
+    // ── Profile ───────────────────────────────────────────────────────────────
+
+    fun setProfileAvatarUri(uri: String)  = update { it[PreferenceKeys.PROFILE_AVATAR_URI] = uri }
+
     // ── Display ───────────────────────────────────────────────────────────────
 
     fun setDateFormat(v: String)          = update { it[PreferenceKeys.DATE_FORMAT] = v }

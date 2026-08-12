@@ -106,11 +106,25 @@ fun AssistantScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment     = Alignment.CenterVertically,
         ) {
-            Text(
-                "Assistant",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+            // Title + online status dot
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    "Assistant",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(
+                            color = if (state.isOnline) Color(0xFF10B981) else Color(0xFFEF4444),
+                            shape = CircleShape,
+                        ),
+                )
+            }
             if (state.messages.isNotEmpty()) {
                 IconButton(onClick = { viewModel.clearConversation() }) {
                     Icon(

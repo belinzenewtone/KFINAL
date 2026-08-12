@@ -55,6 +55,7 @@ data class AssistantUiState(
     val inputText:      String           = "",
     val conversationId: String          = DEFAULT_CONVERSATION_ID,
     val error:          String?          = null,
+    val isOnline:       Boolean          = true,   // local engine is always ready
 )
 
 private const val DEFAULT_CONVERSATION_ID = "main"
