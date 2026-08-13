@@ -8,7 +8,7 @@
 - When a Kotlin-only UI addition has no counterpart in the reference app (stats cards, extra settings sections, extra navigation), prefers removing it to match the reference exactly. Confidence: 0.7
 - For long-running Kotlin/Android edits, prefers incremental verification: run the fast `:app:compileDebugKotlin` task after each file/screen change to catch errors early, and reserve full `assembleDebug` + `adb install` + clean-relaunch smoke tests for milestones. Confidence: 0.7
 - When triaging Android crashes over ADB, clears logcat and force-stops/relaunches, then compares the current process PID against crash lines to distinguish fresh failures from stale ones left by earlier processes. Confidence: 0.6
-- Prefers working through a large remaining backlog sequentially — one screen/item at a time — rather than batching multiple screens or parallelizing the work. Confidence: 0.8
+- Prefers working through a large remaining backlog sequentially — one screen/item at a time — rather than batching multiple screens or parallelizing the work. Confidence: 0.9
 - When aligning a ported screen to the reference, extends the underlying data layer first (entity fields, ViewModel form state, DAO query/update methods) to support the reference's full feature set before rewriting the screen's UI. Confidence: 0.7
 - Prefers the agent to proceed through a remaining backlog of tasks autonomously and continuously until everything is done, without pausing to ask for the user's go-ahead between items. Confidence: 0.8
 - When given a specific set of items to complete, prefers the agent to finish them and then report back, rather than asking for confirmation per item. Confidence: 0.6

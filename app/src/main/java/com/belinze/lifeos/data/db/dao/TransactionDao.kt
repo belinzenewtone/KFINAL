@@ -299,6 +299,46 @@ interface TransactionDao {
     """)
     suspend fun getFeeTotalInRange(startDate: String, endDate: String): Double
 
+    // ─── Analytics tab helpers ────────────────────────────────────────────────
+
+    @Query("""
+        SELECT COALESCE(AVG(amount), 0.0) FROM transactions
+        WHERE date >= :startDate AND date <= :endDate
+          AND transaction_type IN ('expense','transfer','fuliza')
+          AND status = 'completed' AND deleted_at IS NULL
+    """)
+    suspend fun getAverageTransactionInRange(startDate: String, endDate: String): Double
+
+    @Query("""
+        SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+        WHERE date >= :startDate AND date <= :endDate
+          AND transaction_type = 'receive'
+          AND status = 'completed' AND deleted_at IS NULL
+    """)
+    suspend fun getIncomeInRange(startDate: String, endDate: String): Double
+
+    @Query("""
+        SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+        WHERE date >= :startDate AND date <= :endDate
+          AND (category IS NULL OR category = '' OR category = 'uncategorized')
+          AND deleted_at IS NULL
+    """)
+    suspend fun getUncategorizedAmountInRange(startDate: String, endDate: String): Double
+
+    /** Fee summary for a date range: total fees, top category, avg fee, tx count. */
+    @Query("""
+        SELECT
+          COALESCE(SUM(amount), 0.0) AS total,
+          COALESCE(AVG(amount), 0.0) AS avgFee,
+          COUNT(*) AS txCount
+        FROM transactions
+        WHERE date >= :startDate AND date <= :endDate
+          AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
+          AND deleted_at IS NULL
+          AND status = 'completed'
+    """)
+    suspend fun getFeeSummaryInRange(startDate: String, endDate: String): FeeSummary
+
     // ─── Review queue helpers ─────────────────────────────────────────────────
 
     @Query("SELECT * FROM transactions WHERE mpesa_code = :code AND deleted_at IS NULL LIMIT 1")
@@ -316,3 +356,4 @@ data class MerchantTotal(val merchant: String?, val total: Double)
 data class FeeCategoryTotal(val category: String?, val total: Double, val count: Int)
 data class DaySpend(val day: String, val total: Double)
 data class BiggestSpend(val merchant: String?, val amount: Double, val date: String)
+data class FeeSummary(val total: Double, val avgFee: Double, val txCount: Int)
