@@ -346,6 +346,57 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET status = :status, updated_at = :ts WHERE mpesa_code = :code AND deleted_at IS NULL")
     suspend fun updateStatusByMpesaCode(code: String, status: String, ts: String)
+
+    // ─── Insights tab deep queries ────────────────────────────────────────────────
+
+    @Query("""
+        SELECT
+          strftime('%Y-%m', date) as month_key,
+          COALESCE(SUM(CASE WHEN transaction_type IN ('expense','transfer','fuliza') THEN amount ELSE 0 END), 0.0) as expense,
+          COALESCE(SUM(CASE WHEN transaction_type IN ('income','receive') THEN amount ELSE 0 END), 0.0) as income,
+          COUNT(CASE WHEN transaction_type IN ('expense','transfer','fuliza') THEN 1 END) as tx_count
+        FROM transactions
+        WHERE date >= :sixMonthsAgo AND status = 'completed' AND deleted_at IS NULL
+        GROUP BY month_key
+        ORDER BY month_key ASC
+    """)
+    suspend fun getMonthlyTotalsRange(sixMonthsAgo: String): List<MonthlyTotalsRow>
+
+    @Query("""
+        SELECT
+          strftime('%Y-%m', date) as month_key,
+          category,
+          COALESCE(SUM(amount), 0.0) as total
+        FROM transactions
+        WHERE date >= :sixMonthsAgo AND transaction_type IN ('expense','transfer','fuliza')
+          AND status = 'completed' AND deleted_at IS NULL
+        GROUP BY month_key, category
+        ORDER BY month_key ASC, total DESC
+    """)
+    suspend fun getMonthlyCategoryBreakdown(sixMonthsAgo: String): List<MonthlyCategoryRow>
+
+    @Query("""
+        SELECT date(date) as dt
+        FROM transactions
+        WHERE transaction_type IN ('income','receive') AND status = 'completed' AND deleted_at IS NULL
+          AND date >= :sixMonthsAgo
+        ORDER BY date DESC LIMIT 12
+    """)
+    suspend fun getIncomeDates(sixMonthsAgo: String): List<IncomeDateRow>
+
+    @Query("""
+        SELECT
+          COUNT(CASE WHEN amount < 500 THEN 1 END) as micro_count,
+          COUNT(CASE WHEN amount >= 500 AND amount < 2000 THEN 1 END) as medium_count,
+          COUNT(CASE WHEN amount >= 2000 THEN 1 END) as large_count,
+          COALESCE(SUM(CASE WHEN amount < 500 THEN amount ELSE 0 END), 0.0) as micro_total,
+          COALESCE(SUM(CASE WHEN amount >= 500 AND amount < 2000 THEN amount ELSE 0 END), 0.0) as medium_total,
+          COALESCE(SUM(CASE WHEN amount >= 2000 THEN amount ELSE 0 END), 0.0) as large_total
+        FROM transactions
+        WHERE date >= :sixMonthsAgo AND transaction_type IN ('expense','transfer','fuliza')
+          AND status = 'completed' AND deleted_at IS NULL
+    """)
+    suspend fun getSizeBreakdown(sixMonthsAgo: String): SizeBreakdownRow?
 }
 
 // ─── Projection data classes ─────────────────────────────────────────────────
@@ -357,3 +408,24 @@ data class FeeCategoryTotal(val category: String?, val total: Double, val count:
 data class DaySpend(val day: String, val total: Double)
 data class BiggestSpend(val merchant: String?, val amount: Double, val date: String)
 data class FeeSummary(val total: Double, val avgFee: Double, val txCount: Int)
+
+data class MonthlyTotalsRow(
+    @ColumnInfo(name = "month_key") val monthKey: String,
+    val expense: Double,
+    val income: Double,
+    @ColumnInfo(name = "tx_count") val txCount: Int,
+)
+data class MonthlyCategoryRow(
+    @ColumnInfo(name = "month_key") val monthKey: String,
+    val category: String?,
+    val total: Double,
+)
+data class IncomeDateRow(val dt: String)
+data class SizeBreakdownRow(
+    @ColumnInfo(name = "micro_count")  val microCount:  Int,
+    @ColumnInfo(name = "medium_count") val mediumCount: Int,
+    @ColumnInfo(name = "large_count")  val largeCount:  Int,
+    @ColumnInfo(name = "micro_total")  val microTotal:  Double,
+    @ColumnInfo(name = "medium_total") val mediumTotal: Double,
+    @ColumnInfo(name = "large_total")  val largeTotal:  Double,
+)
