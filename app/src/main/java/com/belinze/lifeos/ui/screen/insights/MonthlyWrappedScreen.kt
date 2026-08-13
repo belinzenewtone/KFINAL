@@ -1,17 +1,21 @@
 package com.belinze.lifeos.ui.screen.insights
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -20,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
-import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.ShapeLg
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -46,78 +50,143 @@ fun MonthlyWrappedScreen(
     navController:      NavHostController,
     viewModel:          MonthlyWrappedViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state  by viewModel.uiState.collectAsState()
+    val isDark = isSystemInDarkTheme()
 
     LaunchedEffect(Unit) { viewModel.setMonthOffset(initialMonthOffset) }
 
-    PageScaffold(
-        onBack     = { navController.popBackStack() },
-        scrollable = false,
+    // Page gradient — matches PageScaffold's background brush
+    val bgGradient: Brush = if (isDark) {
+        Brush.verticalGradient(
+            colors = listOf(Color(0xFF0A0A0B), Color(0xFF0D1117), Color(0xFF0A0A0B)),
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(Color(0xFFE8EDF3), Color(0xFFDDE4EE), Color(0xFFE8EDF3)),
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawBehind { drawRect(bgGradient) }
+            .windowInsetsPadding(WindowInsets.statusBars),
     ) {
+        // ── Single combined header row ─────────────────────────────────────────
+        // React layout: [back ←] [‹ month] [title — flex, centered] [month ›]
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(AppBarDimens.height)
+                .padding(horizontal = AppBarDimens.horizontalPad),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // System back button
+            IconButton(
+                onClick  = { navController.popBackStack() },
+                modifier = Modifier.size(AppBarDimens.backBtnSize),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint     = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(AppBarDimens.iconSize),
+                )
+            }
+
+            // Older month (chevron, not a back arrow)
+            IconButton(
+                onClick  = { viewModel.setMonthOffset(state.monthOffset - 1) },
+                enabled  = state.monthOffset > state.minMonthOffset,
+                modifier = Modifier.size(AppBarDimens.backBtnSize),
+            ) {
+                Icon(
+                    Icons.Filled.KeyboardArrowLeft,
+                    contentDescription = "Older month",
+                    tint     = if (state.monthOffset > state.minMonthOffset)
+                                   MaterialTheme.colorScheme.onSurface
+                               else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+
+            // Centered title
+            Text(
+                text      = "${state.monthLabel} Wrapped",
+                style     = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color     = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines  = 1,
+                modifier  = Modifier.weight(1f),
+            )
+
+            // Newer month
+            IconButton(
+                onClick  = { viewModel.setMonthOffset(state.monthOffset + 1) },
+                enabled  = state.monthOffset < 0,
+                modifier = Modifier.size(AppBarDimens.backBtnSize),
+            ) {
+                Icon(
+                    Icons.Filled.KeyboardArrowRight,
+                    contentDescription = "Newer month",
+                    tint     = if (state.monthOffset < 0)
+                                   MaterialTheme.colorScheme.onSurface
+                               else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
+
+        // ── Content ──────────────────────────────────────────────────────────
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(Modifier.height(Spacing.base))
-                        Text("Crunching the numbers…",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Crunching the numbers…",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
-                    contentAlignment = Alignment.Center) {
-                    Text(state.error!!, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                Box(
+                    Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        state.error!!,
+                        color     = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
             !state.hasData -> {
-                Box(Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
-                    contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("No spending this month",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "No spending recorded for ${state.monthLabel} yet.",
+                            style     = MaterialTheme.typography.bodyLarge,
+                            color     = MaterialTheme.colorScheme.outline,
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 }
             }
             else -> {
                 LazyColumn(
-                    modifier            = Modifier.fillMaxSize(),
-                    contentPadding      = PaddingValues(vertical = Spacing.lg),
+                    modifier            = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = Spacing.screenHorizontal),
+                    contentPadding      = PaddingValues(top = Spacing.sm, bottom = Spacing.bottomNavSafeArea),
                     verticalArrangement = Arrangement.spacedBy(Spacing.base),
                 ) {
-                    // ─ Month navigation header ─
-                    item {
-                        Row(
-                            modifier             = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment    = Alignment.CenterVertically,
-                        ) {
-                            IconButton(
-                                onClick  = { viewModel.setMonthOffset(state.monthOffset - 1) },
-                                enabled  = state.monthOffset > state.minMonthOffset,
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Older month",
-                                    modifier = Modifier.size(20.dp))
-                            }
-                            Text(
-                                text       = "${state.monthLabel} Wrapped",
-                                style      = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            IconButton(
-                                onClick  = { viewModel.setMonthOffset(state.monthOffset + 1) },
-                                enabled  = state.monthOffset < 0,
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Newer month",
-                                    modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    }
-
                     // ─ Hero ─
                     item {
                         GlassCard {
@@ -127,14 +196,17 @@ fun MonthlyWrappedScreen(
                                     .padding(vertical = Spacing.xl),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Text("You spent",
+                                Text(
+                                    "You spent",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                                 Text(
                                     text       = formatCurrency(state.totalSpend),
                                     fontSize   = 44.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     lineHeight = 50.sp,
+                                    color      = MaterialTheme.colorScheme.primary,
                                 )
                                 Text(
                                     text  = "this month · ${state.txCount} transaction${if (state.txCount != 1) "s" else ""}",
@@ -149,14 +221,16 @@ fun MonthlyWrappedScreen(
                     if (state.topCategories.isNotEmpty()) {
                         item {
                             GlassCard {
-                                Text("Top Categories",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold)
-                                Spacer(Modifier.height(Spacing.sm))
+                                Text(
+                                    "TOP CATEGORIES",
+                                    style         = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                    color         = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier      = Modifier.padding(bottom = Spacing.base),
+                                )
                                 state.topCategories.forEachIndexed { i, row ->
                                     if (i > 0) HorizontalDivider(
-                                        modifier = Modifier.padding(vertical = Spacing.xs),
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                        modifier  = Modifier.padding(vertical = Spacing.xs),
+                                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                                     )
                                     CategoryRow(row)
                                 }
@@ -167,18 +241,21 @@ fun MonthlyWrappedScreen(
                     // ─ Top Merchant + Biggest Spend (half-cards) ─
                     item {
                         Row(
-                            modifier             = Modifier.fillMaxWidth(),
+                            modifier              = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
                             // Top merchant
                             GlassCard(modifier = Modifier.weight(1f)) {
-                                Text("Top Merchant",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.height(Spacing.xs))
+                                Text(
+                                    "TOP MERCHANT",
+                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = Spacing.sm),
+                                )
                                 Text(
                                     text       = state.topMerchantName.ifBlank { "—" },
-                                    style      = MaterialTheme.typography.bodyMedium,
+                                    style      = MaterialTheme.typography.titleMedium,
+                                    color      = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines   = 1,
                                 )
@@ -190,13 +267,16 @@ fun MonthlyWrappedScreen(
                             }
                             // Biggest spend
                             GlassCard(modifier = Modifier.weight(1f)) {
-                                Text("Biggest Spend",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.height(Spacing.xs))
+                                Text(
+                                    "BIGGEST SPEND",
+                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = Spacing.sm),
+                                )
                                 Text(
                                     text       = formatCurrency(state.biggestAmount),
-                                    style      = MaterialTheme.typography.bodyMedium,
+                                    style      = MaterialTheme.typography.titleMedium,
+                                    color      = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                                 Text(
@@ -212,30 +292,44 @@ fun MonthlyWrappedScreen(
                     // ─ Active Days + Fees (half-cards) ─
                     item {
                         Row(
-                            modifier             = Modifier.fillMaxWidth(),
+                            modifier              = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
                             GlassCard(modifier = Modifier.weight(1f)) {
-                                Text("Active Days",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.height(Spacing.xs))
                                 Text(
-                                    text       = "${state.activeDays} of ${state.totalDaysInMonth} days",
-                                    style      = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
+                                    "ACTIVE DAYS",
+                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = Spacing.sm),
+                                )
+                                Text(
+                                    text       = "${state.activeDays}",
+                                    style      = MaterialTheme.typography.headlineSmall,
+                                    color      = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text  = "of ${state.totalDaysInMonth} days",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             if (state.feesTotal > 0.0) {
                                 GlassCard(modifier = Modifier.weight(1f)) {
-                                    Text("Fees Paid",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(Modifier.height(Spacing.xs))
+                                    Text(
+                                        "FEES PAID",
+                                        style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = Spacing.sm),
+                                    )
                                     Text(
                                         text       = formatCurrency(state.feesTotal),
-                                        style      = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style      = MaterialTheme.typography.headlineSmall,
+                                        color      = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text  = "M-Pesa charges",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             } else {
@@ -248,21 +342,23 @@ fun MonthlyWrappedScreen(
                     if (state.fulizaCount > 0) {
                         item {
                             LeftAccentCard(color = MaterialTheme.colorScheme.error) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text       = "${state.fulizaCount} times · ${formatCurrency(state.fulizaTotal)}",
-                                            style      = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color      = COLOR_FULIZA,
-                                        )
-                                        Text(
-                                            text  = "Fuliza loans affect your balance. Consider paying back early.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
+                                Text(
+                                    "FULIZA USED",
+                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                    color    = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(bottom = Spacing.sm),
+                                )
+                                Text(
+                                    text       = "${state.fulizaCount} time${if (state.fulizaCount != 1) "s" else ""} · ${formatCurrency(state.fulizaTotal)}",
+                                    style      = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color      = COLOR_FULIZA,
+                                )
+                                Text(
+                                    text  = "Try to keep this below 3 times per month",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
@@ -270,17 +366,15 @@ fun MonthlyWrappedScreen(
                     // ─ Savings verdict (conditional, only if income > 0) ─
                     if (state.totalIncome > 0.0) {
                         item {
-                            val saved = state.totalIncome - state.totalSpend
+                            val saved    = state.totalIncome - state.totalSpend
                             val isSaving = saved >= 0
-                            LeftAccentCard(
-                                color = if (isSaving) COLOR_SUCCESS else COLOR_DANGER,
-                            ) {
+                            LeftAccentCard(color = if (isSaving) COLOR_SUCCESS else COLOR_DANGER) {
                                 Text(
-                                    text  = if (isSaving) "Saved this month" else "Spent over income",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    text  = if (isSaving) "SAVED THIS MONTH" else "SPENT OVER INCOME",
+                                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = Spacing.sm),
                                 )
-                                Spacer(Modifier.height(Spacing.xs))
                                 Text(
                                     text       = formatCurrency(kotlin.math.abs(saved)),
                                     style      = MaterialTheme.typography.headlineSmall,
@@ -310,14 +404,17 @@ private fun CategoryRow(row: TopCategoryRow) {
     val rankColor = RANK_COLORS.getOrNull(row.rank - 1) ?: MaterialTheme.colorScheme.onSurfaceVariant
     val rankLabel = when (row.rank) { 1 -> "1st"; 2 -> "2nd"; 3 -> "3rd"; else -> "${row.rank}th" }
     Row(
-        modifier             = Modifier.fillMaxWidth(),
+        modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment    = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
             Text(
                 text       = rankLabel,
-                style      = MaterialTheme.typography.labelSmall,
+                style      = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color      = rankColor,
                 modifier   = Modifier.width(28.dp),
@@ -325,18 +422,19 @@ private fun CategoryRow(row: TopCategoryRow) {
             Text(
                 text  = row.category.replaceFirstChar { it.uppercaseChar() },
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         Text(
             text       = formatCurrency(row.total),
             style      = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
+            color      = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
 
 // ─── Left accent card helper ──────────────────────────────────────────────────
-// Draws a 3dp accent strip on the left edge of a GlassCard, clipped to ShapeLg.
 
 @Composable
 private fun LeftAccentCard(
@@ -348,14 +446,12 @@ private fun LeftAccentCard(
             .fillMaxWidth()
             .clip(ShapeLg)
             .drawBehind {
-                // Accent bar on the left — clipped by the outer ShapeLg clip
                 drawRect(
                     color = color,
                     size  = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height),
                 )
             },
     ) {
-        // Offset the GlassCard so it starts where the accent bar ends
         Box(modifier = Modifier.padding(start = 3.dp)) {
             GlassCard(content = content)
         }
