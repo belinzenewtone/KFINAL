@@ -139,13 +139,6 @@ fun FinanceScreen(
                 .windowInsetsPadding(WindowInsets.statusBars),
         ) {
 
-            // ── Error / SMS import banner ─────────────────────────────────────
-            TopBanner(
-                visible  = state.error != null,
-                message  = state.error ?: "",
-                tone     = BannerTone.Error,
-            )
-
             // ── SMS import progress banner (mirrors FinanceScreen.tsx smsBanner) ─
             if (smsState.isImporting) {
                 Row(
@@ -450,6 +443,16 @@ fun FinanceScreen(
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 // Sit just above the FloatingTabBar (58dp) + a small gap, matching React position
                 .padding(end = Spacing.lg, bottom = TabBarDimens.height + Spacing.base),
+        )
+
+        // Error banner — overlaid so it doesn't shift content
+        TopBanner(
+            visible  = state.error != null,
+            message  = state.error ?: "",
+            tone     = BannerTone.Error,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars),
         )
     }
 }

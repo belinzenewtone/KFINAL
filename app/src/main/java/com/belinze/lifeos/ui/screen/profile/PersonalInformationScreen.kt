@@ -76,15 +76,7 @@ fun PersonalInformationScreen(
         prefState.profileName.split(" ").firstOrNull() ?: ""
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        TopBanner(
-            visible       = successMsg != null,
-            message       = successMsg ?: "",
-            tone          = BannerTone.Success,
-            onDismiss     = { successMsg = null },
-            autoDismissMs = 2000,
-        )
-
+    Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -242,6 +234,15 @@ fun PersonalInformationScreen(
                 }
             }
         }
+
+        // Banner overlaid so it doesn't shift content (TopBanner is fillMaxWidth internally)
+        TopBanner(
+            visible       = successMsg != null,
+            message       = successMsg ?: "",
+            tone          = BannerTone.Success,
+            onDismiss     = { successMsg = null },
+            autoDismissMs = 2000,
+        )
     }
 }
 

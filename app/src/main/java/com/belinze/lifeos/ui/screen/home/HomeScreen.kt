@@ -131,13 +131,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars),
         ) {
-            // Error banner
-            TopBanner(
-                visible  = txState.error != null,
-                message  = txState.error ?: "",
-                tone     = BannerTone.Error,
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -240,6 +233,16 @@ fun HomeScreen(
                 )
             }
         }
+
+        // Error banner — overlaid so it doesn't shift content
+        TopBanner(
+            visible  = txState.error != null,
+            message  = txState.error ?: "",
+            tone     = BannerTone.Error,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars),
+        )
     }
 }
 

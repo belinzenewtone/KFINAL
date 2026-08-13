@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -85,15 +86,7 @@ fun SettingsScreen(
     var showClearDialog by remember { mutableStateOf(false) }
     var fulizaVisible by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
-        TopBanner(
-            visible = infoMessage != null,
-            message = infoMessage ?: "",
-            tone = BannerTone.Success,
-            onDismiss = { infoMessage = null },
-            autoDismissMs = 3000,
-        )
-
+    Box(modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -321,6 +314,15 @@ fun SettingsScreen(
                 }
             }
         }
+
+        // Banner overlaid so it doesn't shift scrollable content
+        TopBanner(
+            visible = infoMessage != null,
+            message = infoMessage ?: "",
+            tone = BannerTone.Success,
+            onDismiss = { infoMessage = null },
+            autoDismissMs = 3000,
+        )
     }
 
     FulizaLimitModal(

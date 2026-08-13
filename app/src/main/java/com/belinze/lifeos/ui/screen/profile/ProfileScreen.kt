@@ -146,20 +146,16 @@ fun ProfileScreen(
         } else null
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .verticalScroll(rememberScrollState()),
+            .windowInsetsPadding(WindowInsets.statusBars),
     ) {
-        TopBanner(
-            visible       = successMessage != null,
-            message       = successMessage ?: "",
-            tone          = BannerTone.Success,
-            onDismiss     = { successMessage = null },
-            autoDismissMs = 3000,
-        )
-
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -527,6 +523,16 @@ fun ProfileScreen(
                 }
             }
         }
+        } // end outer Column
+
+        // Banner overlaid so it doesn't shift scrollable content
+        TopBanner(
+            visible       = successMessage != null,
+            message       = successMessage ?: "",
+            tone          = BannerTone.Success,
+            onDismiss     = { successMessage = null },
+            autoDismissMs = 3000,
+        )
     }
 }
 

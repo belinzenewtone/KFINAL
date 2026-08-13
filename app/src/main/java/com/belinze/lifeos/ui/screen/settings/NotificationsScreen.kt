@@ -49,15 +49,16 @@ fun NotificationsScreen(
         title = "Notifications",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = infoMessage != null,
+                message = infoMessage ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { infoMessage = null },
+                autoDismissMs = 3000,
+            )
+        },
     ) {
-        TopBanner(
-            visible = infoMessage != null,
-            message = infoMessage ?: "",
-            tone = BannerTone.Success,
-            onDismiss = { infoMessage = null },
-            autoDismissMs = 3000,
-        )
-
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Spacing.base),

@@ -52,22 +52,17 @@ fun ReviewQueueScreen(
         title      = "Review Queue",
         onBack     = { navController.popBackStack() },
         scrollable = false,
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // ─ Banner ─
+        topBanner  = {
             TopBanner(
                 visible       = banner != null,
                 message       = banner?.message ?: "",
                 tone          = if (banner?.isSuccess == true) BannerTone.Success else BannerTone.Error,
                 onDismiss     = { viewModel.clearBanner() },
                 autoDismissMs = 3500,
-                modifier      = Modifier.padding(
-                    start  = Spacing.screenHorizontal,
-                    end    = Spacing.screenHorizontal,
-                    bottom = Spacing.sm,
-                ),
             )
-
+        },
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             when {
                 state.isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

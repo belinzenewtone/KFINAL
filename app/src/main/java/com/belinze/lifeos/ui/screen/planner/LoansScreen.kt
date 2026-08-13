@@ -78,15 +78,16 @@ fun LoansScreen(
                 Icon(Icons.Filled.Add, contentDescription = "Add loan", tint = MaterialTheme.colorScheme.primary)
             }
         },
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 2500,
+            )
+        },
     ) {
-        TopBanner(
-            visible = banner != null,
-            message = banner ?: "",
-            tone = BannerTone.Success,
-            onDismiss = { banner = null },
-            autoDismissMs = 2500,
-        )
-
         if (state.loans.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x3l),

@@ -64,15 +64,16 @@ fun RecurringScreen(
                 Icon(Icons.Filled.Add, contentDescription = "Add rule", tint = MaterialTheme.colorScheme.primary)
             }
         },
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 2000,
+            )
+        },
     ) {
-        TopBanner(
-            visible = banner != null,
-            message = banner ?: "",
-            tone = BannerTone.Success,
-            onDismiss = { banner = null },
-            autoDismissMs = 2000,
-        )
-
         if (state.recurringRules.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x3l),

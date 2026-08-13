@@ -71,15 +71,16 @@ fun BillsScreen(
                 Icon(Icons.Filled.Add, contentDescription = "Add bill", tint = MaterialTheme.colorScheme.primary)
             }
         },
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 2500,
+            )
+        },
     ) {
-        TopBanner(
-            visible = banner != null,
-            message = banner ?: "",
-            tone = BannerTone.Success,
-            onDismiss = { banner = null },
-            autoDismissMs = 2500,
-        )
-
         if (state.bills.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x3l),

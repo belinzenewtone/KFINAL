@@ -10,3 +10,5 @@
 - When triaging Android crashes over ADB, clears logcat and force-stops/relaunches, then compares the current process PID against crash lines to distinguish fresh failures from stale ones left by earlier processes. Confidence: 0.6
 - Prefers working through a large remaining backlog sequentially — one screen/item at a time — rather than batching multiple screens or parallelizing the work. Confidence: 0.8
 - When aligning a ported screen to the reference, extends the underlying data layer first (entity fields, ViewModel form state, DAO query/update methods) to support the reference's full feature set before rewriting the screen's UI. Confidence: 0.7
+- Prefers the agent to proceed through a remaining backlog of tasks autonomously and continuously until everything is done, without pausing to ask for the user's go-ahead between items. Confidence: 0.8
+- When given a specific set of items to complete, prefers the agent to finish them and then report back, rather than asking for confirmation per item. Confidence: 0.6
