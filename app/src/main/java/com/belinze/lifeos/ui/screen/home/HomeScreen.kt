@@ -61,6 +61,7 @@ import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.compactCurrency
+import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDate
@@ -87,10 +88,12 @@ fun HomeScreen(
     navController:        NavHostController,
     transactionViewModel: TransactionViewModel = hiltViewModel(),
     taskViewModel:        TaskViewModel        = hiltViewModel(),
+    eventViewModel:       EventViewModel       = hiltViewModel(),
 ) {
-    val isDark    = isSystemInDarkTheme()
-    val txState   by transactionViewModel.uiState.collectAsState()
-    val taskState by taskViewModel.uiState.collectAsState()
+    val isDark       = isSystemInDarkTheme()
+    val txState      by transactionViewModel.uiState.collectAsState()
+    val taskState    by taskViewModel.uiState.collectAsState()
+    val eventState   by eventViewModel.uiState.collectAsState()
 
     // Derived metrics (computed from available state)
     val monthSpend  = txState.monthTotals?.expense ?: 0.0
@@ -218,7 +221,7 @@ fun HomeScreen(
                 // ── HomeMenuCard ──────────────────────────────────────────────
                 HomeMenuCard(
                     pendingTaskCount = taskState.pendingCount,
-                    nextEventTitle   = taskState.upcoming.firstOrNull()?.title,
+                    nextEventTitle   = eventState.nextEvent?.title,
                     onTasks          = { navController.navigate(Route.TASKS) },
                     onEvents         = { navController.navigate(Route.EVENTS) },
                     onInsights       = { navController.navigate(Route.INSIGHTS) },

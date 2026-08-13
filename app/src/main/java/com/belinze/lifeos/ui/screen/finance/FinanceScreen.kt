@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.finance
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -27,8 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -45,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,6 +68,7 @@ import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.util.compactCurrency
 import com.belinze.lifeos.viewmodel.BudgetViewModel
+import com.belinze.lifeos.viewmodel.PlannerViewModel
 import com.belinze.lifeos.viewmodel.SmsImportViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDate
@@ -92,14 +97,16 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceScreen(
-    navController:     NavHostController,
-    viewModel:         TransactionViewModel = hiltViewModel(),
-    smsImportViewModel: SmsImportViewModel = hiltViewModel(),
-    budgetViewModel:   BudgetViewModel     = hiltViewModel(),
+    navController:      NavHostController,
+    viewModel:          TransactionViewModel = hiltViewModel(),
+    smsImportViewModel: SmsImportViewModel  = hiltViewModel(),
+    budgetViewModel:    BudgetViewModel     = hiltViewModel(),
+    plannerViewModel:   PlannerViewModel    = hiltViewModel(),
 ) {
     val state        by viewModel.uiState.collectAsState()
     val smsState     by smsImportViewModel.uiState.collectAsState()
     val budgetState  by budgetViewModel.uiState.collectAsState()
+    val plannerState by plannerViewModel.uiState.collectAsState()
     val isDark       = isSystemInDarkTheme()
 
     // Top budget alert — mirrors RN Finance hero: show banner if any budget ≥ 80%
@@ -216,7 +223,7 @@ fun FinanceScreen(
                         )
                         ActionChip(
                             label   = "Export Data",
-                            icon    = Icons.Filled.FileDownload,
+                            icon    = Icons.Filled.FileUpload,
                             onClick = { navController.navigate(Route.EXPORT_DATA) },
                         )
                     }
@@ -256,17 +263,55 @@ fun FinanceScreen(
                 }
 
                 // ── Budget alert banner (≥ 80% of any budget used) ───────────
+                // Matches React: outlined card with icon + "Over/Approaching" headline +
+                // "X% used" subtitle + chevron; errorContainer vs primaryContainer bg.
                 if (alertBudget != null) {
                     item {
-                        InlineBanner(
-                            message  = "${alertBudget.budget.category.replaceFirstChar { it.uppercase() }} budget at ${(alertBudget.pct * 100).toInt()}% — ${formatCurrency(alertBudget.remaining)} remaining",
-                            tone     = BannerTone.Warning,
+                        val isOver      = alertBudget.pct >= 1.0f
+                        val bgColor     = if (isOver) MaterialTheme.colorScheme.errorContainer
+                                          else MaterialTheme.colorScheme.primaryContainer
+                        val accentColor = if (isOver) MaterialTheme.colorScheme.error
+                                          else MaterialTheme.colorScheme.primary
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
-                            action   = "View",
-                            onAction = { navController.navigate(Route.BUDGETS) },
-                        )
+                                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs)
+                                .clip(MaterialTheme.shapes.large)
+                                .border(1.dp, accentColor, MaterialTheme.shapes.large)
+                                .background(bgColor)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication        = ripple(color = accentColor.copy(0.12f)),
+                                ) { navController.navigate(Route.BUDGETS) }
+                                .padding(Spacing.base),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.base),
+                        ) {
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = null,
+                                tint     = accentColor,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text  = if (isOver) "Over budget" else "Approaching budget",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = accentColor,
+                                )
+                                Text(
+                                    text  = "${alertBudget.budget.category.replaceFirstChar { it.uppercase() }} is ${(alertBudget.pct * 100).toInt()}% used",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Icon(
+                                Icons.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
 
@@ -282,6 +327,44 @@ fun FinanceScreen(
                             action   = "Review",
                             onAction = { navController.navigate(Route.UNCATEGORIZED) },
                         )
+                    }
+                }
+
+                // ── Insights row (Budget / Fuliza / Fees) — above filters, matching React ─
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        // Budget remaining card
+                        val budgetRemaining = budgetState.budgets.sumOf { it.remaining }
+                        InsightCard(
+                            label   = "Budget",
+                            action  = "View",
+                            amount  = budgetRemaining,
+                            sub     = "${budgetState.budgets.size} guardrails",
+                            onClick = { navController.navigate(Route.BUDGETS) },
+                        )
+                        // Fuliza outstanding — from active loan records (matching React's
+                        // loans.filter(status==='active').reduce(draw_amount - total_repaid))
+                        val activeLoans       = plannerState.loans.filter { it.status == "active" }
+                        val fulizaOutstanding = activeLoans.sumOf { it.drawAmountKes - it.totalRepaidKes }
+                        InsightCard(
+                            label  = "Fuliza Outstanding",
+                            amount = fulizaOutstanding,
+                            sub    = "${activeLoans.size} open",
+                        )
+                        // Service charges / fees
+                        if (state.feeTotal > 0) {
+                            InsightCard(
+                                label  = "Service Charges",
+                                amount = state.feeTotal,
+                                sub    = "Airtime, Fuliza & subs",
+                            )
+                        }
                     }
                 }
 
@@ -315,46 +398,6 @@ fun FinanceScreen(
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
                     )
-                }
-
-                // ── Insights row (Budget / Fuliza / Fees) ─────────────────────
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    ) {
-                        // Budget remaining card
-                        val budgetRemaining = budgetState.budgets.sumOf { it.remaining }
-                        InsightCard(
-                            label  = "Budget",
-                            action = "View",
-                            amount = budgetRemaining,
-                            sub    = "${budgetState.budgets.size} guardrails",
-                            onClick = { navController.navigate(Route.BUDGETS) },
-                        )
-                        // Fuliza outstanding — transactions of type "fuliza"
-                        val fulizaOutstanding = remember(state.transactions) {
-                            state.transactions
-                                .filter { it.transactionType == "fuliza" }
-                                .sumOf { it.amount }
-                        }
-                        InsightCard(
-                            label  = "Fuliza Outstanding",
-                            amount = fulizaOutstanding,
-                            sub    = "${state.transactions.count { it.transactionType == "fuliza" }} open",
-                        )
-                        // Service charges / fees
-                        if (state.feeTotal > 0) {
-                            InsightCard(
-                                label  = "Service Charges",
-                                amount = state.feeTotal,
-                                sub    = "Airtime, Fuliza & subs",
-                            )
-                        }
-                    }
                 }
 
                 // ── Transactions header ───────────────────────────────────────
