@@ -1,5 +1,8 @@
 package com.belinze.lifeos.ui.screen.settings
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -85,6 +88,13 @@ fun SettingsScreen(
     var infoMessage by remember { mutableStateOf<String?>(null) }
     var showClearDialog by remember { mutableStateOf(false) }
     var fulizaVisible by remember { mutableStateOf(false) }
+    var smsGranted by remember { mutableStateOf(viewModel.hasSmsPermissions()) }
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { results ->
+        smsGranted = results.values.all { it }
+        if (smsGranted) infoMessage = "SMS permissions granted"
+    }
 
     Box(modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(
@@ -231,8 +241,12 @@ fun SettingsScreen(
             }
 
             SectionLabel("Import SMS")
-            if (!viewModel.hasSmsPermissions()) {
-                PermissionBanner(onClick = { infoMessage = "Grant SMS permissions in device Settings" })
+            if (!smsGranted) {
+                PermissionBanner(onClick = {
+                    smsPermissionLauncher.launch(
+                        arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
+                    )
+                })
             }
             GlassCard {
                 SettingsRow(
