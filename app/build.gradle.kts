@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 // Release signing (Phase 5): credentials live in keystore.properties (git-ignored).
-// CI provides the same file from secrets — see .github/workflows/release.yml.
+// CI provides the same file from secrets â€” see .github/workflows/release.yml.
 val keystorePropsFile = rootProject.file("keystore.properties")
 val keystoreProps = Properties().apply {
     if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
@@ -24,8 +24,8 @@ android {
         applicationId = "com.belinze.lifeos.compose"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -105,7 +105,7 @@ dependencies {
     implementation(libs.activity.compose)
     coreLibraryDesugaring(libs.desugar)
 
-    // Compose BOM — all Compose versions managed here
+    // Compose BOM â€” all Compose versions managed here
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     implementation(libs.compose.ui)
@@ -166,23 +166,24 @@ dependencies {
     // Immutable collections (stable Compose params, no @Stable annotation needed)
     implementation(libs.kotlinx.collections.immutable)
 
-    // SMS module (parser — source included, zero parser changes)
+    // SMS module (parser â€” source included, zero parser changes)
     implementation(project(":sms"))
 
-    // Baseline Profile — ART AOT compilation for cold-start improvement
+    // Baseline Profile â€” ART AOT compilation for cold-start improvement
     // The profileinstaller library enables the profile to be installed at app startup.
     // Run `./gradlew :baselineprofile:generateBaselineProfile` to regenerate the profile.
     implementation(libs.profileinstaller)
 
-    // Unit tests (Robolectric — Phase 3 migration test)
+    // Unit tests (Robolectric â€” Phase 3 migration test)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.robolectric)
     testImplementation(libs.coroutines.test)
 }
 
-// Static analysis (Phase 4) — shared YAML, strict gate
+// Static analysis (Phase 4) â€” shared YAML, strict gate
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.files("config/detekt/detekt.yml"))
 }
+
