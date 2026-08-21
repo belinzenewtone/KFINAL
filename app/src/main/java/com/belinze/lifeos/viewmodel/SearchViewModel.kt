@@ -85,6 +85,31 @@ class SearchViewModel
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    // Persisted for the lifetime of the ViewModel (nav back-stack entry) so
+    // recent searches survive navigation. Capped at MAX_RECENT in the screen.
+    private val _recentSearches = MutableStateFlow<ImmutableList<String>>(persistentListOf())
+    val recentSearches: StateFlow<ImmutableList<String>> = _recentSearches.asStateFlow()
+
+    fun addToRecent(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return
+        val updated = (_recentSearches.value.filter { it != trimmed } + trimmed)
+            .takeLast(10)
+            .reversed()
+            .toImmutableList()
+        _recentSearches.value = updated
+    }
+
+    fun removeFromRecent(query: String) {
+        _recentSearches.value = _recentSearches.value
+            .filter { it != query }
+            .toImmutableList()
+    }
+
+    fun clearRecent() {
+        _recentSearches.value = persistentListOf()
+    }
+
     init {
         _uiState
             .map { it.query }
@@ -100,7 +125,25 @@ class SearchViewModel
 
     fun setTab(tab: SearchTab) = _uiState.update { it.copy(activeTab = tab) }
 
-    fun clearQuery() = _uiState.update { SearchUiState() }
+    fun clearQuery() = _uiState.update { current ->
+        current.copy(
+            query        = "",
+            isLoading    = false,
+            transactions = persistentListOf(),
+            tasks        = persistentListOf(),
+            events       = persistentListOf(),
+            birthdays    = persistentListOf(),
+            anniversaries = persistentListOf(),
+            countdowns   = persistentListOf(),
+            budgets      = persistentListOf(),
+            recurring    = persistentListOf(),
+            bills        = persistentListOf(),
+            goals        = persistentListOf(),
+            incomes      = persistentListOf(),
+            loans        = persistentListOf(),
+            // activeTab preserved — user's tab selection should not reset on clear
+        )
+    }
 
     private fun clearResults() {
         _uiState.update { it.copy(

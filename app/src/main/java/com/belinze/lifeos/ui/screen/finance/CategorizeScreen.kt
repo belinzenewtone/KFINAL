@@ -168,7 +168,7 @@ fun CategorizeScreen(
                     viewModel.assignCategory(tx.id, cat)
                 })
             }
-            item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
+            // contentPadding above already handles the bottom nav safe area
         }
     }
 }

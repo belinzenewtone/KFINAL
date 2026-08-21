@@ -218,6 +218,15 @@ class TaskViewModel
         }
     }
 
+    fun reopen(id: String) {
+        viewModelScope.launch {
+            val entity = dao.getById(id) ?: return@launch
+            dao.update(entity.copy(status = "active", updatedAt = nowIso()))
+            Haptics.success()
+            loadPendingCount()
+        }
+    }
+
     fun softDelete(id: String) {
         viewModelScope.launch {
             dao.softDelete(id, nowIso())

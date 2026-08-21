@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -55,7 +56,12 @@ fun MerchantDetailScreen(
         onBack = { navController.popBackStack() },
         scrollable = false,
     ) {
-        if (state.transactions.isEmpty() && !state.isLoading) {
+        if (state.isLoading) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = androidx.compose.ui.Alignment.Center,
+            ) { CircularProgressIndicator() }
+        } else if (state.transactions.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x2l),
                 horizontalAlignment = Alignment.CenterHorizontally,

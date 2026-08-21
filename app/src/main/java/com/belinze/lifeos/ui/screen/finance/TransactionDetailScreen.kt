@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,16 +61,16 @@ fun TransactionDetailScreen(
     viewModel:      TransactionViewModel = hiltViewModel(),
 ) {
     val selectedTx by viewModel.selectedTransaction.collectAsStateWithLifecycle()
-    // The transaction is loaded into selectedTransaction via loadTransaction(id)
-    // in the LaunchedEffect below. With Paging 3 the Finance screen no longer
-    // holds a flat transactions list, so selectedTx is the single source of truth.
+    // With Paging 3 the Finance screen no longer holds a flat list, so we load
+    // by ID on entry. Track whether the load has resolved so we don't flash
+    // "not found" while the DB query is in-flight.
+    var isLoaded by remember { mutableStateOf(false) }
     val tx = selectedTx?.takeIf { it.id == transactionId }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Load by ID whenever we enter this screen — ensures the detail is always
-    // available regardless of which paginated page was loaded in Finance.
     LaunchedEffect(transactionId) {
         viewModel.loadTransaction(transactionId)
+        isLoaded = true
     }
     val context = LocalContext.current
 
@@ -103,9 +104,21 @@ fun TransactionDetailScreen(
         },
         scrollable = false,
     ) {
-        if (tx == null) {
-            Text("Transaction not found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            return@PageScaffold
+        when {
+            !isLoaded || (tx == null && selectedTx == null) -> {
+                // Still loading — show spinner instead of "not found"
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+                return@PageScaffold
+            }
+            tx == null -> {
+                Text("Transaction not found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                return@PageScaffold
+            }
         }
 
         val categoryColor = categoryColor(tx.category ?: "")

@@ -530,17 +530,17 @@ fun ProfileScreen(
                 }
             }
         }
-        } // end outer Column
-
-        // Banner overlaid so it doesn't shift scrollable content
-        TopBanner(
-            visible       = successMessage != null,
-            message       = successMessage ?: "",
-            tone          = BannerTone.Success,
-            onDismiss     = { successMessage = null },
-            autoDismissMs = 3000,
-        )
     }
+
+    // Banner overlaid so it doesn't shift scrollable content — shown regardless of photo viewer state
+    TopBanner(
+        visible       = successMessage != null,
+        message       = successMessage ?: "",
+        tone          = BannerTone.Success,
+        onDismiss     = { successMessage = null },
+        autoDismissMs = 3000,
+    )
+    } // end Box
 }
 
 @Composable

@@ -98,15 +98,8 @@ fun SearchScreen(
     viewModel:     SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val recentSearches = remember { mutableStateListOf<String>() }
-
-    fun addToRecent(query: String) {
-        val trimmed = query.trim()
-        if (trimmed.isBlank()) return
-        recentSearches.remove(trimmed)
-        recentSearches.add(0, trimmed)
-        while (recentSearches.size > MAX_RECENT) recentSearches.removeAt(recentSearches.lastIndex)
-    }
+    // Backed by ViewModel so they survive navigation (not wiped on back+return).
+    val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
 
     PageScaffold(
         title    = "Search",
@@ -120,7 +113,7 @@ fun SearchScreen(
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { addToRecent(state.query) }),
+            keyboardActions = KeyboardActions(onSearch = { viewModel.addToRecent(state.query) }),
             modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
         )
 
@@ -168,7 +161,7 @@ fun SearchScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f),
                         )
-                        TextButton(onClick = { recentSearches.clear() }) {
+                        TextButton(onClick = { viewModel.clearRecent() }) {
                             Text("Clear")
                         }
                     }
@@ -178,7 +171,7 @@ fun SearchScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     viewModel.updateQuery(recent)
-                                    addToRecent(recent)
+                                    viewModel.addToRecent(recent)
                                 }
                                 .padding(vertical = Spacing.sm),
                             verticalAlignment = Alignment.CenterVertically,

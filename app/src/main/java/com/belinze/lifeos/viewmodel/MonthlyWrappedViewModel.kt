@@ -67,7 +67,8 @@ class MonthlyWrappedViewModel
     private val zone    = ZoneId.systemDefault()
     private val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    init { loadMonth(0) }
+    // Screen's LaunchedEffect calls setMonthOffset(initialMonthOffset) — that is
+    // the single load trigger. No init load to avoid flashing the wrong month.
 
     fun setMonthOffset(offset: Int) {
         if (offset > 0) return              // future not allowed
@@ -85,7 +86,7 @@ class MonthlyWrappedViewModel
                 val firstDay    = targetMonth.atDay(1)
                 val lastDay     = targetMonth.atEndOfMonth()
 
-                val startStr = firstDay.format(dateFmt)
+                val startStr = firstDay.format(dateFmt) + "T00:00:00"
                 val endStr   = lastDay.format(dateFmt) + "T23:59:59"
 
                 val totalSpend   = transactionDao.getSpendTotalInRange(startStr, endStr)

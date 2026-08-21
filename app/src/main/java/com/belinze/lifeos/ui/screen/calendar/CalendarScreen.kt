@@ -160,6 +160,7 @@ fun CalendarScreen(
 
     val allTasks = taskState.tasks
     val pendingCount = allTasks.count { it.status == "active" }
+    val doingCount   = allTasks.count { it.status == "doing" }
     val doneCount = allTasks.count { it.status == "completed" }
     val filteredTasks = if (tasksQuery.isBlank()) {
         allTasks
@@ -377,7 +378,7 @@ fun CalendarScreen(
                     ) {
                         item {
                             Text(
-                                "$pendingCount Pending · 0 Doing · $doneCount Done",
+                                "$pendingCount Pending · $doingCount Doing · $doneCount Done",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

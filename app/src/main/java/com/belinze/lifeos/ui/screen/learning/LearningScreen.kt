@@ -346,27 +346,17 @@ private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            // LE-5: progress bar + chip
-            if (!completed) {
-                Spacer(Modifier.height(Spacing.sm))
-                LinearProgressIndicator(
-                    progress = { 0f },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = color,
-                    trackColor = MaterialTheme.colorScheme.outlineVariant,
-                )
-                Spacer(Modifier.height(4.dp))
-                AssistChip(
-                    onClick = onTap,
-                    label = { Text("Start", style = MaterialTheme.typography.labelSmall) },
-                )
-            } else {
-                Spacer(Modifier.height(4.dp))
-                AssistChip(
-                    onClick = onTap,
-                    label = { Text("Mark Incomplete", style = MaterialTheme.typography.labelSmall) },
-                )
-            }
+            // LE-5: action chip — toggles completion in both directions
+            Spacer(Modifier.height(4.dp))
+            AssistChip(
+                onClick = onTap,
+                label = {
+                    Text(
+                        if (completed) "Mark Incomplete" else "Mark Complete",
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                },
+            )
         } // end Column padding
     }
 }

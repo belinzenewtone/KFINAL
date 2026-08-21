@@ -112,9 +112,9 @@ class WeekReviewViewModel
                 val uncatCount   = transactionDao.countUncategorizedInRange(startStr, endStr)
                 val fulizaCount  = transactionDao.countFulizaInRange(startStr, endStr)
 
-                // ─ Tasks ─
+                // ─ Tasks — scope both to the same week for a fair rate ─
                 val tasksDone    = taskDao.countCompletedSince(startStr)
-                val tasksPending = taskDao.countPending()
+                val tasksPending = taskDao.countPendingCreatedSince(startStr)
 
                 // ─ DOW averages (4 prior complete weeks) ─
                 val dowAvg = computeDowAverages(monThis)

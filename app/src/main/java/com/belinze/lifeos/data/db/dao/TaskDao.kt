@@ -47,4 +47,13 @@ interface TaskDao {
           AND completed_at >= :since
     """)
     suspend fun countCompletedSince(since: String): Int
+
+    /** Count active (pending) tasks created on or after [since] — same week scope as countCompletedSince. */
+    @Query("""
+        SELECT COUNT(*) FROM tasks
+        WHERE deleted_at IS NULL
+          AND status = 'active'
+          AND created_at >= :since
+    """)
+    suspend fun countPendingCreatedSince(since: String): Int
 }

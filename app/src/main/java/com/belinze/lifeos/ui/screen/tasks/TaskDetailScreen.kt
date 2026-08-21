@@ -124,7 +124,9 @@ fun TaskDetailScreen(
             }
 
             Button(
-                onClick = { viewModel.complete(task.id) },
+                onClick = {
+                    if (isCompleted) viewModel.reopen(task.id) else viewModel.complete(task.id)
+                },
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
             ) {
                 Text(if (isCompleted) "Mark as Active" else "Mark as Completed")

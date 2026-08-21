@@ -133,19 +133,19 @@ fun TasksScreen(
                 if (urgent.isNotEmpty()) {
                     item { PrioritySectionHeader("Urgent", MaterialTheme.colorScheme.error, urgent.size) }
                     items(urgent, key = { it.id }) { task ->
-                        TaskCard(task, MaterialTheme.colorScheme.error, viewModel)
+                        TaskCard(task, MaterialTheme.colorScheme.error, viewModel, navController)
                     }
                 }
                 if (important.isNotEmpty()) {
                     item { PrioritySectionHeader("Important", WARNING, important.size) }
                     items(important, key = { it.id }) { task ->
-                        TaskCard(task, WARNING, viewModel)
+                        TaskCard(task, WARNING, viewModel, navController)
                     }
                 }
                 if (other.isNotEmpty()) {
                     item { PrioritySectionHeader("Other", MaterialTheme.colorScheme.primary, other.size) }
                     items(other, key = { it.id }) { task ->
-                        TaskCard(task, MaterialTheme.colorScheme.primary, viewModel)
+                        TaskCard(task, MaterialTheme.colorScheme.primary, viewModel, navController)
                     }
                 }
                 if (completed.isNotEmpty()) {
@@ -177,7 +177,7 @@ fun TasksScreen(
                     }
                     if (completedExpanded) {
                         items(completed, key = { it.id }) { task ->
-                            TaskCard(task, MaterialTheme.colorScheme.outline, viewModel)
+                            TaskCard(task, MaterialTheme.colorScheme.outline, viewModel, navController)
                         }
                     }
                 }
@@ -208,6 +208,7 @@ private fun TaskCard(
     task: TaskEntity,
     color: Color,
     viewModel: TaskViewModel,
+    navController: NavHostController,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isTimerActive = state.activeTimerTaskId == task.id
@@ -259,6 +260,7 @@ private fun TaskCard(
     ) {
         GlassCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
+            onClick = { navController.navigate("task_detail/${task.id}") },
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

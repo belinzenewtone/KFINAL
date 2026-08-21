@@ -191,7 +191,7 @@ fun EventFormScreen(
                         onSave = {
                             viewModel.saveForm {
                                 scope.launch {
-                                    successMsg = if (isEdit) "Event updated" else "Event added"
+                                    successMsg = if (isEdit) "${typeLabel(form.type)} updated" else "${typeLabel(form.type)} added"
                                     delay(1200)
                                     navController.popBackStack()
                                 }
@@ -312,7 +312,7 @@ fun EventFormScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    viewModel.softDelete(form.id.orEmpty())
+                    form.id?.takeIf { it.isNotEmpty() }?.let { viewModel.softDelete(it) }
                     navController.popBackStack()
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },

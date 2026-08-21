@@ -60,7 +60,11 @@ fun FeeAnalyticsScreen(
         onBack = { navController.popBackStack() },
         scrollable = false,
     ) {
-        if (!state.isLoading && state.categories.isEmpty()) {
+        if (state.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                androidx.compose.material3.CircularProgressIndicator()
+            }
+        } else if (!state.isLoading && state.categories.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x2l),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -168,7 +172,7 @@ private fun FeeBar(cat: FeeCategoryTotal, maxTotal: Double) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                cat.category.orEmpty().replaceFirstChar { it.uppercase() }.lowercase(),
+                cat.category.orEmpty().lowercase().replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )

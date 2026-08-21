@@ -50,7 +50,7 @@ fun WeekReviewScreen(
     val firstName = pref.profileName.split(" ").firstOrNull()?.ifBlank { null } ?: "there"
     val greeting  = "${state.greeting}, $firstName"
 
-    LaunchedEffect(Unit) { viewModel.load() }
+    // ViewModel.init already calls load(); no second launch needed.
 
     PageScaffold(
         title      = "Weekly Review",

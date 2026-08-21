@@ -456,9 +456,11 @@ fun FinanceScreen(
                         )
                         if (feeTotal > 0) {
                             InsightCard(
-                                label  = "Service Charges",
-                                amount = feeTotal,
-                                sub    = "Airtime, Fuliza & subs",
+                                label   = "Service Charges",
+                                action  = "View",
+                                amount  = feeTotal,
+                                sub     = "Airtime, Fuliza & subs",
+                                onClick = { navController.navigate(Route.FEE_ANALYTICS) },
                             )
                         }
                     }

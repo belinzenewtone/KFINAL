@@ -97,7 +97,12 @@ fun TaskFormScreen(
     var showDeadlinePicker by remember { mutableStateOf(false) }
     var showDeadlineTimePicker by remember { mutableStateOf(false) }
     val deadlinePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = System.currentTimeMillis(),
+        initialSelectedDateMillis = formState.deadline?.take(10)?.let {
+            runCatching {
+                java.time.LocalDate.parse(it)
+                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+            }.getOrNull()
+        } ?: System.currentTimeMillis(),
     )
 
     if (showDeadlinePicker) {

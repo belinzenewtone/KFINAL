@@ -63,7 +63,6 @@ class LearningViewModel
 
     fun toggleCompleted(id: String, currentlyCompleted: Boolean) {
         viewModelScope.launch {
-            val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
             dao.setCompleted(id = id, done = if (currentlyCompleted) 0 else 1)
         }
     }
