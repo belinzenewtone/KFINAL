@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.TopBanner
@@ -115,7 +116,7 @@ fun EventFormScreen(
     navController: NavHostController,
     viewModel:     EventViewModel = hiltViewModel(),
 ) {
-    val form  by viewModel.formState.collectAsState()
+    val form  by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !eventId.isNullOrEmpty()
     val scope  = rememberCoroutineScope()
 

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -14,6 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ReviewQueueViewModel — full parity with ReviewQueueScreen.tsx
@@ -35,14 +39,16 @@ private fun isPendingOutcome(outcome: String): Boolean =
     !outcome.contains("dismissed") &&
     !outcome.contains("retried")
 
+@Immutable
 data class ReviewQueueUiState(
-    val isLoading:   Boolean                    = true,
-    val entries:     List<SmsService.AuditEntry> = emptyList(),
+    val isLoading:   Boolean                             = true,
+    val entries:     ImmutableList<SmsService.AuditEntry> = persistentListOf(),
     val dismissed:   Set<Long>                  = emptySet(),  // ids hidden without recovery
     val banner:      BannerState?               = null,
     val error:       String?                    = null,
 )
 
+@Immutable
 data class BannerState(
     val message:  String,
     val isSuccess: Boolean,
@@ -79,7 +85,7 @@ class ReviewQueueViewModel
             try {
                 val all = smsService.getAuditLog(500)
                 val pending = all.filter { isPendingOutcome(it.outcome) }
-                _uiState.update { it.copy(isLoading = false, entries = pending) }
+                _uiState.update { it.copy(isLoading = false, entries = pending.toImmutableList()) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }

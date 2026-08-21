@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
@@ -69,7 +70,7 @@ fun BudgetsScreen(
         }
     }
 
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val active       = remember(state.budgets) { state.budgets.filter { it.budget.isActive != 0 } }
     val totalLimit   = remember(active)        { active.sumOf { it.budget.limitAmount } }
     val totalSpend   = remember(active)        { active.sumOf { it.spend } }

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.LearningSessionDao
@@ -14,6 +15,9 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LearningViewModel — LE-1 / LE-10
@@ -30,8 +34,9 @@ class LearningViewModel
     constructor(
     private val dao: LearningSessionDao,
 ) : ViewModel() {
+    @Immutable
     data class UiState(
-        val sessions:     List<LearningSessionEntity> = emptyList(),
+        val sessions:     ImmutableList<LearningSessionEntity> = persistentListOf(),
         val monthlyHours: Float                       = 0f,
         val isLoading:    Boolean                     = true,
     )
@@ -46,7 +51,7 @@ class LearningViewModel
                 dao.observeMonthlyMinutes(),
             ) { sessions, minutes ->
                 UiState(
-                    sessions     = sessions,
+                    sessions     = sessions.toImmutableList(),
                     monthlyHours = minutes / 60f,
                     isLoading    = false,
                 )

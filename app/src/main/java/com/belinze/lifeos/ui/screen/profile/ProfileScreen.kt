@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
@@ -115,7 +116,7 @@ fun ProfileScreen(
     viewModel:          ProfileViewModel  = hiltViewModel(),
     settingsViewModel:  SettingsViewModel = hiltViewModel(),
 ) {
-    val prefState by viewModel.prefState.collectAsState()
+    val prefState by viewModel.prefState.collectAsStateWithLifecycle()
     val context    = LocalContext.current
 
     var successMessage by remember { mutableStateOf<String?>(null) }

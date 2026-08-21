@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -14,6 +15,9 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MonthlyWrappedViewModel — full parity with MonthlyWrappedScreen.tsx
@@ -21,26 +25,28 @@ import javax.inject.Inject
 // monthOffset: 0 = current month, -1 = last month, -2 = two months ago, …
 // ─────────────────────────────────────────────────────────────────────────────
 
+@Immutable
 data class TopCategoryRow(
     val rank:     Int,       // 1, 2, 3
     val category: String,
     val total:    Double,
 )
 
+@Immutable
 data class MonthlyWrappedUiState(
-    val isLoading:          Boolean              = true,
-    val monthLabel:         String               = "",    // "August" or "August 2024"
-    val monthOffset:        Int                  = 0,
-    val minMonthOffset:     Int                  = -60,   // nav limit (oldest data)
-    val totalSpend:         Double               = 0.0,
-    val totalIncome:        Double               = 0.0,
-    val txCount:            Int                  = 0,
-    val activeDays:         Int                  = 0,
-    val totalDaysInMonth:   Int                  = 31,
-    val feesTotal:          Double               = 0.0,
-    val fulizaTotal:        Double               = 0.0,
-    val fulizaCount:        Int                  = 0,
-    val topCategories:      List<TopCategoryRow> = emptyList(),
+    val isLoading:          Boolean                      = true,
+    val monthLabel:         String                       = "",    // "August" or "August 2024"
+    val monthOffset:        Int                          = 0,
+    val minMonthOffset:     Int                          = -60,   // nav limit (oldest data)
+    val totalSpend:         Double                       = 0.0,
+    val totalIncome:        Double                       = 0.0,
+    val txCount:            Int                          = 0,
+    val activeDays:         Int                          = 0,
+    val totalDaysInMonth:   Int                          = 31,
+    val feesTotal:          Double                       = 0.0,
+    val fulizaTotal:        Double                       = 0.0,
+    val fulizaCount:        Int                          = 0,
+    val topCategories:      ImmutableList<TopCategoryRow> = persistentListOf(),
     val topMerchantName:    String               = "",
     val topMerchantSpend:   Double               = 0.0,
     val biggestAmount:      Double               = 0.0,
@@ -130,7 +136,7 @@ class MonthlyWrappedViewModel
                         feesTotal       = feesTotal,
                         fulizaTotal     = fulizaTotal,
                         fulizaCount     = fulizaCount,
-                        topCategories   = top3,
+                        topCategories   = top3.toImmutableList(),
                         topMerchantName  = topMerchants.firstOrNull()?.merchant ?: "",
                         topMerchantSpend = topMerchants.firstOrNull()?.total ?: 0.0,
                         biggestAmount    = biggestSpend?.amount ?: 0.0,

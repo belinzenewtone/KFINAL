@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TaskDao
@@ -18,6 +19,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TaskViewModel
@@ -31,10 +35,11 @@ enum class TaskFilter { All, Active, Completed, Overdue }
 
 enum class TaskSort { Deadline, CreatedAt, Priority }
 
+@Immutable
 data class TaskUiState(
-    val isLoading:  Boolean           = true,
-    val tasks:      List<TaskEntity>  = emptyList(),
-    val upcoming:   List<TaskEntity>  = emptyList(),  // Home widget feed
+    val isLoading:  Boolean                    = true,
+    val tasks:      ImmutableList<TaskEntity>  = persistentListOf(),
+    val upcoming:   ImmutableList<TaskEntity>  = persistentListOf(),  // Home widget feed
     val filter:     TaskFilter        = TaskFilter.Active,
     val sort:       TaskSort          = TaskSort.Deadline,
     val pendingCount: Int             = 0,
@@ -45,6 +50,7 @@ data class TaskUiState(
     val timerBaseSeconds: Int         = 0,        // time_spent_seconds already saved in DB
 )
 
+@Immutable
 data class TaskFormState(
     val id:          String?  = null,
     val title:       String   = "",
@@ -101,7 +107,7 @@ class TaskViewModel
                 filtered.sortedBy { order[it.priority] ?: 99 }
             }
         }
-        _uiState.update { it.copy(isLoading = false, tasks = sorted) }
+        _uiState.update { it.copy(isLoading = false, tasks = sorted.toImmutableList()) }
     }
 
     fun setFilter(f: TaskFilter) {
@@ -125,7 +131,7 @@ class TaskViewModel
                 .plusDays(7).atStartOfDay(java.time.ZoneId.systemDefault())
                 .format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             val tasks = dao.getUpcoming(until, 5)
-            _uiState.update { it.copy(upcoming = tasks) }
+            _uiState.update { it.copy(upcoming = tasks.toImmutableList()) }
         }
     }
 

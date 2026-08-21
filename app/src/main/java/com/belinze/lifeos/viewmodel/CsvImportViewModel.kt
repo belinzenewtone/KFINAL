@@ -1,6 +1,7 @@
 package com.belinze.lifeos.viewmodel
 
 import android.net.Uri
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -13,7 +14,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
+@Immutable
 data class CsvColumnMapping(
     val amount: String = "",
     val merchant: String = "",
@@ -24,6 +29,7 @@ data class CsvColumnMapping(
     val description: String = "",
 )
 
+@Immutable
 data class CsvImportCandidate(
     val amount: Double,
     val merchant: String,
@@ -31,7 +37,7 @@ data class CsvImportCandidate(
     val category: String,
     val type: String,
     val description: String?,
-    val errors: List<String> = emptyList(),
+    val errors: ImmutableList<String> = persistentListOf(),
 )
 
 /**
@@ -43,12 +49,13 @@ class CsvImportViewModel
     constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
+    @Immutable
     data class CsvImportUiState(
         val isLoading:  Boolean = false,
-        val headers:    List<String> = emptyList(),
+        val headers:    ImmutableList<String> = persistentListOf(),
         val mapping:    CsvColumnMapping = CsvColumnMapping(),
-        val valid:      List<CsvImportCandidate> = emptyList(),
-        val invalid:    List<CsvImportCandidate> = emptyList(),
+        val valid:      ImmutableList<CsvImportCandidate> = persistentListOf(),
+        val invalid:    ImmutableList<CsvImportCandidate> = persistentListOf(),
         val imported:   Int = 0,
         val error:      String? = null,
         val done:       Boolean = false,
@@ -168,17 +175,17 @@ class CsvImportViewModel
                     else -> "expense"
                 },
                 description = row.getOrNull(descIdx)?.trim()?.ifBlank { null },
-                errors = errors,
+                errors = errors.toImmutableList(),
             )
             }
         }
 
         _uiState.value = CsvImportUiState(
             isLoading = false,
-            headers = headers,
+            headers = headers.toImmutableList(),
             mapping = mapping,
-            valid = candidates.filter { it.errors.isEmpty() },
-            invalid = candidates.filter { it.errors.isNotEmpty() },
+            valid = candidates.filter { it.errors.isEmpty() }.toImmutableList(),
+            invalid = candidates.filter { it.errors.isNotEmpty() }.toImmutableList(),
         )
     }
 

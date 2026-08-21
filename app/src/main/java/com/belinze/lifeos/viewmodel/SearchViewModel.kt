@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.BudgetDao
@@ -30,6 +31,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 enum class SearchTab {
     All,
@@ -47,22 +51,23 @@ enum class SearchTab {
     Loans,
 }
 
+@Immutable
 data class SearchUiState(
-    val query:         String                     = "",
-    val activeTab:     SearchTab                  = SearchTab.All,
-    val isLoading:     Boolean                    = false,
-    val transactions:  List<TransactionEntity>    = emptyList(),
-    val tasks:         List<TaskEntity>           = emptyList(),
-    val events:        List<EventEntity>          = emptyList(),
-    val birthdays:     List<EventEntity>          = emptyList(),
-    val anniversaries: List<EventEntity>          = emptyList(),
-    val countdowns:    List<EventEntity>          = emptyList(),
-    val budgets:       List<BudgetEntity>         = emptyList(),
-    val recurring:     List<RecurringRuleEntity>  = emptyList(),
-    val bills:         List<BillEntity>           = emptyList(),
-    val goals:         List<GoalEntity>           = emptyList(),
-    val incomes:       List<IncomeEntity>         = emptyList(),
-    val loans:         List<FulizaLoanEntity>     = emptyList(),
+    val query:         String                              = "",
+    val activeTab:     SearchTab                           = SearchTab.All,
+    val isLoading:     Boolean                             = false,
+    val transactions:  ImmutableList<TransactionEntity>   = persistentListOf(),
+    val tasks:         ImmutableList<TaskEntity>           = persistentListOf(),
+    val events:        ImmutableList<EventEntity>          = persistentListOf(),
+    val birthdays:     ImmutableList<EventEntity>          = persistentListOf(),
+    val anniversaries: ImmutableList<EventEntity>          = persistentListOf(),
+    val countdowns:    ImmutableList<EventEntity>          = persistentListOf(),
+    val budgets:       ImmutableList<BudgetEntity>         = persistentListOf(),
+    val recurring:     ImmutableList<RecurringRuleEntity>  = persistentListOf(),
+    val bills:         ImmutableList<BillEntity>           = persistentListOf(),
+    val goals:         ImmutableList<GoalEntity>           = persistentListOf(),
+    val incomes:       ImmutableList<IncomeEntity>         = persistentListOf(),
+    val loans:         ImmutableList<FulizaLoanEntity>     = persistentListOf(),
 )
 
 @OptIn(FlowPreview::class)
@@ -100,18 +105,18 @@ class SearchViewModel
     private fun clearResults() {
         _uiState.update { it.copy(
             isLoading = false,
-            transactions = emptyList(),
-            tasks = emptyList(),
-            events = emptyList(),
-            birthdays = emptyList(),
-            anniversaries = emptyList(),
-            countdowns = emptyList(),
-            budgets = emptyList(),
-            recurring = emptyList(),
-            bills = emptyList(),
-            goals = emptyList(),
-            incomes = emptyList(),
-            loans = emptyList(),
+            transactions = persistentListOf(),
+            tasks = persistentListOf(),
+            events = persistentListOf(),
+            birthdays = persistentListOf(),
+            anniversaries = persistentListOf(),
+            countdowns = persistentListOf(),
+            budgets = persistentListOf(),
+            recurring = persistentListOf(),
+            bills = persistentListOf(),
+            goals = persistentListOf(),
+            incomes = persistentListOf(),
+            loans = persistentListOf(),
         ) }
     }
 
@@ -144,18 +149,18 @@ class SearchViewModel
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    transactions = txs,
-                    tasks = tasks,
-                    events = events.filter { e -> e.type == "event" },
-                    birthdays = events.filter { e -> e.type == "birthday" },
-                    anniversaries = events.filter { e -> e.type == "anniversary" },
-                    countdowns = events.filter { e -> e.type == "countdown" },
-                    budgets = budgets,
-                    incomes = incomes,
-                    recurring = recurring,
-                    bills = bills,
-                    goals = goals,
-                    loans = loans,
+                    transactions = txs.toImmutableList(),
+                    tasks = tasks.toImmutableList(),
+                    events = events.filter { e -> e.type == "event" }.toImmutableList(),
+                    birthdays = events.filter { e -> e.type == "birthday" }.toImmutableList(),
+                    anniversaries = events.filter { e -> e.type == "anniversary" }.toImmutableList(),
+                    countdowns = events.filter { e -> e.type == "countdown" }.toImmutableList(),
+                    budgets = budgets.toImmutableList(),
+                    incomes = incomes.toImmutableList(),
+                    recurring = recurring.toImmutableList(),
+                    bills = bills.toImmutableList(),
+                    goals = goals.toImmutableList(),
+                    loans = loans.toImmutableList(),
                 )
             }
         }

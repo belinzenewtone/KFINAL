@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.EventDao
@@ -21,6 +22,9 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EventViewModel
@@ -32,9 +36,10 @@ import javax.inject.Inject
 /** Calendar view modes matching CalendarScreen tabs */
 enum class CalendarView { Month, Week, Agenda }
 
+@Immutable
 data class EventUiState(
-    val isLoading:    Boolean           = true,
-    val events:       List<EventEntity> = emptyList(),
+    val isLoading:    Boolean                    = true,
+    val events:       ImmutableList<EventEntity> = persistentListOf(),
     val selectedDay:  LocalDate         = LocalDate.now(),
     val calendarView: CalendarView      = CalendarView.Month,
     val nextEvent:    EventEntity?      = null,
@@ -55,6 +60,7 @@ data class EventUiState(
  * - [countdownReminderTime] "HH:mm" — for countdown "Remind at"
  * - [remindBefore] countdown: "Remind 3 days before" toggle
  */
+@Immutable
 data class EventFormState(
     val id:                   String?      = null,
     val type:                 String       = "event",   // task|event|birthday|anniversary|countdown
@@ -71,11 +77,11 @@ data class EventFormState(
     val repeatEndDate:        String?      = null,
     // ─ Event-specific ─
     val location:             String       = "",
-    val guests:               List<String> = emptyList(),
+    val guests:               ImmutableList<String> = persistentListOf(),
     val timeZoneId:           String       = ZoneId.systemDefault().id,
     val kind:                 String       = "other",       // event category dropdown
     val importance:           String       = "medium",      // priority
-    val reminderOffsets:      List<Int>    = emptyList(),   // minutes-before list
+    val reminderOffsets:      ImmutableList<Int> = persistentListOf(),   // minutes-before list
     val alarmEnabled:         Boolean      = false,
     // ─ Birthday ─
     val addYear:              Boolean      = false,
@@ -106,7 +112,7 @@ class EventViewModel
 
     init {
         dao.observeAll()
-            .onEach { all -> _uiState.update { it.copy(isLoading = false, events = all) } }
+            .onEach { all -> _uiState.update { it.copy(isLoading = false, events = all.toImmutableList()) } }
             .launchIn(viewModelScope)
 
         loadNextEvent()
@@ -186,21 +192,21 @@ class EventViewModel
             if (email.isBlank() || s.guests.contains(email)) {
                 s
             } else {
-                s.copy(guests = s.guests + email)
+                s.copy(guests = (s.guests + email).toImmutableList())
             }
         }
     }
 
     fun removeGuest(email: String) =
-        _formState.update { it.copy(guests = it.guests.filter { g -> g != email }) }
+        _formState.update { it.copy(guests = it.guests.filter { g -> g != email }.toImmutableList()) }
 
     fun toggleReminderOffset(minutesBefore: Int) {
         _formState.update { s ->
             val current = s.reminderOffsets
             val updated = if (current.contains(minutesBefore)) {
-                current.filter { it != minutesBefore }
+                current.filter { it != minutesBefore }.toImmutableList()
             } else {
-                (current + minutesBefore).sorted()
+                (current + minutesBefore).sorted().toImmutableList()
             }
             s.copy(reminderOffsets = updated)
         }
@@ -257,11 +263,11 @@ class EventViewModel
             repeatRule           = e.repeatRule,
             repeatEndDate        = e.repeatEndDate,
             location             = e.location ?: "",
-            guests               = parseJsonStringArray(e.guests),
+            guests               = parseJsonStringArray(e.guests).toImmutableList(),
             timeZoneId           = e.timeZoneId,
             kind                 = e.kind,
             importance           = e.importance,
-            reminderOffsets      = offsets,
+            reminderOffsets      = offsets.toImmutableList(),
             alarmEnabled         = e.alarmEnabled != 0,
             addYear              = e.reminderMinutesBefore != null && e.type == "birthday",
             countdownReminderTime = if (remTimeMinutes != null) {

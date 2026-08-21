@@ -29,6 +29,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+
+        buildConfigField(
+            "String",
+            "OTA_MANIFEST_URL",
+            "\"https://raw.githubusercontent.com/belinzenewtone/KFINAL/master/ota/manifest.json\"",
+        )
     }
 
     signingConfigs {
@@ -157,8 +163,16 @@ dependencies {
     // CSV
     implementation(libs.opencsv)
 
+    // Immutable collections (stable Compose params, no @Stable annotation needed)
+    implementation(libs.kotlinx.collections.immutable)
+
     // SMS module (parser — source included, zero parser changes)
     implementation(project(":sms"))
+
+    // Baseline Profile — ART AOT compilation for cold-start improvement
+    // The profileinstaller library enables the profile to be installed at app startup.
+    // Run `./gradlew :baselineprofile:generateBaselineProfile` to regenerate the profile.
+    implementation(libs.profileinstaller)
 
     // Unit tests (Robolectric — Phase 3 migration test)
     testImplementation(libs.kotlin.test)

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferences
@@ -32,6 +33,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AssistantViewModel — Phase 6: full keyword router
@@ -45,6 +49,7 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Displayed message (combines DB entity + in-flight state). */
+@Immutable
 data class ChatMessage(
     val id:          String,
     val role:        String,   // "user" | "assistant"
@@ -52,12 +57,13 @@ data class ChatMessage(
     val isStreaming: Boolean = false,
     val createdAt:   String  = nowIso(),
     // AS-1: structured action chips derived from response content
-    val actions:     List<String> = emptyList(),
+    val actions:     ImmutableList<String> = persistentListOf(),
 )
 
+@Immutable
 data class AssistantUiState(
     val isLoading:      Boolean          = false,
-    val messages:       List<ChatMessage> = emptyList(),
+    val messages:       ImmutableList<ChatMessage> = persistentListOf(),
     val inputText:      String           = "",
     val conversationId: String          = DEFAULT_CONVERSATION_ID,
     val error:          String?          = null,
@@ -115,7 +121,7 @@ class AssistantViewModel
         assistantDao.observeConversation(DEFAULT_CONVERSATION_ID)
             .onEach { entities ->
                 _uiState.update { s ->
-                    s.copy(messages = entities.map { it.toChatMessage() })
+                    s.copy(messages = entities.map { it.toChatMessage() }.toImmutableList())
                 }
             }
             .launchIn(viewModelScope)
@@ -162,7 +168,7 @@ class AssistantViewModel
     fun clearConversation() {
         viewModelScope.launch {
             assistantDao.clearConversation(DEFAULT_CONVERSATION_ID, nowIso())
-            _uiState.update { it.copy(messages = emptyList()) }
+            _uiState.update { it.copy(messages = persistentListOf()) }
         }
     }
 

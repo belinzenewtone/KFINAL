@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -65,7 +66,7 @@ fun BudgetFormScreen(
     navController: NavHostController,
     viewModel:     BudgetViewModel = hiltViewModel(),
 ) {
-    val form         by viewModel.formState.collectAsState()
+    val form         by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit        = !budgetId.isNullOrEmpty()
     val scope         = rememberCoroutineScope()
 

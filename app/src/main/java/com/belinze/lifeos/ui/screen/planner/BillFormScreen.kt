@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -65,7 +66,7 @@ fun BillFormScreen(
     navController: NavHostController,
     viewModel:     PlannerViewModel = hiltViewModel(),
 ) {
-    val form by viewModel.billForm.collectAsState()
+    val form by viewModel.billForm.collectAsStateWithLifecycle()
     val isEdit = !billId.isNullOrEmpty()
     val scope = rememberCoroutineScope()
     // CC-2: delete confirmation

@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FrostCard
@@ -89,10 +90,10 @@ fun HomeScreen(
     profileViewModel:     ProfileViewModel     = hiltViewModel(),
 ) {
     val isDark       = isSystemInDarkTheme()
-    val txState      by transactionViewModel.uiState.collectAsState()
-    val taskState    by taskViewModel.uiState.collectAsState()
-    val eventState   by eventViewModel.uiState.collectAsState()
-    val prefState    by profileViewModel.prefState.collectAsState()
+    val txState      by transactionViewModel.uiState.collectAsStateWithLifecycle()
+    val taskState    by taskViewModel.uiState.collectAsStateWithLifecycle()
+    val eventState   by eventViewModel.uiState.collectAsStateWithLifecycle()
+    val prefState    by profileViewModel.prefState.collectAsStateWithLifecycle()
 
     // Spend metrics for Today and Week — sourced from ViewModel-computed totals
     // (accurate across all data, not just the current paging window).

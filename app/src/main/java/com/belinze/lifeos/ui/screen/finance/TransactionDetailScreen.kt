@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -58,7 +59,7 @@ fun TransactionDetailScreen(
     navController:  NavHostController,
     viewModel:      TransactionViewModel = hiltViewModel(),
 ) {
-    val selectedTx by viewModel.selectedTransaction.collectAsState()
+    val selectedTx by viewModel.selectedTransaction.collectAsStateWithLifecycle()
     // The transaction is loaded into selectedTransaction via loadTransaction(id)
     // in the LaunchedEffect below. With Paging 3 the Finance screen no longer
     // holds a flat transactions list, so selectedTx is the single source of truth.

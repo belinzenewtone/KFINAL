@@ -31,7 +31,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Medication
@@ -44,12 +43,10 @@ import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
@@ -69,7 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.core.update.presentation.OtaUpdatePromptHost
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FulizaLimitModal
 import com.belinze.lifeos.ui.components.GlassCard
@@ -93,7 +92,7 @@ fun SettingsScreen(
     navController: NavHostController,
     viewModel:     SettingsViewModel = hiltViewModel(),
 ) {
-    val settings by viewModel.settings.collectAsState()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var infoMessage by remember { mutableStateOf<String?>(null) }
@@ -103,10 +102,8 @@ fun SettingsScreen(
     var smsGranted by remember { mutableStateOf(viewModel.hasSmsPermissions()) }
     // ST-2: track permission-request-in-flight
     var smsRequesting by remember { mutableStateOf(false) }
-    // ST-9/10/11/12: update check state
-    var updateChecking by remember { mutableStateOf(false) }
-    var updateAvailable by remember { mutableStateOf(false) }
-    var showRestartDialog by remember { mutableStateOf(false) }
+    // OTA: manualTrigger increments each time user taps "Check for Updates"
+    var otaCheckTrigger by remember { mutableStateOf(0) }
 
     // ST-4: re-check SMS permission on every lifecycle resume
     DisposableEffect(lifecycleOwner) {
@@ -132,25 +129,8 @@ fun SettingsScreen(
         }
     }
 
-    // ST-11: "restart now" dialog after download
-    if (showRestartDialog) {
-        AlertDialog(
-            onDismissRequest = { showRestartDialog = false },
-            title = { Text("Update downloaded") },
-            text  = { Text("Restart the app now to apply the update?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showRestartDialog = false
-                    // In a native Android app, we can't force restart from code gracefully;
-                    // signal the user to reopen the app.
-                    infoMessage = "Please close and reopen the app to finish updating."
-                }) { Text("Restart now") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRestartDialog = false }) { Text("Later") }
-            },
-        )
-    }
+    // OTA update dialog — triggered manually or auto on app launch via MainScaffold
+    OtaUpdatePromptHost(shouldCheckForUpdates = true, manualTrigger = otaCheckTrigger)
 
     Box(modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(
@@ -382,45 +362,14 @@ fun SettingsScreen(
 
             SectionLabel("App Updates")
             GlassCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.base),
-                ) {
-                    // ST-9: disable + loading spinner while checking
-                    OutlinedButton(
-                        onClick = {
-                            updateChecking = true
-                            // ST-10: simulate update check (native Android — no OTA updates)
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                updateChecking = false
-                                updateAvailable = false // native build: always on latest
-                                infoMessage = "Already on latest ($APP_VERSION)"
-                            }, 1200)
-                        },
-                        enabled = !updateChecking,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        if (updateChecking) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Checking…", color = MaterialTheme.colorScheme.onSurface)
-                        } else {
-                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Check", color = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                    // ST-12: disable Download when no update available
-                    Button(
-                        onClick = { showRestartDialog = true },
-                        enabled = !updateChecking && updateAvailable,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Download")
-                    }
-                }
+                SettingsRow(
+                    icon        = Icons.Outlined.Refresh,
+                    label       = "Check for Updates",
+                    value       = "v$APP_VERSION",
+                    showChevron = true,
+                    isLast      = true,
+                    onPress     = { otaCheckTrigger++ },
+                )
             }
         }
 

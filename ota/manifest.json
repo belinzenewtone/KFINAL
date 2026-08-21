@@ -1,0 +1,11 @@
+{
+  "version_code": 1,
+  "version_name": "1.0.0",
+  "apk_url": "https://github.com/belinzenewtone/KFINAL/releases/download/v1.0.0/lifeos-release.apk",
+  "apk_sha256": "",
+  "mandatory": false,
+  "title": "LifeOS v1.0.0",
+  "message": "Initial release of LifeOS.",
+  "changelog": "• Initial release",
+  "website_url": "https://github.com/belinzenewtone/KFINAL/releases"
+}

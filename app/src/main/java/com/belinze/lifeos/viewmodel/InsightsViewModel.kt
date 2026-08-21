@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -18,6 +19,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // InsightsViewModel
@@ -36,6 +40,7 @@ enum class InsightsTrend  { Increasing, Decreasing, Stable }
 // ── Data classes shared with screen ──────────────────────────────────────────
 
 /** Month label + spend + income totals — drives the bar chart. */
+@Immutable
 data class MonthBar(
     val label:      String,   // "Jan"
     val fullLabel:  String,   // "Jan 2026"
@@ -46,8 +51,10 @@ data class MonthBar(
     val txCount:    Int,
 )
 
+@Immutable
 data class CategoryPct(val category: String, val amount: Double, val pct: Double)
 
+@Immutable
 data class MonthBreakdownItem(
     val monthKey:      String,
     val label:         String,
@@ -56,16 +63,18 @@ data class MonthBreakdownItem(
     val expense:       Double,
     val income:        Double,
     val txCount:       Int,
-    val topCategories: List<CategoryPct>,
+    val topCategories: ImmutableList<CategoryPct>,
     val delta:         Double?,   // % vs prior month; null for first
 )
 
+@Immutable
 data class PaydayPulse(
     val postPaydayAvgPerDay: Double,
     val otherDaysAvgPerDay:  Double,
     val incomeEventsCount:   Int,
 )
 
+@Immutable
 data class SizeBreakdown(
     val microCount:  Int    = 0,
     val mediumCount: Int    = 0,
@@ -75,15 +84,17 @@ data class SizeBreakdown(
     val largeTotal:  Double = 0.0,
 )
 
+@Immutable
 data class CategorySparklineItem(
     val category:      String,
     val color:         String,
     val total:         Double,
     val pctOfTotal:    Double,
-    val weeklyAmounts: List<Double>,  // 4 values oldest → newest
+    val weeklyAmounts: ImmutableList<Double>,  // 4 values oldest → newest
     val topMerchant:   String?,
 )
 
+@Immutable
 data class AnalyticsFeesData(
     val total:       Double,
     val topCategory: String?,
@@ -93,6 +104,7 @@ data class AnalyticsFeesData(
 
 // ── UI State ─────────────────────────────────────────────────────────────────
 
+@Immutable
 data class InsightsUiState(
     val isLoading: Boolean = true,
     // Tab & range
@@ -100,30 +112,30 @@ data class InsightsUiState(
     val dateRange:     AnalyticsRange = AnalyticsRange.ThisMonth,
     val nudgeDismissed: Boolean       = false,
     // ── Analytics tab (range-dependent) ─────────────────────────────────────
-    val totalSpend:          Double                      = 0.0,
-    val totalIncome:         Double                      = 0.0,
-    val net:                 Double                      = 0.0,
-    val averageTransaction:  Double                      = 0.0,
-    val categorySparklines:  List<CategorySparklineItem> = emptyList(),
-    val feesData:            AnalyticsFeesData           = AnalyticsFeesData(0.0, null, 0.0, 0),
-    val uncategorizedCount:  Int                         = 0,
-    val uncategorizedAmount: Double                      = 0.0,
+    val totalSpend:          Double                               = 0.0,
+    val totalIncome:         Double                               = 0.0,
+    val net:                 Double                               = 0.0,
+    val averageTransaction:  Double                               = 0.0,
+    val categorySparklines:  ImmutableList<CategorySparklineItem> = persistentListOf(),
+    val feesData:            AnalyticsFeesData                   = AnalyticsFeesData(0.0, null, 0.0, 0),
+    val uncategorizedCount:  Int                                 = 0,
+    val uncategorizedAmount: Double                              = 0.0,
     // SpendingComparisonCard (always current/prev month)
-    val currentMonthSpend:   Double                      = 0.0,
-    val prevMonthSpend:      Double                      = 0.0,
+    val currentMonthSpend:   Double                              = 0.0,
+    val prevMonthSpend:      Double                              = 0.0,
     // ── Insights tab ─────────────────────────────────────────────────────────
     // Bar chart
-    val monthBars:           List<MonthBar>              = emptyList(),
+    val monthBars:           ImmutableList<MonthBar>              = persistentListOf(),
     // Summary tiles
-    val avgExpense:          Double                      = 0.0,
-    val totalTracked:        Double                      = 0.0,
+    val avgExpense:          Double                               = 0.0,
+    val totalTracked:        Double                               = 0.0,
     // Spending Insights card
-    val highestMonth:        MonthBar?                   = null,
-    val lowestMonthWithData: MonthBar?                   = null,
-    val topCategoryAllTime:  Pair<String, Double>?       = null,  // (category, pct)
-    val trend:               InsightsTrend               = InsightsTrend.Stable,
+    val highestMonth:        MonthBar?                           = null,
+    val lowestMonthWithData: MonthBar?                           = null,
+    val topCategoryAllTime:  Pair<String, Double>?               = null,  // (category, pct)
+    val trend:               InsightsTrend                       = InsightsTrend.Stable,
     // History accordion
-    val monthBreakdown:      List<MonthBreakdownItem>    = emptyList(),
+    val monthBreakdown:      ImmutableList<MonthBreakdownItem>    = persistentListOf(),
     // Payday Pulse
     val paydayPulse:         PaydayPulse?                = null,
     // Spend Anatomy
@@ -227,7 +239,7 @@ class InsightsViewModel
                 color         = categoryColor(cat),
                 total         = ct.total,
                 pctOfTotal    = if (spend > 0) (ct.total / spend) * 100.0 else 0.0,
-                weeklyAmounts = catWeeklyMap[cat] ?: List(4) { 0.0 },
+                weeklyAmounts = (catWeeklyMap[cat] ?: List(4) { 0.0 }).toImmutableList(),
                 topMerchant   = topMerchant,
             )
         }.sortedByDescending { it.total }.take(8)
@@ -246,7 +258,7 @@ class InsightsViewModel
                 totalIncome         = income,
                 net                 = income - spend,
                 averageTransaction  = avg,
-                categorySparklines  = sparklines,
+                categorySparklines  = sparklines.toImmutableList(),
                 feesData            = feesData,
                 uncategorizedCount  = uncatCount,
                 uncategorizedAmount = uncatAmt,
@@ -310,7 +322,7 @@ class InsightsViewModel
                 expense       = m.expense,
                 income        = m.income,
                 txCount       = m.txCount,
-                topCategories = topCats,
+                topCategories = topCats.toImmutableList(),
                 delta         = delta,
             )
         }.reversed()  // newest first for history list
@@ -390,14 +402,14 @@ class InsightsViewModel
         _uiState.update {
             it.copy(
                 isLoading           = false,
-                monthBars           = months,
+                monthBars           = months.toImmutableList(),
                 avgExpense          = avgExpense,
                 totalTracked        = totalTracked,
                 highestMonth        = highestMonth,
                 lowestMonthWithData = lowestMonthWithData,
                 topCategoryAllTime  = topCategoryAllTime,
                 trend               = trend,
-                monthBreakdown      = breakdown,
+                monthBreakdown      = breakdown.toImmutableList(),
                 paydayPulse         = paydayPulse,
                 sizeBreakdown       = sizeBd,
             )

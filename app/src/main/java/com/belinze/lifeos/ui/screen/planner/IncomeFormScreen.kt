@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -64,7 +65,7 @@ fun IncomeFormScreen(
     navController: NavHostController,
     viewModel:     PlannerViewModel = hiltViewModel(),
 ) {
-    val form   by viewModel.incomeForm.collectAsState()
+    val form   by viewModel.incomeForm.collectAsStateWithLifecycle()
     val isEdit = !incomeId.isNullOrEmpty()
     val scope = rememberCoroutineScope()
     // CC-3: success banner

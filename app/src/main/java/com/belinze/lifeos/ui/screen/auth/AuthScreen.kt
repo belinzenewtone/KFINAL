@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.GlassCardVariant
@@ -65,7 +66,7 @@ fun AuthScreen(
     val isDark  = isSystemInDarkTheme()
     val bgColor = if (isDark) Color(0xFF0A0A0B) else Color(0xFFE8EDF3)
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val profileName   = uiState.prefs.profileName
     val profileUser   = uiState.prefs.profileUsername
 

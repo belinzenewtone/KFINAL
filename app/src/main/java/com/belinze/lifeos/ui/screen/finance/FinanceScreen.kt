@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
@@ -116,10 +117,10 @@ fun FinanceScreen(
     budgetViewModel:    BudgetViewModel     = hiltViewModel(),
     plannerViewModel:   PlannerViewModel    = hiltViewModel(),
 ) {
-    val state        by viewModel.uiState.collectAsState()
-    val smsState     by smsImportViewModel.uiState.collectAsState()
-    val budgetState  by budgetViewModel.uiState.collectAsState()
-    val plannerState by plannerViewModel.uiState.collectAsState()
+    val state        by viewModel.uiState.collectAsStateWithLifecycle()
+    val smsState     by smsImportViewModel.uiState.collectAsStateWithLifecycle()
+    val budgetState  by budgetViewModel.uiState.collectAsStateWithLifecycle()
+    val plannerState by plannerViewModel.uiState.collectAsStateWithLifecycle()
 
     // ── Paging 3 — collect once per composition; survives config changes via
     // cachedIn(viewModelScope). refresh() / retry() are called directly on this.

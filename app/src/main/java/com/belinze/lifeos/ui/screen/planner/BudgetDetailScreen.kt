@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.FrostCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -37,7 +38,7 @@ fun BudgetDetailScreen(
     navController:  NavHostController,
     viewModel:      BudgetViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val bws: BudgetWithSpend? = state.budgets.firstOrNull { it.budget.id == budgetId }
 
     PageScaffold(

@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.viewmodel.AssistantViewModel
@@ -84,8 +86,8 @@ import com.belinze.lifeos.viewmodel.ChatMessage
 fun AssistantScreen(
     viewModel: AssistantViewModel = hiltViewModel(),
 ) {
-    val state       by viewModel.uiState.collectAsState()
-    val quickSuggestionsEnabled by viewModel.quickSuggestionsEnabled.collectAsState()
+    val state       by viewModel.uiState.collectAsStateWithLifecycle()
+    val quickSuggestionsEnabled by viewModel.quickSuggestionsEnabled.collectAsStateWithLifecycle()
     val listState   = rememberLazyListState()
     var inputText   by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -162,6 +164,7 @@ fun AssistantScreen(
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.screenHorizontal),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            contentPadding      = PaddingValues(bottom = Spacing.bottomNavSafeArea),
         ) {
             if (state.messages.size <= 1) {
                 item {

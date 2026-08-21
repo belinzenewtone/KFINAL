@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.belinze.lifeos.ui.screen.auth.AppLockScreen
 import com.belinze.lifeos.ui.screen.auth.AuthScreen
@@ -46,7 +47,7 @@ fun LifeOsNavHost(
     modifier:     Modifier      = Modifier,
     appViewModel: AppViewModel  = hiltViewModel(),
 ) {
-    val uiState by appViewModel.uiState.collectAsState()
+    val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
 
     // ── Lifecycle-based app-lock observer ─────────────────────────────────────
     val lifecycleOwner = LocalLifecycleOwner.current

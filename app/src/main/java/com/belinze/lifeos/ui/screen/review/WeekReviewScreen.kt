@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -43,8 +44,8 @@ fun WeekReviewScreen(
     navController: NavHostController,
     viewModel:     WeekReviewViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val pref  by viewModel.prefState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val pref  by viewModel.prefState.collectAsStateWithLifecycle()
 
     val firstName = pref.profileName.split(" ").firstOrNull()?.ifBlank { null } ?: "there"
     val greeting  = "${state.greeting}, $firstName"

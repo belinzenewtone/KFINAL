@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.GlassCardVariant
@@ -119,7 +120,7 @@ fun OnboardingScreen(
     val bgColor  = if (isDark) Color(0xFF0A0A0B) else Color(0xFFE8EDF3)
 
     // Persisted state (hydrated by AppViewModel prefs)
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val prefs = uiState.prefs
 
     var step      by remember { mutableStateOf(prefs.onboardingStep.coerceIn(1, TOTAL_STEPS)) }

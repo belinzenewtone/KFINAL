@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferenceState
@@ -28,6 +29,7 @@ import javax.inject.Inject
 // (total transactions, month-over-month change) for the Profile tab.
 // ─────────────────────────────────────────────────────────────────────────────
 
+@Immutable
 data class ProfileStats(
     val totalTxCount:   Int    = 0,
     val thisMonthSpend: Double = 0.0,
@@ -35,12 +37,14 @@ data class ProfileStats(
     val momChangePct:   Double = 0.0,   // positive = spent more this month
 )
 
+@Immutable
 data class ProfileUiState(
     val isLoading:     Boolean      = true,
     val stats:         ProfileStats = ProfileStats(),
     val error:         String?      = null,
 )
 
+@Immutable
 data class ProfileFormState(
     val name:      String  = "",
     val email:     String  = "",

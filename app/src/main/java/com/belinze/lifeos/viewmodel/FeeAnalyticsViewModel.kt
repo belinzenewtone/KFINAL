@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.FeeCategoryTotal
@@ -17,6 +18,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * FeeAnalyticsViewModel — service-charge analytics for the month.
@@ -28,11 +32,12 @@ class FeeAnalyticsViewModel
     constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
+    @Immutable
     data class FeeAnalyticsUiState(
         val isLoading:    Boolean = true,
         val totalFees:    Double  = 0.0,
-        val categories:   List<FeeCategoryTotal> = emptyList(),
-        val transactions: List<TransactionEntity> = emptyList(),
+        val categories:   ImmutableList<FeeCategoryTotal> = persistentListOf(),
+        val transactions: ImmutableList<TransactionEntity> = persistentListOf(),
     )
 
     private val _uiState = MutableStateFlow(FeeAnalyticsUiState())
@@ -53,8 +58,8 @@ class FeeAnalyticsViewModel
             _uiState.value = FeeAnalyticsUiState(
                 isLoading    = false,
                 totalFees    = total,
-                categories   = cats,
-                transactions = txs,
+                categories   = cats.toImmutableList(),
+                transactions = txs.toImmutableList(),
             )
         }
     }

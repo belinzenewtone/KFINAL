@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.ui.components.GlassCard
@@ -69,7 +70,7 @@ fun TasksScreen(
     navController: NavHostController,
     viewModel:     TaskViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -208,7 +209,7 @@ private fun TaskCard(
     color: Color,
     viewModel: TaskViewModel,
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isTimerActive = state.activeTimerTaskId == task.id
     val displaySeconds = viewModel.displaySeconds(task)
     val dismissState = rememberSwipeToDismissBoxState(

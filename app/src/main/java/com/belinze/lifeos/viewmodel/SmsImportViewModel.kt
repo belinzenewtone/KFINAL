@@ -1,6 +1,7 @@
 package com.belinze.lifeos.viewmodel
 
 import android.database.Cursor
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
@@ -37,12 +38,14 @@ class SmsImportViewModel
     @ApplicationContext private val context: android.content.Context,
     private val smsService: SmsService,
 ) : ViewModel() {
+    @Immutable
     data class ImportProgress(
         val imported: Int,
         val total:    Int,
         val quarantined: Int = 0,
     )
 
+    @Immutable
     data class ImportResult(
         val imported:    Int,
         val total:       Int,
@@ -51,6 +54,7 @@ class SmsImportViewModel
         val failed:      Int,
     )
 
+    @Immutable
     data class SmsImportUiState(
         val permissionGranted: Boolean = false,
         val isImporting:       Boolean = false,

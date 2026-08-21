@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.core.update.presentation.OtaUpdatePromptHost
 import com.belinze.lifeos.ui.components.FloatingTabBar
 import com.belinze.lifeos.ui.components.LifeOsTab
 import com.belinze.lifeos.ui.screen.assistant.AssistantScreen
@@ -130,6 +131,9 @@ fun MainScaffold(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = Spacing.xs),  // slight lift for shadow clearance
         )
+
+        // ── OTA update dialog — overlaid on top of all content ────────────────
+        OtaUpdatePromptHost(shouldCheckForUpdates = true)
     }
 }
 

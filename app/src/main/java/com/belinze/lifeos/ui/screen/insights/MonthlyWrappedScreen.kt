@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.theme.AppBarDimens
@@ -48,7 +49,7 @@ fun MonthlyWrappedScreen(
     navController:      NavHostController,
     viewModel:          MonthlyWrappedViewModel = hiltViewModel(),
 ) {
-    val state  by viewModel.uiState.collectAsState()
+    val state  by viewModel.uiState.collectAsStateWithLifecycle()
     val isDark = isSystemInDarkTheme()
 
     LaunchedEffect(Unit) { viewModel.setMonthOffset(initialMonthOffset) }

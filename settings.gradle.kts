@@ -24,3 +24,7 @@ dependencyResolutionManagement {
 rootProject.name = "LifeOS"
 include(":app")
 include(":sms")
+// :baselineprofile — Baseline Profile generator module.
+// To generate: temporarily uncomment, apply AGP classpath plugin manually,
+// then run `./gradlew :baselineprofile:generateBaselineProfile`.
+// include(":baselineprofile")

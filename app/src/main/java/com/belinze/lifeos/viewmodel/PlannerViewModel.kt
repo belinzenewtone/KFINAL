@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.IncomeDao
@@ -20,6 +21,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PlannerViewModel
@@ -30,15 +34,16 @@ import javax.inject.Inject
 
 enum class PlannerTab { Recurring, Bills, Goals, Loans, Income }
 
+@Immutable
 data class PlannerUiState(
-    val isLoading:      Boolean                  = true,
-    val activeTab:      PlannerTab               = PlannerTab.Recurring,
-    val recurringRules: List<RecurringRuleEntity> = emptyList(),
-    val bills:          List<BillEntity>          = emptyList(),
-    val goals:          List<GoalEntity>          = emptyList(),
-    val loans:          List<FulizaLoanEntity>    = emptyList(),
-    val income:         List<IncomeEntity>        = emptyList(),
-    val exports:        List<ExportEntity>        = emptyList(),
+    val isLoading:      Boolean                           = true,
+    val activeTab:      PlannerTab                        = PlannerTab.Recurring,
+    val recurringRules: ImmutableList<RecurringRuleEntity> = persistentListOf(),
+    val bills:          ImmutableList<BillEntity>          = persistentListOf(),
+    val goals:          ImmutableList<GoalEntity>          = persistentListOf(),
+    val loans:          ImmutableList<FulizaLoanEntity>    = persistentListOf(),
+    val income:         ImmutableList<IncomeEntity>        = persistentListOf(),
+    val exports:        ImmutableList<ExportEntity>        = persistentListOf(),
     val totalMonthlyBills: Double                 = 0.0,
     val totalActiveLoans:  Double                 = 0.0,
     val error: String? = null,
@@ -46,6 +51,7 @@ data class PlannerUiState(
 
 // ─── Individual form states ───────────────────────────────────────────────────
 
+@Immutable
 data class RecurringFormState(
     val id:          String? = null,
     val name:        String  = "",
@@ -60,6 +66,7 @@ data class RecurringFormState(
     val error:       String? = null,
 )
 
+@Immutable
 data class BillFormState(
     val id:          String?  = null,
     val name:        String   = "",
@@ -74,6 +81,7 @@ data class BillFormState(
     val error:       String?  = null,
 )
 
+@Immutable
 data class GoalFormState(
     val id:           String?  = null,
     val name:         String   = "",
@@ -89,6 +97,7 @@ data class GoalFormState(
     val error:        String?  = null,
 )
 
+@Immutable
 data class LoanFormState(
     val id:                String?  = null,
     val drawCode:          String   = "",
@@ -103,6 +112,7 @@ data class LoanFormState(
     val lastRepaymentDate:  String?  = null,
 )
 
+@Immutable
 data class IncomeFormState(
     val id:          String?  = null,
     val source:      String   = "",
@@ -233,12 +243,12 @@ class PlannerViewModel
                 _uiState.update {
                     it.copy(
                         isLoading         = false,
-                        recurringRules    = rules,
-                        bills             = bills,
-                        goals             = goals,
-                        loans             = loans,
-                        income            = income,
-                        exports           = exports,
+                        recurringRules    = rules.toImmutableList(),
+                        bills             = bills.toImmutableList(),
+                        goals             = goals.toImmutableList(),
+                        loans             = loans.toImmutableList(),
+                        income            = income.toImmutableList(),
+                        exports           = exports.toImmutableList(),
                         totalMonthlyBills = bills.filter { b -> b.isActive != 0 }.sumOf { b -> b.amount ?: 0.0 },
                         totalActiveLoans  = loans.filter { l -> l.status == "active" }.sumOf { l -> l.drawAmountKes - l.totalRepaidKes },
                     )

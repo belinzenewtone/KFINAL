@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
@@ -70,7 +71,7 @@ fun PersonalInformationScreen(
     navController: NavHostController,
     viewModel:     ProfileViewModel = hiltViewModel(),
 ) {
-    val prefState by viewModel.prefState.collectAsState()
+    val prefState by viewModel.prefState.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<InfoField?>(null) }
     var editValue by remember { mutableStateOf("") }
     var successMsg by remember { mutableStateOf<String?>(null) }

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -11,6 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * CategorizeViewModel — per-transaction categorization.
@@ -22,9 +26,10 @@ class CategorizeViewModel
     constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
+    @Immutable
     data class CategorizeUiState(
         val isLoading:    Boolean = true,
-        val transactions: List<TransactionEntity> = emptyList(),
+        val transactions: ImmutableList<TransactionEntity> = persistentListOf(),
         val message:      String? = null,
         val isError:      Boolean = false,
     )
@@ -36,13 +41,13 @@ class CategorizeViewModel
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
             val txs = dao.getUncategorized()
-            _uiState.value = CategorizeUiState(isLoading = false, transactions = txs)
+            _uiState.value = CategorizeUiState(isLoading = false, transactions = txs.toImmutableList())
         }
     }
 
     fun assignCategory(id: String, category: String) {
         _uiState.value = _uiState.value.copy(
-            transactions = _uiState.value.transactions.filterNot { it.id == id },
+            transactions = _uiState.value.transactions.filterNot { it.id == id }.toImmutableList(),
         )
         viewModelScope.launch {
             try {

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * MerchantDetailViewModel — stats + transactions for a single merchant.
@@ -21,6 +25,7 @@ class MerchantDetailViewModel
     constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
+    @Immutable
     data class MerchantStats(
         val totalSpend:  Double,
         val txCount:     Int,
@@ -31,9 +36,10 @@ class MerchantDetailViewModel
         val peakAmount:  Double,
     )
 
+    @Immutable
     data class MerchantDetailUiState(
         val isLoading:    Boolean = true,
-        val transactions: List<TransactionEntity> = emptyList(),
+        val transactions: ImmutableList<TransactionEntity> = persistentListOf(),
         val stats:        MerchantStats? = null,
     )
 
@@ -58,7 +64,7 @@ class MerchantDetailViewModel
                 peakDay    = peak?.key,
                 peakAmount = peak?.value ?: 0.0,
             )
-            _uiState.value = MerchantDetailUiState(isLoading = false, transactions = txs, stats = stats)
+            _uiState.value = MerchantDetailUiState(isLoading = false, transactions = txs.toImmutableList(), stats = stats)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.BudgetDao
@@ -21,6 +22,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BudgetViewModel
@@ -31,6 +35,7 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** A budget enriched with current-month spend. */
+@Immutable
 data class BudgetWithSpend(
     val budget:    BudgetEntity,
     val spend:     Double = 0.0,
@@ -38,14 +43,16 @@ data class BudgetWithSpend(
     val remaining: Double = 0.0,
 )
 
+@Immutable
 data class BudgetUiState(
-    val isLoading:  Boolean              = true,
-    val budgets:    List<BudgetWithSpend> = emptyList(),
+    val isLoading:  Boolean                    = true,
+    val budgets:    ImmutableList<BudgetWithSpend> = persistentListOf(),
     val totalLimit: Double               = 0.0,
     val totalSpend: Double               = 0.0,
     val error:      String?              = null,
 )
 
+@Immutable
 data class BudgetFormState(
     val id:             String?  = null,
     val category:       String   = "",
@@ -103,7 +110,7 @@ class BudgetViewModel
             _uiState.update {
                 it.copy(
                     isLoading  = false,
-                    budgets    = enriched,
+                    budgets    = enriched.toImmutableList(),
                     totalLimit = budgets.sumOf { b -> b.limitAmount },
                     totalSpend = enriched.sumOf { b -> b.spend },
                 )

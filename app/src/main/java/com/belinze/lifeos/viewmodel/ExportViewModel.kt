@@ -1,6 +1,7 @@
 package com.belinze.lifeos.viewmodel
 
 import android.content.Context
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.BudgetDao
@@ -21,6 +22,9 @@ import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 enum class ExportFormat { JSON, CSV, PDF }
 
@@ -41,11 +45,12 @@ class ExportViewModel
     private val incomeDao:      IncomeDao,
     private val plannerDao:     PlannerDao,
 ) : ViewModel() {
+    @Immutable
     data class ExportUiState(
         val isLoading:    Boolean = false,
         val lastExport:   String? = null,
         val error:        String? = null,
-        val history:      List<ExportEntity> = emptyList(),
+        val history:      ImmutableList<ExportEntity> = persistentListOf(),
         val domainCounts: Map<String, Int> = emptyMap(),
     )
 
@@ -66,7 +71,7 @@ class ExportViewModel
                 "goals"        to plannerDao.getAllGoals().size,
             )
             _uiState.value = _uiState.value.copy(
-                history      = plannerDao.getAllExports(),
+                history      = plannerDao.getAllExports().toImmutableList(),
                 domainCounts = counts,
             )
         }
@@ -75,7 +80,7 @@ class ExportViewModel
     fun clearHistory() {
         viewModelScope.launch {
             plannerDao.deleteAllExports()
-            _uiState.value = _uiState.value.copy(history = emptyList())
+            _uiState.value = _uiState.value.copy(history = persistentListOf())
         }
     }
 

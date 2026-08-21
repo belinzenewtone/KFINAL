@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.LifeOsDatabase
@@ -18,6 +19,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * SmsImportHealthViewModel — full parity with SmsImportHealthScreen.tsx.
@@ -43,6 +47,7 @@ class SmsImportHealthViewModel
 
     // ─── UI state ─────────────────────────────────────────────────────────────
 
+    @Immutable
     data class UiState(
         val isLoading:          Boolean                        = true,
         // Receiver Status section
@@ -64,14 +69,14 @@ class SmsImportHealthViewModel
         val pendingQueueCount:  Long                           = 0L,
         val failedQueueCount:   Long                           = 0L,
         // Recent Rejections (conditional)
-        val rejections:         List<SmsService.RejectionEntry> = emptyList(),
+        val rejections:         ImmutableList<SmsService.RejectionEntry> = persistentListOf(),
         // Diagnostics
         val jsDbPath:           String?                        = null,
         val nativeDbPath:       String?                        = null,
         val nativeTxCount:      Long?                          = null,
         val nativeAuditCount:   Long?                          = null,
         // Import Log
-        val audit:              List<SmsService.AuditEntry>    = emptyList(),
+        val audit:              ImmutableList<SmsService.AuditEntry> = persistentListOf(),
         // Last clear marker (entry id below which are cleared from view)
         val lastClearedAuditId: Long                           = 0L,
         // Actions in-flight
@@ -181,12 +186,12 @@ class SmsImportHealthViewModel
                         oldestPendingAt      = queue.oldestPendingAt,
                         pendingQueueCount    = queue.pending,
                         failedQueueCount     = queue.failed,
-                        rejections           = rejections,
+                        rejections           = rejections.toImmutableList(),
                         jsDbPath             = jsPath,
                         nativeDbPath         = nativeDiag?.nativeDbPath,
                         nativeTxCount        = nativeDiag?.nativeTxCount,
                         nativeAuditCount     = nativeDiag?.nativeAuditCount,
-                        audit                = enrichedAudit,
+                        audit                = enrichedAudit.toImmutableList(),
                     )
                 }
             } catch (e: Exception) {

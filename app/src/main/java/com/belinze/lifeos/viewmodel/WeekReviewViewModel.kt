@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferences
@@ -18,6 +19,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WeekReviewViewModel — full parity with WeekReviewScreen.tsx
@@ -27,6 +31,7 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** 7-day spend bar data for chart rendering. */
+@Immutable
 data class DayBar(
     val dayOfWeek: Int,      // 1=Mon … 7=Sun (ISO)
     val dateStr:   String,   // "YYYY-MM-DD"
@@ -36,21 +41,23 @@ data class DayBar(
 )
 
 /** Single narrative item for "What Changed?" section. */
+@Immutable
 data class ChangeItem(
     val icon:      String,   // icon name
     val text:      String,
     val sentiment: String,   // "good" | "warn" | "neutral"
 )
 
+@Immutable
 data class WeekReviewUiState(
-    val isLoading:       Boolean        = true,
-    val weekLabel:       String         = "",        // "Aug 1 – Aug 7, 2025"
-    val greeting:        String         = "",        // "Good morning, Alex"
-    val healthScore:     Int            = 0,         // 0-100
-    val scoreLabel:      String         = "",        // Excellent|Good|Fair|Needs attention
-    val scoreColor:      Long           = 0xFF22C55E,
-    val dayBars:         List<DayBar>   = emptyList(),
-    val changeItems:     List<ChangeItem> = emptyList(),
+    val isLoading:       Boolean                   = true,
+    val weekLabel:       String                    = "",        // "Aug 1 – Aug 7, 2025"
+    val greeting:        String                    = "",        // "Good morning, Alex"
+    val healthScore:     Int                       = 0,         // 0-100
+    val scoreLabel:      String                    = "",        // Excellent|Good|Fair|Needs attention
+    val scoreColor:      Long                      = 0xFF22C55E,
+    val dayBars:         ImmutableList<DayBar>     = persistentListOf(),
+    val changeItems:     ImmutableList<ChangeItem> = persistentListOf(),
     val weekSpend:       Double         = 0.0,
     val topCategory:     String         = "",
     val tasksCompleted:  Int            = 0,
@@ -190,8 +197,8 @@ class WeekReviewViewModel
                     healthScore    = score,
                     scoreLabel     = scoreLabel,
                     scoreColor     = scoreColor,
-                    dayBars        = dayBars,
-                    changeItems    = changes,
+                    dayBars        = dayBars.toImmutableList(),
+                    changeItems    = changes.toImmutableList(),
                     weekSpend      = weekSpend,
                     topCategory    = topCategory,
                     tasksCompleted = tasksDone,

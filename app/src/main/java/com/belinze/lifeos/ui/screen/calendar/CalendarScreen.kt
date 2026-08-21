@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
@@ -108,8 +109,8 @@ fun CalendarScreen(
     taskViewModel:    TaskViewModel    = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
-    val eventState   by eventViewModel.uiState.collectAsState()
-    val taskState    by taskViewModel.uiState.collectAsState()
+    val eventState   by eventViewModel.uiState.collectAsStateWithLifecycle()
+    val taskState    by taskViewModel.uiState.collectAsStateWithLifecycle()
     val settings     by settingsViewModel.settings.collectAsState(initial = com.belinze.lifeos.data.datastore.AppPreferenceState())
     val calendarSwipeEnabled = settings.calendarSwipe
 
@@ -372,6 +373,7 @@ fun CalendarScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = Spacing.screenHorizontal),
+                        contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
                     ) {
                         item {
                             Text(
@@ -410,6 +412,7 @@ fun CalendarScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = Spacing.screenHorizontal),
+                        contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
                     ) {
                         item {
                             Text(

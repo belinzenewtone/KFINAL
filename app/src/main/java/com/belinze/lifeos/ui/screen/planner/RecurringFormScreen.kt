@@ -43,6 +43,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.DateField
@@ -79,7 +80,7 @@ fun RecurringFormScreen(
     navController: NavHostController,
     viewModel:     PlannerViewModel = hiltViewModel(),
 ) {
-    val form by viewModel.recurringForm.collectAsState()
+    val form by viewModel.recurringForm.collectAsStateWithLifecycle()
     val isEdit = !ruleId.isNullOrEmpty()
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()

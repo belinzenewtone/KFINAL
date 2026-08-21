@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
 import com.belinze.lifeos.ui.components.BannerTone
@@ -58,7 +60,7 @@ fun LoansScreen(
     navController: NavHostController,
     viewModel:     PlannerViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     var payLoanId by remember { mutableStateOf<String?>(null) }
     var payAmount by remember { mutableStateOf("") }
     var banner by remember { mutableStateOf<String?>(null) }
@@ -104,7 +106,10 @@ fun LoansScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
+            ) {
                 item {
                     GlassCard(
                         variant = com.belinze.lifeos.ui.components.GlassCardVariant.Elevated,

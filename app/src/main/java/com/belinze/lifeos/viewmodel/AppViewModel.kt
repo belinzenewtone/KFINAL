@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferenceState
@@ -19,6 +20,7 @@ import javax.inject.Inject
 // UI state — mirrors useAppStore shape from the RN app
 // ─────────────────────────────────────────────────────────────────────────────
 
+@Immutable
 data class AppUiState(
     val hasHydrated: Boolean          = false,
     val isAppLocked: Boolean          = false,

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -49,6 +50,7 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Active filter parameters — mirrors the Finance screen filter drawer state. */
+@Immutable
 data class TransactionFilters(
     val search:    String  = "",
     val category:  String  = "all",
@@ -59,6 +61,7 @@ data class TransactionFilters(
     val endDate:   String? = null,
 )
 
+@Immutable
 data class TransactionUiState(
     val filters:       TransactionFilters = TransactionFilters(),
     val monthTotals:   MonthTotals?       = null,
@@ -69,6 +72,7 @@ data class TransactionUiState(
     val error:         String?            = null,
 )
 
+@Immutable
 data class TransactionFormState(
     val id:              String?  = null,      // null = new
     val merchant:        String   = "",
