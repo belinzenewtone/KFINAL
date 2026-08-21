@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,6 +51,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -59,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -116,6 +123,7 @@ fun OnboardingScreen(
     viewModel:    AppViewModel,
     modifier:     Modifier = Modifier,
 ) {
+    val context  = LocalContext.current
     val isDark   = isSystemInDarkTheme()
     val bgColor  = if (isDark) Color(0xFF0A0A0B) else Color(0xFFE8EDF3)
 
@@ -183,7 +191,8 @@ fun OnboardingScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgColor),
+            .background(bgColor)
+            .statusBarsPadding(),       // keep content below status bar / notch
     ) {
         Column(
             modifier = Modifier
@@ -263,7 +272,11 @@ fun OnboardingScreen(
                         4 -> PermissionStep(
                             allowed = notificationsAllowed,
                             onAllow = { notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
-                            onSkip  = { notificationsAllowed = false; viewModel.setNotificationsEnabled(false) },
+                            onSkip  = {
+                                notificationsAllowed = false
+                                viewModel.setNotificationsEnabled(false)
+                                saveStep(step + 1)
+                            },
                             title   = "Stay up to date",
                             body    = "Allow notifications so task timers and reminders can reach you even when the app is in the background.",
                             extraPillar = Triple(Icons.Outlined.Speed, "Timely nudges", "Get reminded about tasks, bills, and events right when they're due."),
@@ -271,7 +284,11 @@ fun OnboardingScreen(
                         5 -> PermissionStep(
                             allowed = smsAllowed,
                             onAllow = { smsPermLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)) },
-                            onSkip  = { smsAllowed = false; smsChecked = true },
+                            onSkip  = {
+                                smsAllowed = false
+                                smsChecked = true
+                                saveStep(step + 1)
+                            },
                             title   = "Smart finance imports",
                             body    = "Allow SMS access so M-Pesa transactions and Fuliza activity can be imported automatically.",
                             extraPillar = Triple(Icons.Outlined.RocketLaunch, "Zero manual entry", "M-Pesa debits, credits, and Fuliza draws appear automatically."),
@@ -281,10 +298,24 @@ fun OnboardingScreen(
                             onEnable = {
                                 bgReceiverEnabled = true
                                 viewModel.setSmsBgReceiver(true)
+                                // Request battery-optimization exemption so Android doesn't
+                                // kill the background SMS receiver.
+                                val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+                                if (pm != null && !pm.isIgnoringBatteryOptimizations(context.packageName)) {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                                data = Uri.parse("package:${context.packageName}")
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                        )
+                                    }
+                                }
                             },
                             onSkip = {
                                 bgReceiverEnabled = false
                                 viewModel.setSmsBgReceiver(false)
+                                saveStep(step + 1)
                             },
                         )
                         else -> FinalStep()
