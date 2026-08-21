@@ -7,6 +7,9 @@ import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.nowIso
 import com.lifeos.sms.SmsService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,9 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ReviewQueueViewModel — full parity with ReviewQueueScreen.tsx

@@ -55,6 +55,7 @@ import java.util.TimeZone
 
 private val TX_TYPES = listOf("expense", "income", "transfer")
 private val STATUSES = listOf("completed", "pending", "failed", "reversed")
+
 // Unified category list — matches CategorizeScreen categories
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
@@ -63,6 +64,7 @@ private val CATEGORIES = listOf(
     "income", "uncategorized",
 )
 
+@Suppress("LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionFormScreen(

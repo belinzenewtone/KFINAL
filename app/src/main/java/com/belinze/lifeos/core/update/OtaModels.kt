@@ -18,20 +18,27 @@ data class OtaUpdateManifest(
 
 sealed interface OtaCheckResult {
     data class UpdateAvailable(val manifest: OtaUpdateManifest) : OtaCheckResult
+
     data object UpToDate        : OtaCheckResult
+
     data object NotConfigured   : OtaCheckResult
+
     data class Error(val message: String) : OtaCheckResult
 }
 
 sealed interface OtaDownloadResult {
     data class Success(val apkUri: String) : OtaDownloadResult
+
     data object Cancelled                  : OtaDownloadResult
+
     data class Error(val message: String)  : OtaDownloadResult
 }
 
 sealed interface OtaInstallResult {
     data object Started                        : OtaInstallResult
+
     data object RequiresUnknownSourcesPermission : OtaInstallResult
+
     data class Error(val message: String)      : OtaInstallResult
 }
 

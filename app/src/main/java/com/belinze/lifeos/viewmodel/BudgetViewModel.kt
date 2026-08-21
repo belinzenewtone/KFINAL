@@ -12,6 +12,9 @@ import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,9 +25,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BudgetViewModel

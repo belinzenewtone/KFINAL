@@ -1,11 +1,11 @@
-﻿{
-    "version_code":  2,
-    "version_name":  "1.1.0",
-    "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.1.0/lifeos-release.apk",
-    "apk_sha256":  "440d13bb4578e2eca7c1bf2f65ffcb80727b102f7fae1011ff51cfb46365a0dc",
+{
+    "version_code":  3,
+    "version_name":  "1.2.0",
+    "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.2.0/lifeos-release.apk",
+    "apk_sha256":  "",
     "mandatory":  false,
-    "title":  "LifeOS 1.1.0",
-    "message":  "A new version of LifeOS is available. Update now for the latest improvements.",
-    "changelog":  "New features\nBug fixes",
+    "title":  "LifeOS 1.2.0",
+    "message":  "Bug fixes and improvements: export sharing, planner confirmations, recurring form, and more.",
+    "changelog":  "- Export now shares file immediately after writing\n- Date window filtering in all export types\n- Delete confirmations across Planner screens\n- Recurring rules: amount is now optional\n- CSV import: file picker now shows all files\n- SMS access banner no longer fires on every screen open\n- Various UI and data accuracy fixes",
     "website_url":  "https://github.com/belinzenewtone/KFINAL/releases"
 }

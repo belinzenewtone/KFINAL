@@ -32,7 +32,6 @@ import java.security.MessageDigest
 
 @Suppress("TooManyFunctions")
 object OtaUpdateManager {
-
     // ── Manifest check ────────────────────────────────────────────────────────
 
     suspend fun checkForUpdate(
@@ -155,8 +154,11 @@ object OtaUpdateManager {
                 },
             )
             true
-        } catch (_: ActivityNotFoundException) { false }
-        catch (_: SecurityException) { false }
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -308,7 +310,9 @@ private fun DownloadSnapshot.toProgressSample(
     val safeBytes     = downloadedBytes.coerceAtLeast(0L)
     val speedBps      = if (elapsed > 0L) {
         ((safeBytes - prevBytes).coerceAtLeast(0L) * 1000L / elapsed).coerceAtLeast(0L)
-    } else null
+    } else {
+        null
+    }
     return OtaDownloadProgress(
         progressPercent = progress,
         downloadedBytes = safeBytes,
@@ -318,8 +322,10 @@ private fun DownloadSnapshot.toProgressSample(
 }
 
 private fun Cursor.intCol(name: String): Int = getInt(getColumnIndexOrThrow(name))
+
 private fun Cursor.intColOrNull(name: String): Int? {
     val idx = getColumnIndex(name)
     return if (idx >= 0) getInt(idx) else null
 }
+
 private fun Cursor.longCol(name: String): Long = getLong(getColumnIndexOrThrow(name))

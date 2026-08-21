@@ -10,7 +10,6 @@ package com.lifeos.sms
  * from field reports. Each pattern is kept narrow to avoid false positives.
  */
 internal object ServiceNoticeFilter {
-
     /**
      * Returns true when the body is a *failed* transaction notice — one that contains the
      * word "Failed" or a standard failure phrase.  These often have a transaction code and

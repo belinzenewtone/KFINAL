@@ -73,7 +73,6 @@ import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.navigation.NavTo
-import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.SettingsViewModel
@@ -403,8 +402,11 @@ fun CalendarScreen(
                                 CalendarTaskItem(
                                     task = task,
                                     onToggle = {
-                                    if (task.status == "completed") taskViewModel.reopen(task.id)
-                                    else taskViewModel.complete(task.id)
+                                    if (task.status == "completed") {
+                                        taskViewModel.reopen(task.id)
+                                    } else {
+                                        taskViewModel.complete(task.id)
+                                    }
                                 },
                                     onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
                                 )

@@ -48,7 +48,6 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,8 +65,8 @@ import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
@@ -110,6 +109,7 @@ import java.util.Locale
 //   ‣ Load-more spinner while appending next page
 // ─────────────────────────────────────────────────────────────────────────────
 
+@Suppress("CyclomaticComplexMethod", "LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceScreen(

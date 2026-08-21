@@ -16,6 +16,9 @@ import com.belinze.lifeos.data.db.entity.ExportEntity
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,9 +28,6 @@ import java.io.File
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 enum class ExportFormat { JSON, CSV, PDF }
 
@@ -135,6 +135,7 @@ class ExportViewModel
 
     // ─── JSON export ──────────────────────────────────────────────────────────
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun exportJson(
         includeTransactions: Boolean,
         includeTasks:        Boolean,
@@ -172,10 +173,14 @@ class ExportViewModel
                 }
                 if (includeTasks) {
                     val tasks = taskDao.getAll().let { all ->
-                        if (startDate != null) all.filter { t ->
+                        if (startDate != null) {
+                            all.filter { t ->
                             val d = t.deadline?.take(10) ?: return@filter true
                             (startDate == null || d >= startDate) && (endDate == null || d <= (endDate ?: d))
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     exported.put("tasks", tasks.map { t -> JSONObject()
                         .put("id", t.id)
@@ -186,10 +191,14 @@ class ExportViewModel
                 }
                 if (includeEvents) {
                     val events = eventDao.getAll().let { all ->
-                        if (startDate != null) all.filter { e ->
+                        if (startDate != null) {
+                            all.filter { e ->
                             val d = e.date.take(10)
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     exported.put("events", events.map { e -> JSONObject()
                         .put("id", e.id)
@@ -206,10 +215,14 @@ class ExportViewModel
                 }
                 if (includeIncomes) {
                     val incomes = incomeDao.getAll().let { all ->
-                        if (startDate != null) all.filter { i ->
+                        if (startDate != null) {
+                            all.filter { i ->
                             val d = i.date?.take(10) ?: return@filter true
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     exported.put("incomes", incomes.map { i -> JSONObject()
                         .put("id", i.id)
@@ -268,7 +281,6 @@ class ExportViewModel
 
                 // BUG #28: share the file immediately via system share sheet
                 shareFile(file, "application/json")
-
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
@@ -316,10 +328,14 @@ class ExportViewModel
                 }
                 if (includeTasks) {
                     val tasks = taskDao.getAll().let { all ->
-                        if (startDate != null) all.filter { t ->
+                        if (startDate != null) {
+                            all.filter { t ->
                             val d = t.deadline?.take(10) ?: return@filter true
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     sb.appendLine("Tasks (${tasks.size}):")
                     sb.appendLine("-".repeat(40))
@@ -328,10 +344,14 @@ class ExportViewModel
                 }
                 if (includeEvents) {
                     val events = eventDao.getAll().let { all ->
-                        if (startDate != null) all.filter { e ->
+                        if (startDate != null) {
+                            all.filter { e ->
                             val d = e.date.take(10)
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     sb.appendLine("Events (${events.size}):")
                     sb.appendLine("-".repeat(40))
@@ -350,7 +370,7 @@ class ExportViewModel
                 sb.appendLine("=".repeat(50))
 
                 val dir  = File(context.getExternalFilesDir(null), "exports").apply { mkdirs() }
-                val file = File(dir, "LifeOS_Export_${nowStr}.txt")
+                val file = File(dir, "LifeOS_Export_$nowStr.txt")
                 file.writeText(sb.toString())
 
                 plannerDao.insertExport(ExportEntity(
@@ -369,7 +389,6 @@ class ExportViewModel
 
                 // BUG #28: share the file immediately
                 shareFile(file, "text/plain")
-
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
@@ -378,6 +397,7 @@ class ExportViewModel
 
     // ─── CSV export ───────────────────────────────────────────────────────────
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun exportCsv(
         includeTransactions: Boolean,
         includeTasks:        Boolean,
@@ -414,10 +434,14 @@ class ExportViewModel
                 }
                 if (includeTasks) {
                     val tasks = taskDao.getAll().let { all ->
-                        if (startDate != null) all.filter { t ->
+                        if (startDate != null) {
+                            all.filter { t ->
                             val d = t.deadline?.take(10) ?: return@filter true
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     sb.appendLine("# tasks")
                     sb.appendLine("id,title,status,deadline,priority")
@@ -429,10 +453,14 @@ class ExportViewModel
                 }
                 if (includeEvents) {
                     val events = eventDao.getAll().let { all ->
-                        if (startDate != null) all.filter { e ->
+                        if (startDate != null) {
+                            all.filter { e ->
                             val d = e.date.take(10)
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     sb.appendLine("# events")
                     sb.appendLine("id,title,date,type")
@@ -453,10 +481,14 @@ class ExportViewModel
                 }
                 if (includeIncomes) {
                     val incomes = incomeDao.getAll().let { all ->
-                        if (startDate != null) all.filter { i ->
+                        if (startDate != null) {
+                            all.filter { i ->
                             val d = i.date?.take(10) ?: return@filter true
                             d >= (startDate ?: d) && d <= (endDate ?: d)
-                        } else all
+                        }
+                        } else {
+                            all
+                        }
                     }
                     sb.appendLine("# incomes")
                     sb.appendLine("id,amount,source,date")
@@ -504,7 +536,6 @@ class ExportViewModel
 
                 // BUG #28: share the file immediately
                 shareFile(file, "text/csv")
-
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }

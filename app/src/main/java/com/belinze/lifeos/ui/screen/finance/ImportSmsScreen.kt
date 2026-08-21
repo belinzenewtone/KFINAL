@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -139,16 +138,21 @@ fun ImportSmsScreen(
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                if (prog != null) "Scanned ${prog.imported} of ${prog.total} messages…"
-                                else "Scanning your messages…",
+                                if (prog != null) {
+                                    "Scanned ${prog.imported} of ${prog.total} messages…"
+                                } else {
+                                    "Scanning your messages…"
+                                },
                                 style      = MaterialTheme.typography.bodyMedium,
                                 color      = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Medium,
                             )
                             Text(
-                                if (prog != null && prog.quarantined > 0)
+                                if (prog != null && prog.quarantined > 0) {
                                     "${prog.quarantined} flagged for review · this may take a moment"
-                                else "This may take a moment",
+                                } else {
+                                    "This may take a moment"
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

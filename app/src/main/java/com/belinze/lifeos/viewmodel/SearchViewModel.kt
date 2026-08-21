@@ -19,6 +19,9 @@ import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,9 +34,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 enum class SearchTab {
     All,
@@ -185,26 +185,46 @@ class SearchViewModel
             val needsPlan   = needsAll || tab == SearchTab.Recurring || tab == SearchTab.Bills ||
                               tab == SearchTab.Goals || tab == SearchTab.Loans
 
-            val txs = if (needsTx) transactionDao.getFiltered(
+            val txs = if (needsTx) {
+                transactionDao.getFiltered(
                 search = q, category = "all", type = null, status = null,
                 startDate = null, endDate = null, limit = 25, offset = 0,
-            ) else emptyList()
+            )
+            } else {
+                emptyList()
+            }
             val tasks = if (needsTasks) taskDao.search(q, 25) else emptyList()
             val events = if (needsEvents) eventDao.search(q, 100) else emptyList()
             val budgets = if (needsBudget) budgetDao.search(q, 25) else emptyList()
             val incomes = if (needsIncome) incomeDao.search(q, 25) else emptyList()
-            val recurring = if (needsPlan) plannerDao.getAllRules().filter {
+            val recurring = if (needsPlan) {
+                plannerDao.getAllRules().filter {
                 it.title.lowercase().contains(lq) || (it.category?.lowercase()?.contains(lq) == true)
-            }.take(25) else emptyList()
-            val bills = if (needsPlan) plannerDao.getAllBills().filter {
+            }.take(25)
+            } else {
+                emptyList()
+            }
+            val bills = if (needsPlan) {
+                plannerDao.getAllBills().filter {
                 it.title.lowercase().contains(lq) || (it.notes?.lowercase()?.contains(lq) == true)
-            }.take(25) else emptyList()
-            val goals = if (needsPlan) plannerDao.getAllGoals().filter {
+            }.take(25)
+            } else {
+                emptyList()
+            }
+            val goals = if (needsPlan) {
+                plannerDao.getAllGoals().filter {
                 it.title.lowercase().contains(lq) || (it.description?.lowercase()?.contains(lq) == true)
-            }.take(25) else emptyList()
-            val loans = if (needsPlan) plannerDao.getAllLoans().filter {
+            }.take(25)
+            } else {
+                emptyList()
+            }
+            val loans = if (needsPlan) {
+                plannerDao.getAllLoans().filter {
                 (it.drawCode?.lowercase()?.contains(lq) == true)
-            }.take(25) else emptyList()
+            }.take(25)
+            } else {
+                emptyList()
+            }
 
             _uiState.update {
                 it.copy(

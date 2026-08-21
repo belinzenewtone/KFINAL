@@ -1247,13 +1247,19 @@ private fun GuestsSection(
             enabled  = canAdd,
             modifier = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp))
                 .background(
-                    if (canAdd) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                    if (canAdd) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    },
                 ),
         ) {
             Icon(Icons.Outlined.Add, contentDescription = "Add guest",
-                tint = if (canAdd) MaterialTheme.colorScheme.onPrimary
-                       else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                tint = if (canAdd) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                },
                 modifier = Modifier.size(20.dp))
         }
     }

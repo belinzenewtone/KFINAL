@@ -38,7 +38,6 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -273,8 +272,11 @@ private fun TaskCard(
                 )
                 IconButton(
                     onClick = {
-                        if (task.status == "completed") viewModel.reopen(task.id)
-                        else viewModel.complete(task.id)
+                        if (task.status == "completed") {
+                            viewModel.reopen(task.id)
+                        } else {
+                            viewModel.complete(task.id)
+                        }
                     },
                     modifier = Modifier.size(28.dp),
                 ) {

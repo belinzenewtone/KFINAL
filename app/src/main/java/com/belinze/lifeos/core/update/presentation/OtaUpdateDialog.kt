@@ -243,7 +243,9 @@ private fun OtaDialogProgress(state: OtaPromptUiState) {
     val percentage   = "${state.downloadPercent ?: 0}%"
     val transferred  = if (state.totalBytes != null) {
         "${formatBytes(state.downloadedBytes)}/${formatBytes(state.totalBytes ?: 0L)}"
-    } else formatBytes(state.downloadedBytes)
+    } else {
+        formatBytes(state.downloadedBytes)
+    }
     val speed = state.downloadSpeedBytesPerSec
         ?.takeIf { it > 0L }
         ?.let { " • ${formatBytes(it)}/s" }

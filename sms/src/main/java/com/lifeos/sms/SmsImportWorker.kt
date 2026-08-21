@@ -246,7 +246,8 @@ class SmsImportWorker(
                 // Update progress notification + WorkInfo progress after each chunk (best effort)
                 try {
                     setForeground(buildForegroundInfo("Imported $imported of ~$total financial messages…"))
-                } catch (_: Exception) { }
+                } catch (_: Exception) {
+                    }
                 setProgress(
                     Data.Builder()
                         .putInt("imported", imported)

@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.LearningSessionDao
 import com.belinze.lifeos.data.db.entity.LearningSessionEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,9 +18,6 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LearningViewModel — LE-1 / LE-10

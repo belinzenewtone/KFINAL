@@ -89,12 +89,18 @@ class SmsImportViewModel
                     // Live progress from setProgress() calls in the worker
                     val progress = if (running && runningInfo != null) {
                         val tot = runningInfo.progress.getInt("total", 0)
-                        if (tot > 0) ImportProgress(
+                        if (tot > 0) {
+                            ImportProgress(
                             imported    = runningInfo.progress.getInt("imported", 0),
                             total       = tot,
                             quarantined = runningInfo.progress.getInt("quarantined", 0),
-                        ) else null
-                    } else null
+                        )
+                        } else {
+                            null
+                        }
+                    } else {
+                        null
+                    }
 
                     // Final counts from Result.success(outputData) in the worker
                     val result = if (!running && doneInfo != null) {
@@ -106,7 +112,9 @@ class SmsImportViewModel
                             quarantined = data.getInt("quarantined", 0),
                             failed      = data.getInt("failed", 0),
                         )
-                    } else null
+                    } else {
+                        null
+                    }
 
                     _uiState.update { cur ->
                         cur.copy(

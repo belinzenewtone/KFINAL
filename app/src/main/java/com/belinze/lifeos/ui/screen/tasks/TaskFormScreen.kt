@@ -39,7 +39,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -257,8 +256,11 @@ fun TaskFormScreen(
                             placeholder = { Text("08:00") },
                             trailingIcon = {
                                 Icon(Icons.Outlined.CalendarToday, contentDescription = "Pick time",
-                                    tint = if (formState.deadline != null) MaterialTheme.colorScheme.onSurfaceVariant
-                                           else MaterialTheme.colorScheme.outline,
+                                    tint = if (formState.deadline != null) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.outline
+                                    },
                                     modifier = Modifier.size(18.dp))
                             },
                             singleLine = true,

@@ -52,7 +52,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -1035,11 +1034,14 @@ private fun InsightsBarChart(
                     .weight(1f)
                     .let {
                         // BUG-13: zero-spend bars should not be tappable
-                        if (bar.expense > 0.0) it.clickable(
+                        if (bar.expense > 0.0) {
+                            it.clickable(
                             interactionSource = interactionSource,
                             indication = null,
                         ) { onBarTap(bar) }
-                        else it
+                        } else {
+                            it
+                        }
                     },
             ) {
                 Box(

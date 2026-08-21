@@ -119,7 +119,9 @@ fun OtaUpdatePromptHost(
                             val path = downloadedApkPath ?: return@OtaDialogCallbacks
                             val apkUri = try {
                                 android.net.Uri.parse(path)
-                            } catch (_: Exception) { return@OtaDialogCallbacks }
+                            } catch (_: Exception) {
+                                return@OtaDialogCallbacks
+                            }
                             val activity = context as? Activity ?: return@OtaDialogCallbacks
                             val result = OtaUpdateManager.launchInstaller(activity, apkUri)
                             if (result is OtaInstallResult.RequiresUnknownSourcesPermission) {

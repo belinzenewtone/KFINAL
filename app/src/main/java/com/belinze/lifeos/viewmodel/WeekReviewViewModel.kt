@@ -7,6 +7,9 @@ import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,9 +22,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WeekReviewViewModel — full parity with WeekReviewScreen.tsx
