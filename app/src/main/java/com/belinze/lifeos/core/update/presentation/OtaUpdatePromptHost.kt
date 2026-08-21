@@ -68,11 +68,16 @@ fun OtaUpdatePromptHost(
     var activeManifest     by remember { mutableStateOf<OtaUpdateManifest?>(null) }
     var downloadedApkPath  by remember { mutableStateOf<String?>(null) }
 
+    // True when the user presses back on the "Checking…" dialog — suppresses
+    // the update popup for that check run so the dismissal feels final.
+    var userCancelledCheck by remember { mutableStateOf(false) }
+
     // ── Auto-check on first entry (or on manual trigger) ─────────────────────
     LaunchedEffect(manualTrigger) {
         val isManual = manualTrigger > 0
         if (!isManual && uiState.hasCheckedThisSession) return@LaunchedEffect
 
+        userCancelledCheck = false
         uiState = uiState.copy(isChecking = true)
         val result = runCatching {
             OtaUpdateManager.checkForUpdate(context, BuildConfig.OTA_MANIFEST_URL)
@@ -80,7 +85,10 @@ fun OtaUpdatePromptHost(
 
         uiState = uiState.copy(isChecking = false, hasCheckedThisSession = true)
 
-        if (result is OtaCheckResult.UpdateAvailable &&
+        // If the user dismissed the checking spinner, skip the update popup for
+        // this run — pressing back felt intentional, don't interrupt them anyway.
+        if (!userCancelledCheck &&
+            result is OtaCheckResult.UpdateAvailable &&
             result.manifest.versionCode > uiState.skippedVersionCode
         ) {
             activeManifest = result.manifest
@@ -90,7 +98,13 @@ fun OtaUpdatePromptHost(
 
     // ── "Checking…" spinner dialog ────────────────────────────────────────────
     if (uiState.isChecking) {
-        OtaCheckingDialog(appName = appName)
+        OtaCheckingDialog(
+            appName = appName,
+            onDismissRequest = {
+                userCancelledCheck = true
+                uiState = uiState.copy(isChecking = false)
+            },
+        )
     }
 
     // ── Main update dialog ────────────────────────────────────────────────────

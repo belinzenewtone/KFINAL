@@ -550,8 +550,11 @@ fun FinanceScreen(
                 // Date grouping is done inline per item:
                 //   • isFirstOfDay  → show date header above + open rounded top corners
                 //   • isLastOfDay   → close rounded bottom corners + vertical gap after
-                //   • peek(index+1) may return null at page boundaries; when the next
-                //     page loads the item recomposes with correct corner radius.
+                //   • peek(index+1) returns null at page boundaries (not yet loaded);
+                //     when the next page loads the item recomposes with the correct radius.
+                //   • peek(index+1) must be bounds-checked: accessing index == itemCount
+                //     throws IndexOutOfBoundsException when the filtered list is small
+                //     enough that the user scrolls to the very last item.
                 //   • dividers only between same-day items (hidden when isLastOfDay)
                 items(
                     count = pagingItems.itemCount,
@@ -561,7 +564,7 @@ fun FinanceScreen(
 
                     val prevDate     = if (index > 0) pagingItems.peek(index - 1)?.date?.take(10) else null
                     val currDate     = tx.date?.take(10) ?: ""
-                    val nextDate     = pagingItems.peek(index + 1)?.date?.take(10)
+                    val nextDate     = if (index + 1 < pagingItems.itemCount) pagingItems.peek(index + 1)?.date?.take(10) else null
                     val isFirstOfDay = prevDate != currDate
                     val isLastOfDay  = nextDate != currDate
 

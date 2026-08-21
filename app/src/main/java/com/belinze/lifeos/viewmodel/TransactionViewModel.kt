@@ -194,10 +194,14 @@ class TransactionViewModel
 
     fun setPeriod(period: String) {
         val now = java.time.LocalDate.now()
+        // endDate must include the full day: transaction dates are ISO timestamps
+        // ("2026-08-22T14:00:00"), so "date <= '2026-08-22'" excludes everything from
+        // today. Appending T23:59:59 makes today's transactions visible.
+        val endOfToday = "${now}T23:59:59"
         val (start, end) = when (period) {
-            "today" -> now.toString() to now.toString()
-            "week"  -> now.with(java.time.DayOfWeek.MONDAY).toString() to now.toString()
-            "month" -> now.withDayOfMonth(1).toString() to now.toString()
+            "today" -> now.toString() to endOfToday
+            "week"  -> now.with(java.time.DayOfWeek.MONDAY).toString() to endOfToday
+            "month" -> now.withDayOfMonth(1).toString() to endOfToday
             else    -> null to null
         }
         _uiState.update {

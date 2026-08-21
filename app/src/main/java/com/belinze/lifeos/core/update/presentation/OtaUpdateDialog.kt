@@ -316,13 +316,16 @@ private fun primaryButtonLabel(state: OtaPromptUiState, hasDownloadedApk: Boolea
 /**
  * Lightweight dialog shown while the manifest is being fetched.
  * Dismissed automatically once the check completes.
+ *
+ * Back-press is allowed: [onDismissRequest] lets the caller hide the spinner
+ * immediately (e.g. clear isChecking) so the dialog doesn't snap back.
  */
 @Composable
-internal fun OtaCheckingDialog(appName: String) {
+internal fun OtaCheckingDialog(appName: String, onDismissRequest: () -> Unit = {}) {
     Dialog(
-        onDismissRequest = {},
+        onDismissRequest = onDismissRequest,
         properties = DialogProperties(
-            dismissOnBackPress    = false,
+            dismissOnBackPress    = true,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
         ),
