@@ -20,7 +20,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.core.update.OtaSharedTrigger
 import com.belinze.lifeos.core.update.presentation.OtaUpdatePromptHost
 import com.belinze.lifeos.ui.components.FloatingTabBar
 import com.belinze.lifeos.ui.components.LifeOsTab
@@ -132,8 +134,11 @@ fun MainScaffold(
                 .padding(bottom = Spacing.xs),  // slight lift for shadow clearance
         )
 
-        // ── OTA update dialog — overlaid on top of all content ────────────────
-        OtaUpdatePromptHost(shouldCheckForUpdates = true)
+        // ── OTA update dialog — single instance, overlaid on all content ─────
+        // manualTrigger comes from OtaSharedTrigger so Settings (and any other
+        // screen) can request a fresh check without a second host composable.
+        val otaTrigger by OtaSharedTrigger.manualTrigger.collectAsStateWithLifecycle()
+        OtaUpdatePromptHost(shouldCheckForUpdates = true, manualTrigger = otaTrigger)
     }
 }
 

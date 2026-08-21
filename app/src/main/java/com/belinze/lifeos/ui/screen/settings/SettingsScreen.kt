@@ -68,7 +68,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.belinze.lifeos.core.update.presentation.OtaUpdatePromptHost
+import com.belinze.lifeos.core.update.OtaSharedTrigger
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FulizaLimitModal
 import com.belinze.lifeos.ui.components.GlassCard
@@ -102,8 +102,7 @@ fun SettingsScreen(
     var smsGranted by remember { mutableStateOf(viewModel.hasSmsPermissions()) }
     // ST-2: track permission-request-in-flight
     var smsRequesting by remember { mutableStateOf(false) }
-    // OTA: manualTrigger increments each time user taps "Check for Updates"
-    var otaCheckTrigger by remember { mutableStateOf(0) }
+    // OTA checks are handled by the single OtaUpdatePromptHost in MainScaffold.
 
     // ST-4: re-check SMS permission on every lifecycle resume
     DisposableEffect(lifecycleOwner) {
@@ -128,9 +127,6 @@ fun SettingsScreen(
             "Permissions denied — grant them in device Settings"
         }
     }
-
-    // OTA update dialog — triggered manually or auto on app launch via MainScaffold
-    OtaUpdatePromptHost(shouldCheckForUpdates = true, manualTrigger = otaCheckTrigger)
 
     Box(modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(
@@ -368,7 +364,7 @@ fun SettingsScreen(
                     value       = "v$APP_VERSION",
                     showChevron = true,
                     isLast      = true,
-                    onPress     = { otaCheckTrigger++ },
+                    onPress     = { OtaSharedTrigger.requestCheck() },
                 )
             }
         }
