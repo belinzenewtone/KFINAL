@@ -2,7 +2,7 @@
     "version_code":  3,
     "version_name":  "1.2.0",
     "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.2.0/lifeos-release.apk",
-    "apk_sha256":  "",
+    "apk_sha256":  "d5b3274eb39519552799cde3924bcc1d8bd6f9efb74481d68b53766399af2c4f",
     "mandatory":  false,
     "title":  "LifeOS 1.2.0",
     "message":  "Bug fixes and improvements: export sharing, planner confirmations, recurring form, and more.",
