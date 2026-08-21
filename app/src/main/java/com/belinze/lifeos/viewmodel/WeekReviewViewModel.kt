@@ -59,12 +59,13 @@ data class WeekReviewUiState(
 )
 
 @HiltViewModel
-class WeekReviewViewModel @Inject constructor(
+class WeekReviewViewModel
+    @Inject
+    constructor(
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
     private val appPreferences: AppPreferences,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(WeekReviewUiState())
     val uiState: StateFlow<WeekReviewUiState> = _uiState.asStateFlow()
 
@@ -234,8 +235,11 @@ class WeekReviewViewModel @Inject constructor(
     // ─── Narrative items ──────────────────────────────────────────────────────
 
     private fun buildChangeItems(
-        weekSpend: Double, prevSpend: Double,
-        uncatCount: Int, fulizaCount: Int, topCategory: String,
+        weekSpend: Double,
+        prevSpend: Double,
+        uncatCount: Int,
+        fulizaCount: Int,
+        topCategory: String,
     ): List<ChangeItem> {
         val items = mutableListOf<ChangeItem>()
 

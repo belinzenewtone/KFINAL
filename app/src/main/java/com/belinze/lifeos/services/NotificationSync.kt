@@ -18,7 +18,9 @@ import javax.inject.Singleton
  * task/event/recurring/bill mutation.
  */
 @Singleton
-class NotificationSync @Inject constructor(
+class NotificationSync
+    @Inject
+    constructor(
     @ApplicationContext private val context: Context,
     private val scheduler:   NotificationScheduler,
     private val prefs:       AppPreferences,
@@ -27,14 +29,16 @@ class NotificationSync @Inject constructor(
     private val plannerDao:  PlannerDao,
     private val budgetDao:   BudgetDao,
 ) {
-
     private fun parseJsonOffsets(raw: String?): List<Int> {
         if (raw.isNullOrBlank()) return emptyList()
         return try {
             // Stored as a JSON array of numbers; tolerate leading/trailing brackets.
             val cleaned = raw.trim().removePrefix("[").removeSuffix("]")
-            if (cleaned.isBlank()) emptyList()
-            else cleaned.split(",").mapNotNull { it.trim().toIntOrNull() }
+            if (cleaned.isBlank()) {
+                emptyList()
+            } else {
+                cleaned.split(",").mapNotNull { it.trim().toIntOrNull() }
+            }
         } catch (_: Exception) {
             emptyList()
         }

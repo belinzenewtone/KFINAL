@@ -1,11 +1,14 @@
 package com.belinze.lifeos.ui.screen.finance
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,27 +18,27 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Message
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Message
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,18 +46,29 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FrostCard
 import com.belinze.lifeos.ui.components.InlineBanner
@@ -64,9 +78,7 @@ import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
-import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.util.formatCurrency
-import com.belinze.lifeos.util.compactCurrency
 import com.belinze.lifeos.viewmodel.BudgetViewModel
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import com.belinze.lifeos.viewmodel.SmsImportViewModel
@@ -89,9 +101,10 @@ import java.util.Locale
 //   ‣ InlineBanner: uncategorized transactions
 //   ‣ Horizontal insights row: Budget / Fuliza / Fees
 //   ‣ Period selector + search field
-//   ‣ "Transactions" header + count
-//   ‣ Date-grouped LazyColumn of TransactionListItem
-//   ‣ FAB: Add transaction
+//   ‣ "Transactions" header + loaded count
+//   ‣ Paging 3 LazyColumn of TransactionListItem — date-grouped visually
+//     with adaptive corner radius (no wrapping card needed per group)
+//   ‣ Load-more spinner while appending next page
 // ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,47 +120,73 @@ fun FinanceScreen(
     val smsState     by smsImportViewModel.uiState.collectAsState()
     val budgetState  by budgetViewModel.uiState.collectAsState()
     val plannerState by plannerViewModel.uiState.collectAsState()
-    val isDark       = isSystemInDarkTheme()
 
-    // Top budget alert — mirrors RN Finance hero: show banner if any budget ≥ 80%
-    val alertBudget = remember(budgetState.budgets) {
-        budgetState.budgets.firstOrNull { it.pct >= 0.80f }
+    // ── Paging 3 — collect once per composition; survives config changes via
+    // cachedIn(viewModelScope). refresh() / retry() are called directly on this.
+    val pagingItems = viewModel.pagedTransactions.collectAsLazyPagingItems()
+
+    // ── Derived state slices — each only re-triggers its readers when the
+    // specific field actually changes (structural equality via data class ==).
+    // Paging load-state changes do NOT change these slices, so the hero card,
+    // insights row, and filter chips stay composed during long scroll sessions.
+    val monthTotals     by remember { derivedStateOf { state.monthTotals } }
+    val feeTotal        by remember { derivedStateOf { state.feeTotal } }
+    val uncategorized   by remember { derivedStateOf { state.uncategorized } }
+    val activeFilters   by remember { derivedStateOf { state.filters } }
+    val activeBudgetsDs by remember { derivedStateOf { budgetState.budgets.filter { it.budget.isActive != 0 } } }
+    val activeLoansDs   by remember { derivedStateOf { plannerState.loans.filter { it.status == "active" } } }
+    val isImporting     by remember { derivedStateOf { smsState.isImporting } }
+    val context      = LocalContext.current
+
+    // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
+    // from the Budgets/Categorize screens) so the budget alert, budget card, and
+    // uncategorized banner count reflect current data instead of stale values.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            budgetViewModel.load()
+            viewModel.refreshMetrics()
+        }
     }
 
-    // Group transactions by date
-    val grouped = remember(state.transactions) {
-        state.transactions
-            .groupBy { it.date?.take(10) ?: "" }
-            .entries
-            .sortedByDescending { it.key }
+    // FI-1: SMS permission check — show banner if READ_SMS not granted
+    var smsGranted by remember {
+        mutableStateOf(
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_SMS)
+                == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val smsPermLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { results ->
+        smsGranted = results[Manifest.permission.READ_SMS] == true ||
+                     results[Manifest.permission.RECEIVE_SMS] == true
     }
 
-    // Derived hero values
-    val monthIncome   = state.monthTotals?.income  ?: 0.0
-    val monthExpense  = state.monthTotals?.expense ?: 0.0
-    val todayStr      = remember { java.time.LocalDate.now().toString() }
-    val weekStartStr  = remember { java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).toString() }
-    val todayExpense  = remember(state.transactions) {
-        state.transactions
-            .filter { it.date?.take(10) == todayStr && it.transactionType != "income" }
-            .sumOf { it.amount }
+    // Top budget alert — derived from activeBudgetsDs so it doesn't recompute on scroll
+    val alertBudget by remember {
+        derivedStateOf {
+            activeBudgetsDs.firstOrNull { b ->
+                b.pct >= (b.budget.alertThreshold ?: 0.8).toFloat()
+            }
+        }
     }
-    val weekExpense   = remember(state.transactions) {
-        state.transactions
-            .filter { (it.date?.take(10) ?: "") >= weekStartStr && it.transactionType != "income" }
-            .sumOf { it.amount }
-    }
+
+    // Hero sub-metrics — pulled from ViewModel metrics (accurate for ALL data,
+    // not just the current paging window) so these are never off after filter changes.
+    val monthIncome  = monthTotals?.income  ?: 0.0
+    val monthExpense = monthTotals?.expense ?: 0.0
+    val todayExpense = state.todayExpense
+    val weekExpense  = state.weekExpense
 
     Box(modifier = Modifier.fillMaxSize()) {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars),
         ) {
-
             // ── SMS import progress banner (mirrors FinanceScreen.tsx smsBanner) ─
-            if (smsState.isImporting) {
+            if (isImporting) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -180,50 +219,102 @@ fun FinanceScreen(
                 Text(
                     text     = "Finance",
                     style    = MaterialTheme.typography.headlineSmall,
-                    color    = MaterialTheme.colorScheme.onBackground,
+                    color    = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
-                IconButton(onClick = { viewModel.reload() }) {
-                    Icon(
-                        imageVector        = Icons.Filled.Refresh,
-                        contentDescription = "Refresh",
-                        tint               = MaterialTheme.colorScheme.onBackground.copy(0.60f),
-                    )
+                Row {
+                    IconButton(onClick = { navController.navigate(NavTo.transactionForm()) }) {
+                        Icon(
+                            imageVector        = Icons.Outlined.Add,
+                            contentDescription = "Add transaction",
+                            tint               = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(onClick = {
+                        pagingItems.refresh()
+                        viewModel.refreshMetrics()
+                    }) {
+                        Icon(
+                            imageVector        = Icons.Outlined.Refresh,
+                            contentDescription = "Refresh",
+                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 
+            // Hoist scroll states so they are never recreated inside LazyColumn item lambdas
+            val actionChipsScrollState    = rememberScrollState()
+            val insightsRowScrollState    = rememberScrollState()
+            val periodSelectorScrollState = rememberScrollState()
+            val listState                 = rememberLazyListState()
+
             LazyColumn(
+                state               = listState,
                 modifier            = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
+                // ── FI-1: SMS permission banner ───────────────────────────────
+                if (!smsGranted) {
+                    item {
+                        val WARNING = Color(0xFFF5CB5C)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs)
+                                .clip(MaterialTheme.shapes.medium)
+                                .border(1.dp, WARNING, MaterialTheme.shapes.medium)
+                                .background(WARNING.copy(alpha = 0.10f))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(color = WARNING.copy(0.2f)),
+                                ) {
+                                    smsPermLauncher.launch(
+                                        arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
+                                    )
+                                }
+                                .padding(Spacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            Icon(Icons.Outlined.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(16.dp))
+                            Text(
+                                "SMS permissions not granted — tap to allow",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = WARNING,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
 
                 // ── Action chips ──────────────────────────────────────────────
                 item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
+                            .horizontalScroll(actionChipsScrollState)
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
                         ActionChip(
                             label   = "Add",
-                            icon    = Icons.Filled.Add,
+                            icon    = Icons.Outlined.Add,
                             onClick = { navController.navigate(Route.TRANSACTION_FORM) },
                         )
                         ActionChip(
                             label   = "Import SMS",
-                            icon    = Icons.Filled.Message,
+                            icon    = Icons.Outlined.Message,
                             onClick = { navController.navigate(Route.IMPORT_SMS) },
                         )
                         ActionChip(
                             label   = "Import CSV",
-                            icon    = Icons.Filled.FileDownload,
+                            icon    = Icons.Outlined.FileDownload,
                             onClick = { navController.navigate(Route.IMPORT_CSV) },
                         )
                         ActionChip(
                             label   = "Export Data",
-                            icon    = Icons.Filled.FileUpload,
+                            icon    = Icons.Outlined.FileUpload,
                             onClick = { navController.navigate(Route.EXPORT_DATA) },
                         )
                     }
@@ -239,7 +330,7 @@ fun FinanceScreen(
                         Text(
                             text  = "Spent this month",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground.copy(0.60f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(Spacing.xs))
                         Text(
@@ -248,30 +339,34 @@ fun FinanceScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize   = 34.sp,
                             ),
-                            color      = MaterialTheme.colorScheme.onBackground,
+                            color      = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(Modifier.height(Spacing.md))
                         Row(
                             modifier              = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(24.dp),
                         ) {
-                            HeroSubMetric(label = "Today",  amount = todayExpense)
+                            HeroSubMetric(label = "Today",     amount = todayExpense)
                             HeroSubMetric(label = "This week", amount = weekExpense)
-                            HeroSubMetric(label = "Income", amount = monthIncome, isCredit = true)
+                            HeroSubMetric(label = "Income",    amount = monthIncome, isCredit = true)
                         }
                     }
                 }
 
                 // ── Budget alert banner (≥ 80% of any budget used) ───────────
-                // Matches React: outlined card with icon + "Over/Approaching" headline +
-                // "X% used" subtitle + chevron; errorContainer vs primaryContainer bg.
-                if (alertBudget != null) {
+                alertBudget?.let { ab ->
                     item {
-                        val isOver      = alertBudget.pct >= 1.0f
-                        val bgColor     = if (isOver) MaterialTheme.colorScheme.errorContainer
-                                          else MaterialTheme.colorScheme.primaryContainer
-                        val accentColor = if (isOver) MaterialTheme.colorScheme.error
-                                          else MaterialTheme.colorScheme.primary
+                        val isOver      = ab.pct >= 1.0f
+                        val bgColor     = if (isOver) {
+                            MaterialTheme.colorScheme.errorContainer
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        }
+                        val accentColor = if (isOver) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -288,7 +383,7 @@ fun FinanceScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.base),
                         ) {
                             Icon(
-                                Icons.Filled.Warning,
+                                Icons.Outlined.Warning,
                                 contentDescription = null,
                                 tint     = accentColor,
                                 modifier = Modifier.size(20.dp),
@@ -299,14 +394,19 @@ fun FinanceScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = accentColor,
                                 )
+                                val pctText = if (ab.budget.limitAmount > 0) {
+                                    "${(ab.pct * 100).toInt()}% of ${formatCurrency(ab.budget.limitAmount, decimals = 0)} ${ab.budget.category} budget used"
+                                } else {
+                                    "${ab.budget.category.replaceFirstChar { it.uppercase() }} — no limit set"
+                                }
                                 Text(
-                                    text  = "${alertBudget.budget.category.replaceFirstChar { it.uppercase() }} is ${(alertBudget.pct * 100).toInt()}% used",
+                                    text  = pctText,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             Icon(
-                                Icons.Filled.KeyboardArrowRight,
+                                Icons.Outlined.KeyboardArrowRight,
                                 contentDescription = null,
                                 tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp),
@@ -316,52 +416,47 @@ fun FinanceScreen(
                 }
 
                 // ── Uncategorized banner ──────────────────────────────────────
-                if (state.uncategorized > 0) {
+                if (uncategorized > 0) {
                     item {
                         InlineBanner(
-                            message  = "${state.uncategorized} transactions need a category",
+                            message  = "$uncategorized transactions need a category",
                             tone     = BannerTone.Info,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
                             action   = "Review",
-                            onAction = { navController.navigate(Route.UNCATEGORIZED) },
+                            onAction = { navController.navigate(Route.CATEGORIZE) },
                         )
                     }
                 }
 
-                // ── Insights row (Budget / Fuliza / Fees) — above filters, matching React ─
+                // ── Insights row (Budget / Fuliza / Fees) — above filters ─────
                 item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
+                            .horizontalScroll(insightsRowScrollState)
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
-                        // Budget remaining card
-                        val budgetRemaining = budgetState.budgets.sumOf { it.remaining }
+                        val budgetRemaining = activeBudgetsDs.sumOf { it.remaining }
                         InsightCard(
                             label   = "Budget",
                             action  = "View",
                             amount  = budgetRemaining,
-                            sub     = "${budgetState.budgets.size} guardrails",
+                            sub     = "${activeBudgetsDs.size} guardrails",
                             onClick = { navController.navigate(Route.BUDGETS) },
                         )
-                        // Fuliza outstanding — from active loan records (matching React's
-                        // loans.filter(status==='active').reduce(draw_amount - total_repaid))
-                        val activeLoans       = plannerState.loans.filter { it.status == "active" }
-                        val fulizaOutstanding = activeLoans.sumOf { it.drawAmountKes - it.totalRepaidKes }
+                        val fulizaOutstanding = activeLoansDs.sumOf { it.drawAmountKes - it.totalRepaidKes }
                         InsightCard(
                             label  = "Fuliza Outstanding",
                             amount = fulizaOutstanding,
-                            sub    = "${activeLoans.size} open",
+                            sub    = "${activeLoansDs.size} open",
                         )
-                        // Service charges / fees
-                        if (state.feeTotal > 0) {
+                        if (feeTotal > 0) {
                             InsightCard(
                                 label  = "Service Charges",
-                                amount = state.feeTotal,
+                                amount = feeTotal,
                                 sub    = "Airtime, Fuliza & subs",
                             )
                         }
@@ -373,12 +468,12 @@ fun FinanceScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
+                            .horizontalScroll(periodSelectorScrollState)
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
                         listOf("all", "today", "week", "month").forEach { period ->
-                            val selected = state.filters.period == period
+                            val selected = activeFilters.period == period
                             PeriodChip(
                                 label    = period.replaceFirstChar { it.uppercase() },
                                 selected = selected,
@@ -390,7 +485,7 @@ fun FinanceScreen(
 
                 item {
                     OutlinedTextField(
-                        value         = state.filters.search,
+                        value         = activeFilters.search,
                         onValueChange = { viewModel.setSearch(it) },
                         placeholder   = { Text("Name, ref code…") },
                         singleLine    = true,
@@ -404,20 +499,21 @@ fun FinanceScreen(
                 item {
                     SectionHeader(
                         label    = "Transactions",
-                        action   = if (state.transactions.isNotEmpty()) "${state.transactions.size}" else null,
+                        action   = pagingItems.itemCount.takeIf { it > 0 }?.toString(),
                         modifier = Modifier.padding(top = Spacing.md),
                     )
                 }
 
-                // ── Shimmer while loading ─────────────────────────────────────
-                if (state.isLoading) {
+                // ── Shimmer — only on the very first load (empty + refreshing) ─
+                val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading
+                if (isRefreshing && pagingItems.itemCount == 0) {
                     item {
                         ShimmerLoadingState(
                             rowCount = 6,
                             modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
                         )
                     }
-                } else if (grouped.isEmpty()) {
+                } else if (!isRefreshing && pagingItems.itemCount == 0) {
                     item {
                         Box(
                             modifier         = Modifier
@@ -427,44 +523,80 @@ fun FinanceScreen(
                         ) {
                             Text(
                                 "No transactions yet.",
-                                color = MaterialTheme.colorScheme.onBackground.copy(0.40f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
-                } else {
-                    // Date-grouped list
-                    grouped.forEach { (dateKey, txs) ->
-                        item(key = "header_$dateKey") {
-                            val dayTotal = txs
-                                .filter { it.transactionType != "income" }
-                                .sumOf { it.amount }
-                            DayGroupHeader(
-                                dateLabel = formatDateKey(dateKey),
-                                total     = dayTotal,
-                            )
-                        }
-                        itemsIndexed(
-                            items = txs,
-                            key   = { _, tx -> tx.id },
-                        ) { _, tx ->
-                            TransactionListItem(
-                                tx      = tx,
-                                onClick = { navController.navigate(NavTo.transactionDetail(tx.id)) },
-                            )
-                        }
+                }
+
+                // ── Paging 3 transaction list ─────────────────────────────────
+                //
+                // Date grouping is done inline per item:
+                //   • isFirstOfDay  → show date header above + open rounded top corners
+                //   • isLastOfDay   → close rounded bottom corners + vertical gap after
+                //   • peek(index+1) may return null at page boundaries; when the next
+                //     page loads the item recomposes with correct corner radius.
+                //   • dividers only between same-day items (hidden when isLastOfDay)
+                items(
+                    count = pagingItems.itemCount,
+                    key   = { index -> pagingItems.peek(index)?.id ?: index },
+                ) { index ->
+                    val tx = pagingItems[index] ?: return@items
+
+                    val prevDate     = if (index > 0) pagingItems.peek(index - 1)?.date?.take(10) else null
+                    val currDate     = tx.date?.take(10) ?: ""
+                    val nextDate     = pagingItems.peek(index + 1)?.date?.take(10)
+                    val isFirstOfDay = prevDate != currDate
+                    val isLastOfDay  = nextDate != currDate
+
+                    // Date section header above the first item of each day
+                    if (isFirstOfDay) {
+                        DayGroupHeader(
+                            dateLabel = formatDateKey(currDate),
+                            modifier  = Modifier.padding(top = if (index == 0) 0.dp else Spacing.sm),
+                        )
                     }
 
-                    // Load-more item
-                    if (state.hasNextPage) {
-                        item {
-                            Box(
-                                modifier         = Modifier
-                                    .fillMaxWidth()
-                                    .padding(Spacing.lg),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                            }
+                    // Visual grouping: adaptive corner radius gives each date group
+                    // a card-like appearance without a wrapping GlassCard.
+                    val topR    = if (isFirstOfDay) 12.dp else 0.dp
+                    val bottomR = if (isLastOfDay)  12.dp else 0.dp
+                    val shape   = RoundedCornerShape(
+                        topStart    = topR, topEnd    = topR,
+                        bottomStart = bottomR, bottomEnd = bottomR,
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.screenHorizontal)
+                            .clip(shape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, shape),
+                    ) {
+                        TransactionListItem(
+                            tx      = tx,
+                            onClick = { navController.navigate(NavTo.transactionDetail(tx.id)) },
+                        )
+                        if (!isLastOfDay) {
+                            HorizontalDivider(
+                                modifier  = Modifier.padding(horizontal = 12.dp),
+                                color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                                thickness = 1.dp,
+                            )
+                        }
+                    }
+                }
+
+                // ── Append (load-more) spinner ────────────────────────────────
+                if (pagingItems.loadState.append is LoadState.Loading) {
+                    item(key = "load_more") {
+                        Box(
+                            modifier         = Modifier
+                                .fillMaxWidth()
+                                .padding(Spacing.lg),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         }
                     }
                 }
@@ -474,26 +606,24 @@ fun FinanceScreen(
             }
         }
 
-        // ── FAB ───────────────────────────────────────────────────────────────
-        ExtendedFloatingActionButton(
-            onClick          = { navController.navigate(Route.TRANSACTION_FORM) },
-            text             = { Text("Add") },
-            icon             = { Icon(Icons.Filled.Add, contentDescription = "Add transaction") },
-            containerColor   = MaterialTheme.colorScheme.primary,
-            contentColor     = MaterialTheme.colorScheme.onPrimary,
-            modifier         = Modifier
-                .align(Alignment.BottomEnd)
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                // Sit just above the FloatingTabBar (58dp) + a small gap, matching React position
-                .padding(end = Spacing.lg, bottom = TabBarDimens.height + Spacing.base),
-        )
-
         // Error banner — overlaid so it doesn't shift content
         TopBanner(
             visible  = state.error != null,
             message  = state.error ?: "",
             tone     = BannerTone.Error,
             modifier = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars),
+        )
+
+        // FI-3: Post-import result banner ("Imported N transactions")
+        TopBanner(
+            visible       = smsState.banner != null,
+            message       = smsState.banner ?: "",
+            tone          = BannerTone.Success,
+            onDismiss     = { smsImportViewModel.clearBanner() },
+            autoDismissMs = 3000,
+            modifier      = Modifier
                 .align(Alignment.TopCenter)
                 .windowInsetsPadding(WindowInsets.statusBars),
         )
@@ -526,7 +656,7 @@ private fun ActionChip(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(icon, contentDescription = label, tint = primary, modifier = Modifier.size(16.dp))
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -548,10 +678,13 @@ private fun androidx.compose.foundation.layout.RowScope.HeroSubMetric(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text       = compactCurrency(amount),
+            text       = formatCurrency(amount, decimals = 0),
             style      = MaterialTheme.typography.titleMedium,
-            color      = if (isCredit) MaterialTheme.colorScheme.primary
-                         else MaterialTheme.colorScheme.onSurface,
+            color      = if (isCredit) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
         )
     }
 }
@@ -592,11 +725,15 @@ private fun InsightCard(
                 MaterialTheme.shapes.medium,
             )
             .then(
-                if (onClick != null) Modifier.clickable(
+                if (onClick != null) {
+                    Modifier.clickable(
                     interactionSource = interactionSource,
                     indication        = ripple(color = primary.copy(0.12f)),
                     onClick           = onClick,
-                ) else Modifier
+                )
+                } else {
+                    Modifier
+                }
             )
             .padding(Spacing.sm),
     ) {
@@ -619,7 +756,7 @@ private fun InsightCard(
             }
         }
         Text(
-            text     = compactCurrency(amount),
+            text     = formatCurrency(amount, decimals = 0),
             style    = MaterialTheme.typography.headlineSmall,
             color    = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
@@ -637,15 +774,14 @@ private fun InsightCard(
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-private fun currentMonthLabel(): String =
-    LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
-
 private fun formatDateKey(dateKey: String): String = try {
     val d = LocalDate.parse(dateKey)
     val today = LocalDate.now()
     when {
-        d == today           -> "Today"
-        d == today.minusDays(1) -> "Yesterday"
+        d == today               -> "Today"
+        d == today.minusDays(1)  -> "Yesterday"
         else -> d.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH))
     }
-} catch (_: Exception) { dateKey }
+} catch (_: Exception) {
+    dateKey
+}

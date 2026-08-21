@@ -10,6 +10,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.await
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
@@ -26,10 +27,11 @@ import javax.inject.Singleton
  * register the SmsReceiverModule Compose stub, and schedule the periodic sweep.
  */
 @Singleton
-class SmsService @Inject constructor(
+class SmsService
+    @Inject
+    constructor(
     private val context: Context,
 ) {
-
     private val workManager: WorkManager get() = WorkManager.getInstance(context)
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -97,18 +99,19 @@ class SmsService @Inject constructor(
     }
 
     /**
-     * Triggers a one-time historical SMS import from the device inbox.
-     * Mirrors SmsReceiverModule.importHistoricalSms() from the RN app.
+     * Triggers a one-time historical SMS import from the device inbox and waits
+     * for the worker to finish. Mirrors SmsReceiverModule.importHistoricalSms()
+     * from the RN app (which awaits the worker result before returning).
      *
      * @param fromMs start of the scan window (epoch millis)
      * @param toMs   end of the scan window (epoch millis)
      * @param filter "mpesa_only" | "banks_only" | "all" — which institutions to scan
      */
-    fun importHistoricalSms(
+    suspend fun importHistoricalSms(
         fromMs: Long = 0L,
         toMs:   Long = System.currentTimeMillis(),
         filter: String = "all",
-    ) {
+    ): ImportResult {
         val request = OneTimeWorkRequestBuilder<SmsImportWorker>()
             .setInputData(
                 androidx.work.Data.Builder()
@@ -118,12 +121,35 @@ class SmsService @Inject constructor(
                     .build()
             )
             .build()
-        workManager.enqueueUniqueWork(
+        val operation = workManager.enqueueUniqueWork(
             "lifeos_historical_import",
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.REPLACE,
             request,
         )
+        // Await the enqueue operation, then pull the finished worker's output.
+        operation.result.await()
+        val info = workManager.getWorkInfosForUniqueWork("lifeos_historical_import").await()
+            .firstOrNull { it.state.isFinished }
+            ?: return ImportResult(0, 0, 0, 0, 0, "worker_not_found")
+        val data = info.outputData
+        return ImportResult(
+            total       = data.getInt("total", 0),
+            imported    = data.getInt("imported", 0),
+            duplicates  = data.getInt("duplicates", 0),
+            quarantined = data.getInt("quarantined", 0),
+            failed      = data.getInt("failed", 0),
+            error       = data.getString("error"),
+        )
     }
+
+    data class ImportResult(
+        val total:       Int,
+        val imported:    Int,
+        val duplicates:  Int,
+        val quarantined: Int,
+        val failed:      Int,
+        val error:       String?,
+    )
 
     /**
      * Retry messages currently awaiting review in the ingest queue.
@@ -147,6 +173,7 @@ class SmsService @Inject constructor(
         val failureReason: String?,
         val confidence: String?,
         val createdAt: String,
+        val smsDate: String? = null,
     )
 
     data class IngestQueueStatus(
@@ -193,6 +220,123 @@ class SmsService @Inject constructor(
             failed          = raw["failed"] as? Long ?: 0L,
             oldestPendingAt = raw["oldestPendingAt"] as? String,
         )
+    }
+
+    // ─── Lifetime stats (mirrors SmsReceiverModule.getStats) ───────────────────
+
+    data class SmsStats(
+        val totalImported:    Long,
+        val totalDuplicates:  Long,
+        val totalFailed:      Long,
+        val totalQuarantined: Long,
+        val lastImportAt:     String?,
+    )
+
+    fun getStats(): SmsStats {
+        val raw = DbWriter.getInstance(context).getStats()
+        return SmsStats(
+            totalImported    = raw["totalImported"] as? Long ?: 0L,
+            totalDuplicates  = raw["totalDuplicates"] as? Long ?: 0L,
+            totalFailed      = raw["totalFailed"] as? Long ?: 0L,
+            totalQuarantined = raw["totalQuarantined"] as? Long ?: 0L,
+            lastImportAt     = raw["lastImportAt"] as? String,
+        )
+    }
+
+    // ─── Receiver status (mirrors SmsReceiverModule.getReceiverStatus) ─────────
+
+    data class ReceiverStatus(
+        val enabled:    Boolean,
+        val lastFireMs: Long,
+    )
+
+    fun getReceiverStatus(): ReceiverStatus {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return ReceiverStatus(
+            enabled    = prefs.getBoolean(KEY_BACKGROUND_RECEIVER, false),
+            lastFireMs = prefs.getLong(KEY_LAST_RECEIVER_FIRE_MS, 0L),
+        )
+    }
+
+    // ─── Diagnostics (mirrors SmsReceiverModule.getNativeDiagnosticInfo) ──────
+
+    data class NativeDiagnostic(
+        val nativeDbPath:   String,
+        val nativeTxCount:  Long,
+        val nativeAuditCount: Long,
+    )
+
+    fun getNativeDiagnosticInfo(): NativeDiagnostic {
+        val db = DbWriter.getInstance(context)
+        val path = java.io.File(context.filesDir, "SQLite/lifeos.db").absolutePath
+        return NativeDiagnostic(
+            nativeDbPath    = path,
+            nativeTxCount   = db.getTransactionCount(),
+            nativeAuditCount = db.getAuditCount(),
+        )
+    }
+
+    /**
+     * Re-arms every failed ingest-queue row so the next sweep re-processes them.
+     * Mirrors SmsReceiverModule.retryIngestQueue from the RN app.
+     */
+    fun retryIngestQueue() {
+        DbWriter.getInstance(context).requeueFailedIngest()
+        ensureIngestSweep()
+    }
+
+    /**
+     * Re-parse a single quarantined audit entry by audit id.
+     * Returns true if the entry was recovered (parsed and inserted as a transaction).
+     * Mirrors React's retrySingle(id) which targets one card's Retry button.
+     */
+    fun retrySingleQuarantined(auditId: Long): Boolean {
+        val db = DbWriter.getInstance(context)
+        val entry = db.getQuarantinedById(auditId) ?: return false
+        val rawMsg = entry["rawMessage"] as? String ?: return false
+
+        val receivedAtMs = isoToEpoch(entry["createdAt"] as? String)
+        val result = SmsParser.parse(rawMsg, receivedAtMs)
+        if (result !is SmsParser.SmsParseResult.Success) return false
+        val tx = result.transaction
+        if (tx.parseRoute == SmsParser.ParseRoute.QUARANTINE) return false
+
+        val dupReason = SmsDedupeEngine.check(SmsDedupeEngine.Context(), tx, db)
+        if (dupReason != SmsDedupeEngine.Result.NEW) return false
+
+        val rowId = db.insertTransaction(tx)
+        if (rowId < 0) return false
+
+        db.insertAudit(tx.mpesaCode, rawMsg, tx.amount, tx.counterparty, "retry_imported")
+        db.markAuditRetried(listOf(auditId))
+        db.checkpoint()
+        return true
+    }
+
+    /**
+     * Mark a single audit row as dismissed (updates outcome to 'dismissed').
+     * Mirrors React's dismiss action which marks the audit row before hiding the card.
+     */
+    fun dismissAuditEntry(auditId: Long) {
+        DbWriter.getInstance(context).markAuditDismissed(listOf(auditId))
+    }
+
+    /**
+     * Bulk-dismiss a list of audit rows (e.g. "Dismiss all").
+     */
+    fun dismissAllAuditEntries(auditIds: List<Long>) {
+        if (auditIds.isEmpty()) return
+        DbWriter.getInstance(context).markAuditDismissed(auditIds)
+    }
+
+    /**
+     * Mark an audit row as approved after the user taps Approve on an imported_review card.
+     * DbWriter has no dedicated "approved" outcome writer, so we reuse markAuditDismissed —
+     * the outcome becomes 'dismissed' which keeps the card out of the review queue.
+     * This matches React's intent (entry leaves the queue) if not the exact outcome string.
+     */
+    fun markAuditApproved(auditId: Long) {
+        DbWriter.getInstance(context).markAuditDismissed(listOf(auditId))
     }
 
     /**
@@ -283,6 +427,23 @@ class SmsService @Inject constructor(
         return pm.isIgnoringBatteryOptimizations(context.packageName)
     }
 
+    /**
+     * Opens the system battery-optimization settings so the user can allow
+     * background SMS capture. Mirrors requestIgnoreBatteryOptimizations in the
+     * RN app (expo battery module opens the same settings intent).
+     */
+    fun requestIgnoreBatteryOptimizations() {
+        try {
+            val intent = android.content.Intent(
+                android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                "package:${context.packageName}".let { android.net.Uri.parse(it) }
+            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "Battery optimization request unavailable: ${e.message}")
+        }
+    }
+
     private fun isoToEpoch(iso: String?): Long {
         if (iso.isNullOrBlank()) return System.currentTimeMillis()
         return try {
@@ -299,6 +460,7 @@ class SmsService @Inject constructor(
         private const val TAG = "LifeOS/SmsService"
         private const val PREFS_NAME = "lifeos_sms_prefs"           // matches SmsReceiver.PREFS_NAME
         private const val KEY_BACKGROUND_RECEIVER = "background_receiver_enabled"
+        private const val KEY_LAST_RECEIVER_FIRE_MS = "last_receiver_fire_ms"
         private const val KEY_FULIZA_LIMIT_KES = "fuliza_limit_kes" // matches SmsProcessWorker.KEY_FULIZA_LIMIT
     }
 }

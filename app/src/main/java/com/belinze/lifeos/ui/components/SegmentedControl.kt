@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,8 +43,11 @@ fun SegmentedControl(
                     .weight(1f)
                     .clip(ShapeLg)
                     .background(
-                        if (selected) MaterialTheme.colorScheme.surface
-                        else androidx.compose.ui.graphics.Color.Transparent,
+                        if (selected) {
+                            MaterialTheme.colorScheme.surface
+                        } else {
+                            androidx.compose.ui.graphics.Color.Transparent
+                        },
                     )
                     .clickable { onChange(optionValue) }
                     .padding(vertical = 10.dp),
@@ -54,8 +56,11 @@ fun SegmentedControl(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
             }
         }

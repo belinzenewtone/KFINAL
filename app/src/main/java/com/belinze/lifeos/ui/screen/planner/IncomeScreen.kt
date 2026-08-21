@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AttachMoney
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,14 +26,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -70,7 +68,7 @@ fun IncomeScreen(
         scrollable = false, // LazyColumn below provides its own scrolling
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.incomeForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add income", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add income", tint = MaterialTheme.colorScheme.primary)
             }
         },
     ) {
@@ -105,7 +103,7 @@ fun IncomeScreen(
                             modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Filled.AttachMoney, contentDescription = null,
+                            Icon(Icons.Outlined.AttachMoney, contentDescription = null,
                                 tint = SUCCESS, modifier = Modifier.size(32.dp))
                         }
                         Spacer(Modifier.height(Spacing.base))
@@ -141,7 +139,7 @@ fun IncomeScreen(
                                 Text(formatCurrency(income.amount),
                                     style = MaterialTheme.typography.titleMedium, color = SUCCESS)
                                 IconButton(onClick = { viewModel.deleteIncome(income.id) }, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Delete",
+                                    Icon(Icons.Outlined.Delete, contentDescription = "Delete",
                                         tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                 }
                             }
@@ -157,4 +155,6 @@ fun IncomeScreen(
 
 private fun formatDate(iso: String?): String = try {
     LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
-} catch (_: Exception) { iso?.take(10) ?: "" }
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}

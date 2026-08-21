@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.belinze.lifeos.ui.theme.LocalDarkTheme
 import com.belinze.lifeos.ui.theme.Motion
 import com.belinze.lifeos.ui.theme.ShapePill
 import com.belinze.lifeos.ui.theme.ShapeXl
@@ -108,7 +108,7 @@ fun FloatingTabBar(
     onTabSelect:  (LifeOsTab) -> Unit,
     modifier:     Modifier = Modifier,
 ) {
-    val isDark  = isSystemInDarkTheme()
+    val isDark  = LocalDarkTheme.current
     val primary = MaterialTheme.colorScheme.primary
 
     // Bottom offset: max(navigationBarHeight, sm) + sm
@@ -208,8 +208,11 @@ private fun TabButton(
                     Icon(
                         imageVector        = if (isSelected) tab.iconFilled else tab.iconOutlined,
                         contentDescription = tab.label,
-                        tint               = if (isSelected) primary
-                                             else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint               = if (isSelected) {
+                            primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         modifier           = Modifier.size(TabBarDimens.iconSize),   // 24dp
                     )
                 }
@@ -220,8 +223,11 @@ private fun TabButton(
                 text       = tab.label,
                 fontSize   = TabBarDimens.labelSize.sp,                // 10sp
                 fontWeight = FontWeight.Medium,                         // weight 500
-                color      = if (isSelected) primary
-                             else MaterialTheme.colorScheme.onSurfaceVariant,
+                color      = if (isSelected) {
+                    primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 textAlign  = TextAlign.Center,
                 lineHeight = 13.sp,
                 maxLines   = 1,

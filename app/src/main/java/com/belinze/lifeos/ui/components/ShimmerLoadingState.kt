@@ -6,11 +6,9 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,15 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.belinze.lifeos.ui.theme.LocalDarkTheme
 import com.belinze.lifeos.ui.theme.Motion
 import com.belinze.lifeos.ui.theme.ShapeMd
-import com.belinze.lifeos.ui.theme.ShapePill
 import com.belinze.lifeos.ui.theme.ShapeSm
 import com.belinze.lifeos.ui.theme.Spacing
 
@@ -50,7 +47,7 @@ fun ShimmerBox(
     width:    Dp?      = null,         // null = fillMaxWidth
     alpha:    Float    = 0.5f,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
     val baseColor = if (isDark) Color(0xFF2E2E33) else Color(0xFFCBD5E1)
 
     val boxMod = if (width != null) modifier.width(width) else modifier.fillMaxWidth()
@@ -95,8 +92,11 @@ fun ShimmerLoadingState(
                     .height(160.dp)
                     .clip(ShapeMd)
                     .background(
-                        if (isSystemInDarkTheme()) Color(0xFF161618).copy(alpha = alpha)
-                        else Color(0xFFCBD5E1).copy(alpha = alpha)
+                        if (LocalDarkTheme.current) {
+                            Color(0xFF161618).copy(alpha = alpha)
+                        } else {
+                            Color(0xFFCBD5E1).copy(alpha = alpha)
+                        }
                     ),
             )
             Spacer(Modifier.height(Spacing.md))
@@ -110,70 +110,34 @@ fun ShimmerLoadingState(
     }
 }
 
-/** One shimmer row — icon placeholder + two text placeholders. */
+/** One shimmer row — two stacked rectangle placeholders. */
 @Composable
 private fun ShimmerRow(
     alpha: Float,
     wide:  Boolean = true,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
     val baseColor = if (isDark) Color(0xFF2E2E33) else Color(0xFFCBD5E1)
 
-    Row(
-        modifier            = Modifier.fillMaxWidth(),
-        verticalAlignment   = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // Avatar / icon circle placeholder
+        // Title line
         Box(
             modifier = Modifier
-                .width(40.dp)
-                .height(40.dp)
-                .clip(ShapePill)
+                .fillMaxWidth(if (wide) 0.75f else 0.55f)
+                .height(14.dp)
+                .clip(ShapeSm)
                 .background(baseColor.copy(alpha = alpha)),
         )
-
-        Column(
-            modifier            = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            // Title line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(if (wide) 0.65f else 0.45f)
-                    .height(13.dp)
-                    .clip(ShapeSm)
-                    .background(baseColor.copy(alpha = alpha)),
-            )
-            // Subtitle line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(if (wide) 0.40f else 0.55f)
-                    .height(11.dp)
-                    .clip(ShapeSm)
-                    .background(baseColor.copy(alpha = alpha * 0.75f)),
-            )
-        }
-
-        // Amount placeholder (right-aligned)
-        Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(72.dp)
-                    .height(13.dp)
-                    .clip(ShapeSm)
-                    .background(baseColor.copy(alpha = alpha)),
-            )
-            Box(
-                modifier = Modifier
-                    .width(48.dp)
-                    .height(11.dp)
-                    .clip(ShapeSm)
-                    .background(baseColor.copy(alpha = alpha * 0.75f)),
-            )
-        }
+        // Subtitle line
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(if (wide) 0.50f else 0.38f)
+                .height(11.dp)
+                .clip(ShapeSm)
+                .background(baseColor.copy(alpha = alpha * 0.70f)),
+        )
     }
 }

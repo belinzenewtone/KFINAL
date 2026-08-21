@@ -74,7 +74,7 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
                 text       = "LifeOS",
                 fontSize   = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.60f),
+                color      = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 2.sp,
             )
         }

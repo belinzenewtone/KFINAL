@@ -6,7 +6,6 @@ import com.belinze.lifeos.data.db.entity.*
 /** Aggregated DAO for the Planner hub — covers recurring rules, bills, goals, loans, exports. */
 @Dao
 interface PlannerDao {
-
     // ─── Recurring rules ─────────────────────────────────────────────────────
 
     @Query("SELECT * FROM recurring_rules WHERE deleted_at IS NULL AND enabled = 1 ORDER BY next_run_at ASC")
@@ -94,4 +93,7 @@ interface PlannerDao {
 
     @Query("DELETE FROM exports WHERE id = :id")
     suspend fun deleteExport(id: String)
+
+    @Query("DELETE FROM exports")
+    suspend fun deleteAllExports()
 }

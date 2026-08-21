@@ -2,8 +2,8 @@ package com.belinze.lifeos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.AppPreferenceState
+import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.currentMonthKey
@@ -52,11 +52,12 @@ data class ProfileFormState(
 )
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor(
+class ProfileViewModel
+    @Inject
+    constructor(
     private val appPreferences:  AppPreferences,
     private val transactionDao:  TransactionDao,
 ) : ViewModel() {
-
     /** Live prefs snapshot for the profile page (name, avatar, etc.) */
     val prefState: StateFlow<AppPreferenceState> = appPreferences.state.stateIn(
         scope        = viewModelScope,
@@ -75,14 +76,17 @@ class ProfileViewModel @Inject constructor(
         prefState
             .onEach { p ->
                 _formState.update { f ->
-                    if (f.isSaving) f
-                    else f.copy(
+                    if (f.isSaving) {
+                        f
+                    } else {
+                        f.copy(
                         name      = p.profileName,
                         email     = p.profileEmail,
                         phone     = p.profilePhone,
                         username  = p.profileUsername,
                         avatarUri = p.profileAvatarUri,
                     )
+                    }
                 }
             }
             .launchIn(viewModelScope)
@@ -101,9 +105,11 @@ class ProfileViewModel @Inject constructor(
 
                 val curSpend  = curTotals.expense  ?: 0.0
                 val prevSpend = prevTotals.expense ?: 0.0
-                val momPct    = if (prevSpend > 0)
+                val momPct    = if (prevSpend > 0) {
                     ((curSpend - prevSpend) / prevSpend) * 100.0
-                else 0.0
+                } else {
+                    0.0
+                }
 
                 // Approx total transaction count
                 val recentCount = transactionDao.getPage(1000, 0).size
@@ -127,10 +133,14 @@ class ProfileViewModel @Inject constructor(
 
     // ─── Form ─────────────────────────────────────────────────────────────────
 
-    fun updateName(v: String)      = _formState.update { it.copy(name = v) }
-    fun updateEmail(v: String)     = _formState.update { it.copy(email = v) }
-    fun updatePhone(v: String)     = _formState.update { it.copy(phone = v) }
-    fun updateUsername(v: String)  = _formState.update { it.copy(username = v) }
+    fun updateName(v: String) = _formState.update { it.copy(name = v) }
+
+    fun updateEmail(v: String) = _formState.update { it.copy(email = v) }
+
+    fun updatePhone(v: String) = _formState.update { it.copy(phone = v) }
+
+    fun updateUsername(v: String) = _formState.update { it.copy(username = v) }
+
     fun updateAvatarUri(v: String) = _formState.update { it.copy(avatarUri = v) }
 
     /** Save only name + username (the Profile hero edit modal), preserving the rest. */
@@ -156,8 +166,11 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 appPreferences.update {
-                    if (email.isNullOrBlank()) it.remove(PreferenceKeys.PROFILE_EMAIL)
-                    else it[PreferenceKeys.PROFILE_EMAIL] = email
+                    if (email.isNullOrBlank()) {
+                        it.remove(PreferenceKeys.PROFILE_EMAIL)
+                    } else {
+                        it[PreferenceKeys.PROFILE_EMAIL] = email
+                    }
                 }
                 onSuccess()
             } catch (_: Exception) {

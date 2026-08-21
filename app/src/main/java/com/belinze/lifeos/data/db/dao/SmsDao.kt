@@ -11,7 +11,6 @@ import com.belinze.lifeos.data.db.entity.*
  */
 @Dao
 interface SmsDao {
-
     // ─── Merchant categories ──────────────────────────────────────────────────
 
     @Query("SELECT * FROM merchant_categories WHERE merchant = :merchant AND deleted_at IS NULL")

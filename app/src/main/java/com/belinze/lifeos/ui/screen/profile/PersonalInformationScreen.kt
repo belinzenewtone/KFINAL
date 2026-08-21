@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.screen.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -9,19 +8,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,6 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,16 +44,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.TopBanner
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 
@@ -81,6 +84,7 @@ fun PersonalInformationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.lg),
         ) {
             // Header
@@ -106,6 +110,7 @@ fun PersonalInformationScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
                 Spacer(Modifier.width(40.dp))
             }
@@ -124,7 +129,7 @@ fun PersonalInformationScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Icon(
-                        Icons.Filled.Edit,
+                        Icons.Outlined.Edit,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp),
@@ -132,7 +137,7 @@ fun PersonalInformationScreen(
                 }
 
                 InfoRow(
-                    icon = Icons.Filled.Person,
+                    icon = Icons.Outlined.Person,
                     label = "Name",
                     value = prefState.profileName,
                     placeholder = "Your name",
@@ -142,7 +147,7 @@ fun PersonalInformationScreen(
                     },
                 )
                 InfoRow(
-                    icon = Icons.Filled.Email,
+                    icon = Icons.Outlined.Email,
                     label = "Email",
                     value = prefState.profileEmail,
                     placeholder = "your@email.com",
@@ -152,7 +157,7 @@ fun PersonalInformationScreen(
                     },
                 )
                 InfoRow(
-                    icon = Icons.Filled.Person,
+                    icon = Icons.Outlined.Person,
                     label = "Username",
                     value = displayUsername,
                     placeholder = "Username",
@@ -165,6 +170,15 @@ fun PersonalInformationScreen(
             }
         }
     }
+
+    // PI-2: TopBanner outside editing guard so it remains visible after sheet closes
+    TopBanner(
+        visible       = successMsg != null,
+        message       = successMsg ?: "",
+        tone          = BannerTone.Success,
+        onDismiss     = { successMsg = null },
+        autoDismissMs = 2000,
+    )
 
     if (editing != null) {
         ModalBottomSheet(
@@ -185,19 +199,27 @@ fun PersonalInformationScreen(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                // PI-1: auto-focus edit field when sheet opens
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(200)
+                    runCatching { focusRequester.requestFocus() }
+                }
                 OutlinedTextField(
                     value = editValue,
                     onValueChange = { value ->
                         editValue = if (field == InfoField.Username) {
                             value.lowercase().replace(Regex("[^a-z0-9_]"), "").take(8)
-                        } else value
+                        } else {
+                            value
+                        }
                     },
                     placeholder = { Text(if (field == InfoField.Email) "your@email.com" else field.name) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = if (field == InfoField.Email) KeyboardType.Email else KeyboardType.Text,
                     ),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                 )
                 Button(
                     onClick = {
@@ -235,14 +257,7 @@ fun PersonalInformationScreen(
             }
         }
 
-        // Banner overlaid so it doesn't shift content (TopBanner is fillMaxWidth internally)
-        TopBanner(
-            visible       = successMsg != null,
-            message       = successMsg ?: "",
-            tone          = BannerTone.Success,
-            onDismiss     = { successMsg = null },
-            autoDismissMs = 2000,
-        )
+        // (TopBanner moved to screen level — PI-2)
     }
 }
 
@@ -255,16 +270,10 @@ private fun InfoRow(
     onClick: () -> Unit,
     isLast: Boolean = false,
 ) {
+    Column {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (!isLast) Modifier.border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp),
-                ) else Modifier
-            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
@@ -301,10 +310,16 @@ private fun InfoRow(
             )
         }
         Icon(
-            Icons.Filled.Edit,
+            Icons.Outlined.Edit,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(18.dp),
         )
     }
+    if (!isLast) {
+        androidx.compose.material3.HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+    }
+    } // end Column
 }

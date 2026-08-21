@@ -1,7 +1,5 @@
 package com.belinze.lifeos.ui.theme
 
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.spring
@@ -14,14 +12,19 @@ import androidx.compose.animation.core.tween
 object Motion {
     /** 100 ms — navigation slide, tab pill opacity fade */
     const val fast        = 100
+
     /** 180 ms — standard transitions, banner exit */
     const val standard    = 180
+
     /** 260 ms — slow reveals */
     const val slow        = 260
+
     /** 900 ms — shimmer pulse (alpha 0.35 ↔ 0.85, reversed) */
     const val shimmer     = 900
+
     /** 220 ms — TopBanner enter (slide + fade) */
     const val bannerEnter = 220
+
     /** 180 ms — TopBanner exit (= standard) */
     const val bannerExit  = 180
 }

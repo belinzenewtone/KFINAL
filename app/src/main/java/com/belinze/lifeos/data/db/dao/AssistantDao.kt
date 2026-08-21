@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AssistantDao {
-
     /** Rolling 10-message history window for the conversation context. */
     @Query("""
         SELECT * FROM assistant_messages

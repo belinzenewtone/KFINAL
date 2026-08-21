@@ -1,6 +1,5 @@
 package com.belinze.lifeos.ui.screen.planner
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,13 +12,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -52,6 +52,27 @@ fun RecurringScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var banner by remember { mutableStateOf<String?>(null) }
+    // RC-1: delete confirmation dialog
+    var pendingDeleteId by remember { mutableStateOf<String?>(null) }
+
+    if (pendingDeleteId != null) {
+        AlertDialog(
+            onDismissRequest = { pendingDeleteId = null },
+            title = { Text("Delete rule?") },
+            text  = { Text("This recurring rule will be permanently removed.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val id = pendingDeleteId!!
+                    pendingDeleteId = null
+                    // RC-2: trigger exit animation then delete from DB after animation settles
+                    viewModel.deleteRule(id)
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteId = null }) { Text("Cancel") }
+            },
+        )
+    }
 
     PageScaffold(
         eyebrow = "Automation",
@@ -61,7 +82,7 @@ fun RecurringScreen(
         scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.recurringForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add rule", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add rule", tint = MaterialTheme.colorScheme.primary)
             }
         },
         topBanner = {
@@ -79,22 +100,27 @@ fun RecurringScreen(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x3l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.Repeat, contentDescription = null,
+                Icon(Icons.Outlined.Repeat, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No recurring rules yet", style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(Spacing.xs))
+                // RC-6: subtitle uses bodySmall
                 Text("Add a rule to automate subscriptions, bills, or repeating tasks.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(state.recurringRules, key = { it.id }) { rule ->
+                    // RC-2: animateItem animates item removal with fade+shrink automatically
                     GlassCard(
                         onClick = { navController.navigate(NavTo.recurringForm(rule.id)) },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = Spacing.base)
+                            .animateItem(fadeInSpec = null, fadeOutSpec = null),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -114,22 +140,32 @@ fun RecurringScreen(
                                     Text(formatCurrency(it), style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface)
                                 }
+                                // RC-8: match RN toggle visual — white thumb on primary track
                                 Switch(
                                     checked = rule.enabled != 0,
                                     onCheckedChange = { v ->
                                         viewModel.toggleRecurringEnabled(rule.id, v)
                                         banner = "${rule.title} ${if (v) "enabled" else "paused"}"
                                     },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
+                                        checkedTrackColor    = MaterialTheme.colorScheme.primary,
+                                        uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
+                                        uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
+                                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                                    ),
                                 )
                             }
                         }
                         Spacer(Modifier.height(Spacing.base))
+                        // RC-7: delete button left-aligned (matches RN)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
+                            horizontalArrangement = Arrangement.Start,
                         ) {
-                            TextButton(onClick = { viewModel.deleteRule(rule.id) }) {
-                                Icon(Icons.Filled.Delete, contentDescription = null,
+                            // RC-1: show confirmation before deleting
+                            TextButton(onClick = { pendingDeleteId = rule.id }) {
+                                Icon(Icons.Outlined.Delete, contentDescription = null,
                                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.size(4.dp))
                                 Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -145,4 +181,6 @@ fun RecurringScreen(
 
 private fun formatDate(iso: String?): String = try {
     LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
-} catch (_: Exception) { iso?.take(10) ?: "" }
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}

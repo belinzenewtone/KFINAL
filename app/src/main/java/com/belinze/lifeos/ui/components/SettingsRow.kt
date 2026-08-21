@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -52,8 +51,11 @@ fun SettingsRow(
     modifier:        Modifier      = Modifier,
 ) {
     val resolvedIconColor = iconColor ?: MaterialTheme.colorScheme.primary
-    val labelColor = if (destructive) MaterialTheme.colorScheme.error
-                     else MaterialTheme.colorScheme.onSurface
+    val labelColor = if (destructive) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
     val interactionSource = remember { MutableInteractionSource() }
 
     val row = @Composable {
@@ -61,12 +63,17 @@ fun SettingsRow(
             modifier = modifier
                 .fillMaxWidth()
                 .then(
-                    if (disabled) Modifier
-                    else if (onPress != null && !toggle) Modifier.clickable(
+                    if (disabled) {
+                        Modifier
+                    } else if (onPress != null && !toggle) {
+                        Modifier.clickable(
                         interactionSource = interactionSource,
                         indication = ripple(color = resolvedIconColor.copy(alpha = 0.2f)),
                         onClick = onPress,
-                    ) else Modifier
+                    )
+                    } else {
+                        Modifier
+                    }
                 )
                 .padding(vertical = Spacing.base),
             verticalAlignment = Alignment.CenterVertically,
@@ -131,13 +138,11 @@ fun SettingsRow(
                         onCheckedChange = onToggleChange ?: {},
                         enabled = !disabled,
                         colors = SwitchDefaults.colors(
-                            // Explicit unchecked colors for both themes.
-                            // Light: outline was #E2E8F0 (invisible on #E8EDF3 bg).
-                            // Dark: surfaceVariant is #161618 (invisible on dark bg).
-                            // onSurface.copy(0.12f) gives a visible subtle track in both.
-                            uncheckedThumbColor  = MaterialTheme.colorScheme.onSurfaceVariant,
-                            uncheckedTrackColor  = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                            uncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor    = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
+                            uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
                         ),
                     )
                 } else if (showChevron) {

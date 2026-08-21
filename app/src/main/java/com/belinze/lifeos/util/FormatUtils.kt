@@ -42,6 +42,7 @@ fun formatCurrency(
     amount:       Double,
     showCurrency: Boolean = true,
     compact:      Boolean = false,
+    decimals:     Int     = -1,   // -1 = default (2 decimals); 0 = whole number
 ): String {
     val absAmount = Math.abs(amount)
     val sign      = if (amount < 0) "-" else ""
@@ -51,6 +52,8 @@ fun formatCurrency(
         val millions = absAmount / 1_000_000.0
         "${String.format(Locale.US, "%.1f", millions)}M"
     } else if (compact && absAmount >= 1_000.0 && absAmount % 1.0 == 0.0) {
+        KES_FORMAT_NO_DECIMALS.format(absAmount.toLong())
+    } else if (decimals == 0) {
         KES_FORMAT_NO_DECIMALS.format(absAmount.toLong())
     } else {
         KES_FORMAT.format(absAmount)
@@ -64,14 +67,16 @@ fun formatCurrency(
     amount:       Long,
     showCurrency: Boolean = true,
     compact:      Boolean = false,
-): String = formatCurrency(amount.toDouble(), showCurrency, compact)
+    decimals:     Int     = -1,
+): String = formatCurrency(amount.toDouble(), showCurrency, compact, decimals)
 
 /** Overload accepting BigDecimal for precision-sensitive calcs. */
 fun formatCurrency(
     amount:       BigDecimal,
     showCurrency: Boolean = true,
     compact:      Boolean = false,
-): String = formatCurrency(amount.toDouble(), showCurrency, compact)
+    decimals:     Int     = -1,
+): String = formatCurrency(amount.toDouble(), showCurrency, compact, decimals)
 
 /**
  * Format a plain number with comma thousands separator.

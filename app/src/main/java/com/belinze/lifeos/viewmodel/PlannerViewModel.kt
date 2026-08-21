@@ -33,17 +33,14 @@ enum class PlannerTab { Recurring, Bills, Goals, Loans, Income }
 data class PlannerUiState(
     val isLoading:      Boolean                  = true,
     val activeTab:      PlannerTab               = PlannerTab.Recurring,
-
     val recurringRules: List<RecurringRuleEntity> = emptyList(),
     val bills:          List<BillEntity>          = emptyList(),
     val goals:          List<GoalEntity>          = emptyList(),
     val loans:          List<FulizaLoanEntity>    = emptyList(),
     val income:         List<IncomeEntity>        = emptyList(),
     val exports:        List<ExportEntity>        = emptyList(),
-
     val totalMonthlyBills: Double                 = 0.0,
     val totalActiveLoans:  Double                 = 0.0,
-
     val error: String? = null,
 )
 
@@ -101,6 +98,9 @@ data class LoanFormState(
     val notes:             String   = "",
     val isSaving:          Boolean  = false,
     val error:             String?  = null,
+    // Read-only display fields populated from the stored entity
+    val totalRepaidKes:     Double   = 0.0,
+    val lastRepaymentDate:  String?  = null,
 )
 
 data class IncomeFormState(
@@ -117,11 +117,12 @@ data class IncomeFormState(
 )
 
 @HiltViewModel
-class PlannerViewModel @Inject constructor(
+class PlannerViewModel
+    @Inject
+    constructor(
     private val plannerDao: PlannerDao,
     private val incomeDao:  IncomeDao,
 ) : ViewModel() {
-
     private val _uiState        = MutableStateFlow(PlannerUiState())
     val uiState: StateFlow<PlannerUiState> = _uiState.asStateFlow()
 
@@ -146,46 +147,77 @@ class PlannerViewModel @Inject constructor(
 
     // ─── Form field updates ───────────────────────────────────────────────────
 
-    fun updateRecurringName(v: String)      = _recurringForm.update { it.copy(name = v) }
-    fun updateRecurringType(v: String)      = _recurringForm.update { it.copy(type = v) }
-    fun updateRecurringAmount(v: String)    = _recurringForm.update { it.copy(amount = v) }
-    fun updateRecurringCategory(v: String)  = _recurringForm.update { it.copy(category = v) }
+    fun updateRecurringName(v: String) = _recurringForm.update { it.copy(name = v) }
+
+    fun updateRecurringType(v: String) = _recurringForm.update { it.copy(type = v) }
+
+    fun updateRecurringAmount(v: String) = _recurringForm.update { it.copy(amount = v) }
+
+    fun updateRecurringCategory(v: String) = _recurringForm.update { it.copy(category = v) }
+
     fun updateRecurringFrequency(v: String) = _recurringForm.update { it.copy(frequency = v) }
-    fun updateRecurringNextRun(v: String)   = _recurringForm.update { it.copy(nextRunAt = v) }
-    fun updateRecurringEnabled(v: Boolean)  = _recurringForm.update { it.copy(enabled = v) }
-    fun updateRecurringError(v: String?)    = _recurringForm.update { it.copy(error = v) }
 
-    fun updateBillName(v: String)       = _billForm.update { it.copy(name = v) }
-    fun updateBillAmount(v: String)     = _billForm.update { it.copy(amount = v) }
-    fun updateBillFrequency(v: String)  = _billForm.update { it.copy(frequency = v) }
-    fun updateBillNextDue(v: String)    = _billForm.update { it.copy(nextDueDate = v) }
-    fun updateBillNotes(v: String)      = _billForm.update { it.copy(notes = v) }
-    fun updateBillPaid(v: Boolean)      = _billForm.update { it.copy(isPaid = v) }
-    fun updateBillActive(v: Boolean)    = _billForm.update { it.copy(isActive = v) }
-    fun updateBillError(v: String?)     = _billForm.update { it.copy(error = v) }
+    fun updateRecurringNextRun(v: String) = _recurringForm.update { it.copy(nextRunAt = v) }
 
-    fun updateGoalName(v: String)         = _goalForm.update { it.copy(name = v) }
-    fun updateGoalDescription(v: String)  = _goalForm.update { it.copy(description = v) }
-    fun updateGoalTarget(v: String)       = _goalForm.update { it.copy(targetAmount = v) }
-    fun updateGoalSaved(v: String)        = _goalForm.update { it.copy(savedAmount = v) }
-    fun updateGoalUnit(v: String)         = _goalForm.update { it.copy(unit = v) }
-    fun updateGoalDeadline(v: String?)    = _goalForm.update { it.copy(deadline = v) }
-    fun updateGoalStatus(v: String)       = _goalForm.update { it.copy(status = v) }
-    fun updateGoalError(v: String?)       = _goalForm.update { it.copy(error = v) }
+    fun updateRecurringEnabled(v: Boolean) = _recurringForm.update { it.copy(enabled = v) }
 
-    fun updateLoanDrawCode(v: String)      = _loanForm.update { it.copy(drawCode = v) }
-    fun updateLoanDrawAmount(v: String)    = _loanForm.update { it.copy(drawAmountKes = v) }
-    fun updateLoanDrawDate(v: String)      = _loanForm.update { it.copy(drawDate = v) }
-    fun updateLoanStatus(v: String)        = _loanForm.update { it.copy(status = v) }
-    fun updateLoanError(v: String?)        = _loanForm.update { it.copy(error = v) }
+    fun updateRecurringError(v: String?) = _recurringForm.update { it.copy(error = v) }
 
-    fun updateIncomeSource(v: String)  = _incomeForm.update { it.copy(source = v) }
-    fun updateIncomeAmount(v: String)  = _incomeForm.update { it.copy(amount = v) }
-    fun updateIncomeDate(v: String)    = _incomeForm.update { it.copy(date = v) }
-    fun updateIncomeNote(v: String)    = _incomeForm.update { it.copy(notes = v) }
+    fun updateBillName(v: String) = _billForm.update { it.copy(name = v) }
+
+    fun updateBillAmount(v: String) = _billForm.update { it.copy(amount = v) }
+
+    fun updateBillFrequency(v: String) = _billForm.update { it.copy(frequency = v) }
+
+    fun updateBillNextDue(v: String) = _billForm.update { it.copy(nextDueDate = v) }
+
+    fun updateBillNotes(v: String) = _billForm.update { it.copy(notes = v) }
+
+    fun updateBillPaid(v: Boolean) = _billForm.update { it.copy(isPaid = v) }
+
+    fun updateBillActive(v: Boolean) = _billForm.update { it.copy(isActive = v) }
+
+    fun updateBillError(v: String?) = _billForm.update { it.copy(error = v) }
+
+    fun updateGoalName(v: String) = _goalForm.update { it.copy(name = v) }
+
+    fun updateGoalDescription(v: String) = _goalForm.update { it.copy(description = v) }
+
+    fun updateGoalTarget(v: String) = _goalForm.update { it.copy(targetAmount = v) }
+
+    fun updateGoalSaved(v: String) = _goalForm.update { it.copy(savedAmount = v) }
+
+    fun updateGoalUnit(v: String) = _goalForm.update { it.copy(unit = v) }
+
+    fun updateGoalDeadline(v: String?) = _goalForm.update { it.copy(deadline = v) }
+
+    fun updateGoalStatus(v: String) = _goalForm.update { it.copy(status = v) }
+
+    fun updateGoalError(v: String?) = _goalForm.update { it.copy(error = v) }
+
+    fun updateLoanDrawCode(v: String) = _loanForm.update { it.copy(drawCode = v) }
+
+    fun updateLoanDrawAmount(v: String) = _loanForm.update { it.copy(drawAmountKes = v) }
+
+    fun updateLoanDrawDate(v: String) = _loanForm.update { it.copy(drawDate = v) }
+
+    fun updateLoanStatus(v: String) = _loanForm.update { it.copy(status = v) }
+
+    fun updateLoanError(v: String?) = _loanForm.update { it.copy(error = v) }
+
+    fun updateIncomeSource(v: String) = _incomeForm.update { it.copy(source = v) }
+
+    fun updateIncomeAmount(v: String) = _incomeForm.update { it.copy(amount = v) }
+
+    fun updateIncomeDate(v: String) = _incomeForm.update { it.copy(date = v) }
+
+    fun updateIncomeNote(v: String) = _incomeForm.update { it.copy(notes = v) }
+
     fun updateIncomeRecurring(v: Boolean) = _incomeForm.update { it.copy(isRecurring = v) }
-    fun updateIncomeFrequency(v: String)  = _incomeForm.update { it.copy(frequency = v) }
-    fun updateIncomeError(v: String?)  = _incomeForm.update { it.copy(error = v) }
+
+    fun updateIncomeFrequency(v: String) = _incomeForm.update { it.copy(frequency = v) }
+
+    fun updateIncomeError(v: String?) = _incomeForm.update { it.copy(error = v) }
 
     fun loadAll() {
         viewModelScope.launch {
@@ -223,13 +255,16 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             val e = ruleId?.let { plannerDao.getRuleById(it) }
             _recurringForm.update {
-                if (e == null) RecurringFormState()
-                else RecurringFormState(
+                if (e == null) {
+                    RecurringFormState()
+                } else {
+                    RecurringFormState(
                     id = e.id, name = e.title, type = e.type ?: "expense",
                     amount = e.amount?.toString() ?: "",
                     category = e.category ?: "uncategorized", frequency = e.cadence ?: "monthly",
                     nextRunAt = e.nextRunAt ?: nowIso(), notes = "", enabled = e.enabled != 0,
                 )
+                }
             }
         }
     }
@@ -285,13 +320,16 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             val e = billId?.let { plannerDao.getBillById(it) }
             _billForm.update {
-                if (e == null) BillFormState()
-                else BillFormState(
+                if (e == null) {
+                    BillFormState()
+                } else {
+                    BillFormState(
                     id = e.id, name = e.title, amount = e.amount?.toString() ?: "",
                     category = e.cycle ?: "bills", frequency = e.cycle ?: "monthly",
                     nextDueDate = e.nextDueDate ?: nowIso(), notes = e.notes ?: "",
                     isPaid = e.paidStatus != 0, isActive = e.isActive != 0,
                 )
+                }
             }
         }
     }
@@ -377,14 +415,17 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             val e = goalId?.let { plannerDao.getGoalById(it) }
             _goalForm.update {
-                if (e == null) GoalFormState()
-                else GoalFormState(
+                if (e == null) {
+                    GoalFormState()
+                } else {
+                    GoalFormState(
                     id = e.id, name = e.title, description = e.description ?: "",
                     targetAmount = e.targetValue.toString(),
                     savedAmount = e.currentValue.toString(), unit = e.unit ?: "",
                     deadline = e.deadline, status = e.status,
                     category = e.category ?: "savings", notes = "",
                 )
+                }
             }
         }
     }
@@ -466,12 +507,17 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             val e = loanId?.let { plannerDao.getLoanById(it) }
             _loanForm.update {
-                if (e == null) LoanFormState()
-                else LoanFormState(
+                if (e == null) {
+                    LoanFormState()
+                } else {
+                    LoanFormState(
                     id = e.id, drawCode = e.drawCode ?: "",
                     drawAmountKes = e.drawAmountKes.toString(), drawDate = e.drawDate ?: nowIso(),
                     status = e.status, notes = "",
+                    totalRepaidKes = e.totalRepaidKes,
+                    lastRepaymentDate = e.lastRepaymentDate,
                 )
+                }
             }
         }
     }
@@ -559,12 +605,15 @@ class PlannerViewModel @Inject constructor(
         viewModelScope.launch {
             val e = incomeId?.let { incomeDao.getById(it) }
             _incomeForm.update {
-                if (e == null) IncomeFormState()
-                else IncomeFormState(
+                if (e == null) {
+                    IncomeFormState()
+                } else {
+                    IncomeFormState(
                     id = e.id, source = e.source ?: "", amount = e.amount.toString(),
                     date = e.date ?: nowIso(), category = "salary", notes = e.note ?: "",
                     isRecurring = e.isRecurring != 0, frequency = e.frequency ?: "once",
                 )
+                }
             }
         }
     }

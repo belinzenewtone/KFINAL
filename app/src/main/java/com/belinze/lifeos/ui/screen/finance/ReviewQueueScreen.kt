@@ -4,7 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,8 +49,15 @@ fun ReviewQueueScreen(
         }
     }
 
+    val subtitle = when {
+        state.isLoading -> null
+        visible.isEmpty() -> "All clear"
+        else -> "${visible.size} pending"
+    }
+
     PageScaffold(
         title      = "Review Queue",
+        subtitle   = subtitle,
         onBack     = { navController.popBackStack() },
         scrollable = false,
         topBanner  = {
@@ -73,40 +81,53 @@ fun ReviewQueueScreen(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector        = Icons.Filled.CheckCircle,
+                                imageVector        = Icons.Outlined.CheckCircle,
                                 contentDescription = null,
                                 tint               = MaterialTheme.colorScheme.primary,
                                 modifier           = Modifier.size(48.dp),
                             )
                             Spacer(Modifier.height(Spacing.base))
-                            Text("Queue clear",
+                            Text(
+                                "Queue clear",
                                 style      = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold)
-                            Text("No transactions waiting",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                "No transactions waiting for review",
+                                style     = MaterialTheme.typography.bodyMedium,
+                                color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
                         }
                     }
                 }
                 else -> {
                     LazyColumn(
                         modifier            = Modifier.fillMaxSize(),
-                        contentPadding      = PaddingValues(vertical = Spacing.lg),
+                        contentPadding      = PaddingValues(top = Spacing.xs, bottom = Spacing.bottomNavSafeArea),
                         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
-                        // ─ Header (within list, not nav bar) ─
-                        item {
-                            ReviewQueueHeader(count = visible.size, navController = navController)
-                        }
-
-                        // ─ Bulk card ─
+                        // ─ Bulk actions card ─
                         item {
                             GlassCard {
-                                Text(
-                                    text  = "${visible.size} transaction${if (visible.size != 1) "s" else ""} need review",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Row(
+                                    modifier             = Modifier.fillMaxWidth(),
+                                    verticalAlignment    = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.HourglassEmpty,
+                                        contentDescription = null,
+                                        tint     = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Text(
+                                        "${visible.size} transaction${if (visible.size != 1) "s" else ""} waiting for review",
+                                        style    = MaterialTheme.typography.bodyMedium,
+                                        color    = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
                                 Spacer(Modifier.height(Spacing.sm))
                                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                     Button(
@@ -136,35 +157,10 @@ fun ReviewQueueScreen(
                                 onDismiss = { viewModel.dismissEntry(entry) },
                             )
                         }
-
-                        item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                     }
                 }
             }
         }
-    }
-}
-
-// ─── Header row (within list) ─────────────────────────────────────────────────
-
-@Composable
-private fun ReviewQueueHeader(count: Int, navController: NavHostController) {
-    Row(
-        modifier             = Modifier.fillMaxWidth().height(44.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment    = Alignment.CenterVertically,
-    ) {
-        // Back handled by PageScaffold; spacer mirrors it for centering
-        Spacer(Modifier.width(44.dp))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Review Queue",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold)
-            Text("$count pending",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Spacer(Modifier.width(44.dp))
     }
 }
 
@@ -194,7 +190,7 @@ private fun EntryCard(
             if (amount != null) {
                 Text(
                     text       = formatCurrency(amount),
-                    style      = MaterialTheme.typography.titleMedium,
+                    style      = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -223,7 +219,7 @@ private fun EntryCard(
         }
 
         // "Already in your ledger" note for review entries
-        if (entry.outcome == "imported_review") {
+        if (entry.outcome.contains("review")) {
             Spacer(Modifier.height(Spacing.xs))
             Text(
                 text  = "Already in your ledger",
@@ -247,16 +243,20 @@ private fun EntryCard(
             Spacer(Modifier.height(Spacing.xs))
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 if (!mpesaCode.isNullOrBlank()) {
-                    Text(mpesaCode,
+                    Text(
+                        mpesaCode,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 if (!confidence.isNullOrBlank()) {
                     Text("·", style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$confidence confidence",
+                    Text(
+                        "$confidence confidence",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -265,7 +265,7 @@ private fun EntryCard(
 
         // Action buttons
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            val recoverLabel = if (entry.outcome == "imported_review") "Approve" else "Recover"
+            val recoverLabel = if (entry.outcome.contains("review")) "Approve" else "Recover"
             Button(onClick = onRecover, modifier = Modifier.weight(1f)) {
                 Text(recoverLabel)
             }
@@ -287,21 +287,21 @@ private fun EntryCard(
 
 @Composable
 private fun OutcomeChip(outcome: String) {
-    val (label, color) = when (outcome) {
-        "quarantined"     -> "Quarantined" to MaterialTheme.colorScheme.error
-        "imported_review" -> "Review"      to Color(0xFFF5CB5C)
-        "batch_pending"   -> "Batch"       to MaterialTheme.colorScheme.primary
-        else              -> "Pending"     to MaterialTheme.colorScheme.primary
+    val (label, color) = when {
+        outcome.contains("quarantin") -> "Quarantined" to MaterialTheme.colorScheme.error
+        outcome.contains("review")    -> "Review"      to Color(0xFFF5CB5C)
+        outcome == "batch_pending"    -> "Pending"     to MaterialTheme.colorScheme.primary
+        else                          -> "Pending"     to MaterialTheme.colorScheme.primary
     }
     Surface(
-        color        = color.copy(alpha = 0.15f),
-        shape        = MaterialTheme.shapes.small,
+        color = color.copy(alpha = 0.15f),
+        shape = MaterialTheme.shapes.small,
     ) {
         Text(
-            text      = label,
-            style     = MaterialTheme.typography.labelSmall,
-            color     = color,
-            modifier  = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            text       = label,
+            style      = MaterialTheme.typography.labelSmall,
+            color      = color,
+            modifier   = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             fontWeight = FontWeight.SemiBold,
         )
     }

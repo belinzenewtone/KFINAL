@@ -8,18 +8,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Loop
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.Wallet
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Loop
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.TrendingDown
+import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,14 +44,14 @@ private data class HubEntry(
 @Composable
 fun PlannerHubScreen(navController: NavHostController) {
     val entries = listOf(
-        HubEntry(Icons.Filled.Wallet,       "Budgets",        Color(0xFF34D399), Route.BUDGETS),
-        HubEntry(Icons.Filled.Payments,     "Income",         Color(0xFF4DB8FF), Route.INCOME),
-        HubEntry(Icons.Filled.Loop,         "Recurring",      Color(0xFF8B5CF6), Route.RECURRING),
-        HubEntry(Icons.Filled.TrendingDown, "Loans & Fuliza", Color(0xFFFF6B6B), Route.LOANS),
-        HubEntry(Icons.Filled.Receipt,      "Bills",          Color(0xFFF59E0B), Route.BILLS),
-        HubEntry(Icons.Filled.Flag,         "Goals",          Color(0xFFEC4899), Route.GOALS),
-        HubEntry(Icons.Filled.Search,       "Search Finance", Color(0xFFA78BFA), Route.SEARCH),
-        HubEntry(Icons.Filled.Download,     "Export",         Color(0xFF14B8A6), Route.EXPORT),
+        HubEntry(Icons.Outlined.Wallet,       "Budgets",        Color(0xFF34D399), Route.BUDGETS),
+        HubEntry(Icons.Outlined.Payments,     "Income",         Color(0xFF4DB8FF), Route.INCOME),
+        HubEntry(Icons.Outlined.Loop,         "Recurring",      Color(0xFF8B5CF6), Route.RECURRING),
+        HubEntry(Icons.Outlined.TrendingDown, "Loans & Fuliza", Color(0xFFFF6B6B), Route.LOANS),
+        HubEntry(Icons.Outlined.Receipt,      "Bills",          Color(0xFFF59E0B), Route.BILLS),
+        HubEntry(Icons.Outlined.Flag,         "Goals",          Color(0xFFEC4899), Route.GOALS),
+        HubEntry(Icons.Outlined.Search,       "Search Finance", Color(0xFFA78BFA), Route.SEARCH),
+        HubEntry(Icons.Outlined.Download,     "Export",         Color(0xFF14B8A6), Route.EXPORT),
     )
 
     PageScaffold(

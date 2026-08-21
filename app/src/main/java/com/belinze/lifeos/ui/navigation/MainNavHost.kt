@@ -21,7 +21,6 @@ import com.belinze.lifeos.ui.screen.finance.TransactionDetailScreen
 import com.belinze.lifeos.ui.screen.finance.TransactionFormScreen
 import com.belinze.lifeos.ui.screen.insights.InsightsScreen
 import com.belinze.lifeos.ui.screen.insights.MonthlyWrappedScreen
-import com.belinze.lifeos.ui.screen.placeholder.PlaceholderScreen
 import com.belinze.lifeos.ui.screen.planner.BudgetFormScreen
 import com.belinze.lifeos.ui.screen.planner.BudgetsScreen
 import com.belinze.lifeos.ui.screen.planner.PlannerHubScreen
@@ -66,7 +65,6 @@ fun MainNavHost(
         popEnterTransition   = { popEnter },
         popExitTransition    = { popExit },
     ) {
-
         // ── Main tab scaffold ─────────────────────────────────────────────────
         composable(Route.MAIN) {
             MainScaffold(

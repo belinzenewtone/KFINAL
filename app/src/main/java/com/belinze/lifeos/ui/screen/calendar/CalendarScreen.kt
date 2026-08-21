@@ -3,10 +3,10 @@ package com.belinze.lifeos.ui.screen.calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,30 +17,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ChevronLeft
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -48,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +62,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -67,12 +74,12 @@ import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventViewModel
+import com.belinze.lifeos.viewmodel.SettingsViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
-import java.time.DayOfWeek
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,25 +95,43 @@ private val WARNING = Color(0xFFF5CB5C)
 private val BIRTHDAY = Color(0xFFEC4899)
 private val ANNIVERSARY = Color(0xFF22C55E)
 
+// HorizontalPager bounds — ±100 years around today so months can be swiped
+// freely in either direction (same paging engine the Material3 date picker uses).
+private const val PAGER_CENTER = 1200
+private const val PAGER_RANGE = PAGER_CENTER * 2 + 1
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
-    navController: NavHostController,
-    eventViewModel: EventViewModel = hiltViewModel(),
-    taskViewModel:  TaskViewModel  = hiltViewModel(),
+    navController:    NavHostController,
+    eventViewModel:   EventViewModel   = hiltViewModel(),
+    taskViewModel:    TaskViewModel    = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
-    val eventState by eventViewModel.uiState.collectAsState()
-    val taskState  by taskViewModel.uiState.collectAsState()
+    val eventState   by eventViewModel.uiState.collectAsState()
+    val taskState    by taskViewModel.uiState.collectAsState()
+    val settings     by settingsViewModel.settings.collectAsState(initial = com.belinze.lifeos.data.datastore.AppPreferenceState())
+    val calendarSwipeEnabled = settings.calendarSwipe
 
     var selectedTab by rememberSaveable { mutableStateOf(CalendarTab.Calendar) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
-    var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     var calendarQuery by remember { mutableStateOf("") }
     var tasksQuery by remember { mutableStateOf("") }
     var eventsQuery by remember { mutableStateOf("") }
     var addMenuOpen by remember { mutableStateOf(false) }
 
     val today = LocalDate.now()
+    val todayYearMonth = YearMonth.now()
+
+    // Pager center = current month; swiping left/right moves ±1 month with the
+    // same smooth animated paging the Material3 date picker uses.
+    val pagerState = rememberPagerState(initialPage = PAGER_CENTER) { PAGER_RANGE }
+    val yearMonth = remember(pagerState.currentPage) {
+        YearMonth.now().plusMonths(pagerState.currentPage.toLong() - PAGER_CENTER)
+    }
+    val isCurrentMonth = yearMonth == todayYearMonth
+    val scope = rememberCoroutineScope()
+
     val headerSubtitle = YearMonth.now().format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
     val selectedDateLabel = remember(selectedDate) {
         runCatching {
@@ -118,8 +143,11 @@ fun CalendarScreen(
         eventState.events.filter { it.date.take(10) == selectedDate }
     }
 
-    val filteredDayItems = if (calendarQuery.isBlank()) dayItems
-    else dayItems.filter { it.title.contains(calendarQuery, ignoreCase = true) }
+    val filteredDayItems = if (calendarQuery.isBlank()) {
+        dayItems
+    } else {
+        dayItems.filter { it.title.contains(calendarQuery, ignoreCase = true) }
+    }
 
     val dayItemGroups = listOf(
         Triple("Tasks", SUCCESS, filteredDayItems.filter { it.type == "task" }),
@@ -132,14 +160,20 @@ fun CalendarScreen(
     val allTasks = taskState.tasks
     val pendingCount = allTasks.count { it.status == "active" }
     val doneCount = allTasks.count { it.status == "completed" }
-    val filteredTasks = if (tasksQuery.isBlank()) allTasks
-    else allTasks.filter { it.title.contains(tasksQuery, ignoreCase = true) }
+    val filteredTasks = if (tasksQuery.isBlank()) {
+        allTasks
+    } else {
+        allTasks.filter { it.title.contains(tasksQuery, ignoreCase = true) }
+    }
 
     val allEvents = eventState.events.filter {
-        it.type == "event" || it.type == "task"
+        it.type == "event"
     }
-    val filteredEvents = if (eventsQuery.isBlank()) allEvents
-    else allEvents.filter { it.title.contains(eventsQuery, ignoreCase = true) }
+    val filteredEvents = if (eventsQuery.isBlank()) {
+        allEvents
+    } else {
+        allEvents.filter { it.title.contains(eventsQuery, ignoreCase = true) }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -158,7 +192,7 @@ fun CalendarScreen(
                     Text(
                         "Calendar",
                         style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                     )
                     Text(
@@ -169,7 +203,7 @@ fun CalendarScreen(
                 }
                 IconButton(onClick = { addMenuOpen = true }) {
                     Icon(
-                        Icons.Filled.Add,
+                        Icons.Outlined.Add,
                         contentDescription = "Add",
                         tint = MaterialTheme.colorScheme.primary,
                     )
@@ -193,88 +227,103 @@ fun CalendarScreen(
 
             Spacer(Modifier.height(Spacing.xs))
 
-            when (selectedTab) {
-                CalendarTab.Calendar -> {
-                    Column(
+            // ── Month navigation — always visible, regardless of tab ───────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = {
+                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+                }) {
+                    Icon(Icons.Outlined.ChevronLeft, contentDescription = "Previous month",
+                        tint = MaterialTheme.colorScheme.onSurface)
+                }
+                Text(
+                    yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                IconButton(onClick = {
+                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                }) {
+                    Icon(Icons.Outlined.ChevronRight, contentDescription = "Next month",
+                        tint = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+
+            // CA-4: Today button — sits tight against the month/year row above
+            // with a uniform 4dp gap on both sides, only when not on current month.
+            if (!isCurrentMonth) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 0.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = {
+                            scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
+                            selectedDate = today.toString()
+                        },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        modifier = Modifier.height(32.dp),
+                    ) {
+                        Text("Today", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            // Weekday header
+            Row(modifier = Modifier.fillMaxWidth()) {
+                listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
+                    Text(
+                        text = label,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+
+            // Smooth month paging — userScrollEnabled respects the Settings toggle.
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth(),
+                beyondViewportPageCount = 1,
+                userScrollEnabled = calendarSwipeEnabled,
+            ) { page ->
+                val pageMonth = YearMonth.now().plusMonths(page.toLong() - PAGER_CENTER)
+                MonthGrid(
+                    yearMonth = pageMonth,
+                    today = today,
+                    selectedDate = selectedDate,
+                    events = eventState.events,
+                    onDayClick = { selectedDate = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.base))
+            Text(
+                selectedDateLabel,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(Spacing.sm))
+
+            // ── Tab content scrolls below the always-visible calendar ──────────
+            Box(modifier = Modifier.weight(1f)) {
+                when (selectedTab) {
+                    CalendarTab.Calendar -> Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                             .padding(horizontal = Spacing.screenHorizontal),
                     ) {
-                        // Month navigation
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            IconButton(onClick = { yearMonth = yearMonth.minusMonths(1) }) {
-                                Icon(Icons.Filled.ChevronLeft, contentDescription = "Previous month",
-                                    tint = MaterialTheme.colorScheme.onBackground)
-                            }
-                            Text(
-                                yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)),
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onBackground,
-                            )
-                            IconButton(onClick = { yearMonth = yearMonth.plusMonths(1) }) {
-                                Icon(Icons.Filled.ChevronRight, contentDescription = "Next month",
-                                    tint = MaterialTheme.colorScheme.onBackground)
-                            }
-                        }
-
-                        // Weekday header
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
-                                Text(
-                                    text = label,
-                                    modifier = Modifier.weight(1f),
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-
-                        // Month grid
-                        val firstDay = yearMonth.atDay(1)
-                        val startOffset = (firstDay.dayOfWeek.value % 7)
-                        val daysInMonth = yearMonth.lengthOfMonth()
-                        val rows = (startOffset + daysInMonth + 6) / 7
-                        for (row in 0 until rows) {
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                for (col in 0 until 7) {
-                                    val dayIndex = row * 7 + col - startOffset + 1
-                                    if (dayIndex < 1 || dayIndex > daysInMonth) {
-                                        Box(modifier = Modifier.weight(1f).aspectRatio(1f))
-                                    } else {
-                                        val date = yearMonth.atDay(dayIndex)
-                                        val dateStr = date.toString()
-                                        val isToday = date == today
-                                        val isSelected = dateStr == selectedDate
-                                        val hasEvent = eventState.events.any { it.date.take(10) == dateStr }
-                                        DayCell(
-                                            day = dayIndex,
-                                            isToday = isToday,
-                                            isSelected = isSelected,
-                                            hasEvent = hasEvent,
-                                            onClick = { selectedDate = dateStr },
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(Spacing.base))
-                        Text(
-                            selectedDateLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(Modifier.height(Spacing.sm))
-
                         SearchBar(
                             value = calendarQuery,
                             onChange = { calendarQuery = it },
@@ -290,7 +339,7 @@ fun CalendarScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Filled.CalendarMonth, contentDescription = null,
+                                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null,
                                         tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(40.dp))
                                     Text("Nothing for the day", style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface)
@@ -307,11 +356,9 @@ fun CalendarScreen(
                                     color = group.second,
                                     items = group.third,
                                     onItemClick = { item ->
-                                        if (item.type == "task") {
-                                            navController.navigate(NavTo.taskDetail(item.id))
-                                        } else {
-                                            navController.navigate(NavTo.eventDetail(item.id))
-                                        }
+                                        // Day-view items are all EventEntity rows (tasks with
+                                        // type="task" live in the events table, not tasks table).
+                                        navController.navigate(NavTo.eventDetail(item.id))
                                     },
                                 )
                                 Spacer(Modifier.height(Spacing.base))
@@ -320,10 +367,8 @@ fun CalendarScreen(
 
                         Spacer(Modifier.height(Spacing.bottomNavSafeArea))
                     }
-                }
 
-                CalendarTab.Tasks -> {
-                    LazyColumn(
+                    CalendarTab.Tasks -> LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = Spacing.screenHorizontal),
@@ -360,10 +405,8 @@ fun CalendarScreen(
                         }
                         item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                     }
-                }
 
-                CalendarTab.Events -> {
-                    LazyColumn(
+                    CalendarTab.Events -> LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = Spacing.screenHorizontal),
@@ -423,10 +466,10 @@ fun CalendarScreen(
                 ) {
                     Text("Add", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                     IconButton(onClick = { addMenuOpen = false }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Outlined.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                AddMenuOption("Task", { addMenuOpen = false; navController.navigate(Route.TASK_FORM) })
+                AddMenuOption("Task", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "task")) })
                 AddMenuOption("Event", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "event")) })
                 AddMenuOption("Birthday", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "birthday")) })
                 AddMenuOption("Anniversary", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "anniversary")) })
@@ -446,7 +489,7 @@ private fun SearchBar(
         value = value,
         onValueChange = onChange,
         placeholder = { Text(placeholder) },
-        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -531,7 +574,7 @@ private fun CalendarTaskItem(
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Icon(
-                imageVector = if (isDone) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                imageVector = if (isDone) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                 contentDescription = null,
                 tint = if (isDone) SUCCESS else MaterialTheme.colorScheme.outline,
                 modifier = Modifier
@@ -546,8 +589,12 @@ private fun CalendarTaskItem(
                 Text(
                     task.title,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (isDone) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            else MaterialTheme.colorScheme.onSurface,
+                    color = if (isDone) {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None,
                     maxLines = 1,
                 )
                 task.deadline?.let {
@@ -606,7 +653,59 @@ private fun EventListItem(
                 )
             }
             IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthGrid(
+    yearMonth:   YearMonth,
+    today:       LocalDate,
+    selectedDate: String,
+    events:      List<EventEntity>,
+    onDayClick:  (String) -> Unit,
+    modifier:    Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        val firstDay = yearMonth.atDay(1)
+        // Monday = 0 offset (Mon-first grid matches "M T W T F S S" header)
+        val startOffset = firstDay.dayOfWeek.value - 1
+        val daysInMonth = yearMonth.lengthOfMonth()
+        val rows = (startOffset + daysInMonth + 6) / 7
+        for (row in 0 until rows) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                for (col in 0 until 7) {
+                    val dayIndex = row * 7 + col - startOffset + 1
+                    if (dayIndex < 1 || dayIndex > daysInMonth) {
+                        Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                    } else {
+                        val date = yearMonth.atDay(dayIndex)
+                        val dateStr = date.toString()
+                        val isToday = date == today
+                        val isSelected = dateStr == selectedDate
+                        // CA-2: collect one dot per event type present on this day
+                        val dotColors = remember(events, dateStr) {
+                            buildList {
+                                val dayEvents = events.filter { it.date.take(10) == dateStr }
+                                if (dayEvents.any { it.type == "task" })        add(SUCCESS)
+                                if (dayEvents.any { it.type == "event" })       add(Color(0xFF60A5FA))
+                                if (dayEvents.any { it.type == "birthday" })    add(BIRTHDAY)
+                                if (dayEvents.any { it.type == "anniversary" }) add(ANNIVERSARY)
+                                if (dayEvents.any { it.type == "countdown" })   add(WARNING)
+                            }
+                        }
+                        DayCell(
+                            day = dayIndex,
+                            isToday = isToday,
+                            isSelected = isSelected,
+                            dotColors = dotColors,
+                            onClick = { onDayClick(dateStr) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
     }
@@ -617,7 +716,7 @@ private fun DayCell(
     day: Int,
     isToday: Boolean,
     isSelected: Boolean,
-    hasEvent: Boolean,
+    dotColors: List<Color>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -648,16 +747,26 @@ private fun DayCell(
             color = when {
                 isSelected -> MaterialTheme.colorScheme.onPrimary
                 isToday -> primary
-                else -> MaterialTheme.colorScheme.onBackground
+                else -> MaterialTheme.colorScheme.onSurface
             },
         )
-        if (hasEvent) {
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .background(if (isSelected) MaterialTheme.colorScheme.onPrimary else primary,
-                        androidx.compose.foundation.shape.CircleShape),
-            )
+        // CA-2: colored dots for each event type present on this day
+        if (dotColors.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.padding(top = 2.dp),
+            ) {
+                dotColors.take(3).forEach { color ->
+                    Box(
+                        modifier = Modifier
+                            .size(4.dp)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.onPrimary else color,
+                                androidx.compose.foundation.shape.CircleShape,
+                            ),
+                    )
+                }
+            }
         }
     }
 }
@@ -676,7 +785,7 @@ private fun AddMenuOption(label: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.base),
     ) {
-        Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
     }
 }

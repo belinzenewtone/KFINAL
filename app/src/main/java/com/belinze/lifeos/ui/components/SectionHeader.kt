@@ -45,7 +45,7 @@ fun SectionHeader(
             text          = label.uppercase(),
             fontSize      = 12.sp,
             fontWeight    = FontWeight.SemiBold,
-            color         = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+            color         = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.5.sp,
         )
 

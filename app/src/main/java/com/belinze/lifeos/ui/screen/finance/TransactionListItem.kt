@@ -14,10 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -90,7 +89,7 @@ fun TransactionListItem(
                 text       = tx.merchant?.ifBlank { null } ?: tx.description?.take(40) ?: "Unknown",
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 14.sp,
-                color      = MaterialTheme.colorScheme.onBackground,
+                color      = MaterialTheme.colorScheme.onSurface,
                 maxLines   = 1,
                 overflow   = TextOverflow.Ellipsis,
             )
@@ -104,7 +103,7 @@ fun TransactionListItem(
                 Text(
                     text  = tx.date?.let { isoToTime(it) } ?: "",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(0.45f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -113,13 +112,24 @@ fun TransactionListItem(
 
         // ── Amount + status ──────────────────────────────────────────────
         Column(horizontalAlignment = Alignment.End) {
-            val isCredit = tx.transactionType == "income"
+            val txType = tx.transactionType ?: "expense"
+            val isCredit   = txType == "income"
+            val isTransfer = txType == "transfer"
+            val amountText = when {
+                isCredit   -> "+${formatCurrency(tx.amount)}"
+                isTransfer -> formatCurrency(tx.amount)
+                else       -> "-${formatCurrency(tx.amount)}"
+            }
+            val amountColor = when {
+                isCredit   -> Color(0xFF10B981)
+                isTransfer -> MaterialTheme.colorScheme.onSurface
+                else       -> MaterialTheme.colorScheme.error
+            }
             Text(
-                text       = if (isCredit) "+${formatCurrency(tx.amount)}"
-                             else "-${formatCurrency(tx.amount)}",
+                text       = amountText,
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 14.sp,
-                color      = if (isCredit) Color(0xFF10B981) else MaterialTheme.colorScheme.onBackground,
+                color      = amountColor,
             )
             if (tx.status != "completed" && tx.status.isNotBlank()) {
                 Text(
@@ -137,7 +147,7 @@ fun TransactionListItem(
 @Composable
 fun DayGroupHeader(
     dateLabel: String,
-    total:     Double,
+    total:     Double? = null,   // null = hide the right-side total (used with Paging 3)
     modifier:  Modifier = Modifier,
 ) {
     Row(
@@ -151,15 +161,17 @@ fun DayGroupHeader(
             text      = dateLabel,
             fontSize  = 11.sp,
             fontWeight = FontWeight.Medium,
-            color     = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+            color     = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.5.sp,
         )
-        Text(
-            text       = "-${formatCurrency(total)}",
-            fontSize   = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color      = MaterialTheme.colorScheme.onBackground.copy(0.55f),
-        )
+        if (total != null) {
+            Text(
+                text       = "-${formatCurrency(total)}",
+                fontSize   = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color      = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -178,7 +190,7 @@ fun CategoryChip(category: String) {
         Text(
             text      = category,
             fontSize  = 10.sp,
-            color     = MaterialTheme.colorScheme.onBackground.copy(0.65f),
+            color     = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines  = 1,
         )
     }
@@ -204,7 +216,7 @@ private fun txIconTint(type: String): Color {
         "income"   -> Color(0xFF10B981)
         "transfer" -> scheme.primary
         "fuliza"   -> Color(0xFFF59E0B)
-        else       -> scheme.onBackground.copy(0.55f)
+        else       -> scheme.onSurfaceVariant
     }
 }
 
@@ -214,19 +226,21 @@ private fun isoToTime(iso: String?): String {
     if (iso == null) return ""
     return try {
         LocalDateTime.parse(iso.take(19)).format(TIME_FMT)
-    } catch (_: Exception) { "" }
+    } catch (_: Exception) {
+        ""
+    }
 }
 
 private fun txIcon(type: String) = when (type) {
-    "income"   -> Icons.Filled.ArrowDownward
-    "transfer" -> Icons.Filled.SwapHoriz
-    else       -> Icons.Filled.ArrowUpward
+    "income"   -> Icons.Outlined.ArrowDownward
+    "transfer" -> Icons.Outlined.SwapHoriz
+    else       -> Icons.Outlined.ArrowUpward
 }
 
 @Composable
 private fun statusColor(status: String): Color = when (status) {
     "pending"   -> Color(0xFFF59E0B)
     "failed"    -> Color(0xFFEF4444)
-    "reversed"  -> MaterialTheme.colorScheme.onBackground.copy(0.40f)
-    else        -> MaterialTheme.colorScheme.onBackground.copy(0.40f)
+    "reversed"  -> MaterialTheme.colorScheme.onSurfaceVariant
+    else        -> MaterialTheme.colorScheme.onSurfaceVariant
 }

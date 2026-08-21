@@ -9,7 +9,6 @@ data class AppSettingEntity(
     @PrimaryKey
     @ColumnInfo(name = "key")
     val key: String,
-
     @ColumnInfo(name = "value")
     val value: String?,
 )

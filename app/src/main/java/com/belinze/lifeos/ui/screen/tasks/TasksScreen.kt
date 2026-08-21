@@ -3,7 +3,6 @@ package com.belinze.lifeos.ui.screen.tasks
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,17 +18,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,7 +37,6 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,7 +55,6 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
-import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.TaskViewModel
@@ -77,18 +73,23 @@ fun TasksScreen(
     var query by remember { mutableStateOf("") }
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val filtered = if (query.isBlank()) state.tasks
-    else state.tasks.filter {
-        it.title.contains(query, ignoreCase = true) ||
-            (it.description?.contains(query, ignoreCase = true) == true)
+    val filtered = remember(state.tasks, query) {
+        if (query.isBlank()) {
+            state.tasks
+        } else {
+            state.tasks.filter {
+            it.title.contains(query, ignoreCase = true) ||
+                (it.description?.contains(query, ignoreCase = true) == true)
+        }
+        }
     }
-    val active = filtered.filter { it.status == "active" }
-    val urgent = active.filter { it.priority == "high" }
-    val important = active.filter { it.priority == "medium" }
-    val other = active.filter { it.priority == "low" }
-    val completed = filtered.filter { it.status == "completed" }.take(COMPLETED_LIMIT)
-    val openCount = state.tasks.count { it.status == "active" }
-    val completedCount = state.tasks.count { it.status == "completed" }
+    val active    = remember(filtered)     { filtered.filter { it.status == "active" } }
+    val urgent    = remember(active)       { active.filter { it.priority == "high" } }
+    val important = remember(active)       { active.filter { it.priority == "medium" } }
+    val other     = remember(active)       { active.filter { it.priority == "low" } }
+    val completed = remember(filtered)     { filtered.filter { it.status == "completed" }.take(COMPLETED_LIMIT) }
+    val openCount      = remember(state.tasks) { state.tasks.count { it.status == "active" } }
+    val completedCount = remember(state.tasks) { state.tasks.count { it.status == "completed" } }
 
     PageScaffold(
         title = "Tasks",
@@ -97,7 +98,7 @@ fun TasksScreen(
         scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(Route.TASK_FORM) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add task", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Outlined.Add, contentDescription = "Add task", tint = MaterialTheme.colorScheme.onSurface)
             }
         },
     ) {
@@ -105,7 +106,7 @@ fun TasksScreen(
             value = query,
             onValueChange = { query = it },
             placeholder = { Text("Search tasks") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -117,7 +118,7 @@ fun TasksScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.x4l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.CheckCircle, contentDescription = null,
+                Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No tasks found", style = MaterialTheme.typography.bodyLarge,
@@ -166,7 +167,7 @@ fun TasksScreen(
                             Text("${completed.size}", style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Icon(
-                                if (completedExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                if (completedExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp),
@@ -238,12 +239,15 @@ private fun TaskCard(
             Box(
                 modifier = Modifier.fillMaxSize().background(bgColor, MaterialTheme.shapes.large)
                     .padding(horizontal = 20.dp),
-                contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd)
-                    Alignment.CenterStart else Alignment.CenterEnd,
+                contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                    Alignment.CenterStart
+                } else {
+                    Alignment.CenterEnd
+                },
             ) {
                 if (direction != SwipeToDismissBoxValue.Settled) {
                     Icon(
-                        if (direction == SwipeToDismissBoxValue.StartToEnd) Icons.Filled.Check else Icons.Filled.Delete,
+                        if (direction == SwipeToDismissBoxValue.StartToEnd) Icons.Outlined.Check else Icons.Outlined.Delete,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(22.dp),
@@ -269,7 +273,7 @@ private fun TaskCard(
                     modifier = Modifier.size(28.dp),
                 ) {
                     Icon(
-                        if (task.status == "completed") Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                        if (task.status == "completed") Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                         contentDescription = null,
                         tint = if (task.status == "completed") SUCCESS else color,
                     )
@@ -278,9 +282,11 @@ private fun TaskCard(
                     Text(
                         task.title,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = if (task.status == "completed")
+                        color = if (task.status == "completed") {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        else MaterialTheme.colorScheme.onSurface,
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                         textDecoration = if (task.status == "completed") TextDecoration.LineThrough else TextDecoration.None,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -295,7 +301,7 @@ private fun TaskCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Icon(
-                        if (isTimerActive) Icons.Filled.Stop else Icons.Filled.Timer,
+                        if (isTimerActive) Icons.Outlined.Stop else Icons.Outlined.Timer,
                         contentDescription = null,
                         tint = if (isTimerActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         modifier = Modifier

@@ -46,7 +46,7 @@ fun PlaceholderScreen(
                     Icon(
                         imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint               = MaterialTheme.colorScheme.onBackground,
+                        tint               = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -55,7 +55,7 @@ fun PlaceholderScreen(
             Text(
                 text      = label,
                 style     = MaterialTheme.typography.titleLarge,
-                color     = MaterialTheme.colorScheme.onBackground,
+                color     = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier  = Modifier.align(Alignment.Center),
             )

@@ -1,12 +1,12 @@
 package com.belinze.lifeos.ui.screen.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +19,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -43,6 +44,7 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.GlassCardVariant
 import com.belinze.lifeos.ui.components.HeroSurface
 import com.belinze.lifeos.ui.components.TopBanner
+import com.belinze.lifeos.ui.theme.ShapeLg
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.AppViewModel
 
@@ -80,6 +82,36 @@ fun AuthScreen(
             viewModel.setProfileUsername(username.trim())
             onAuthenticated()
         }
+    }
+
+    // AU-1: loading splash while app state is hydrating
+    if (!uiState.hasHydrated) {
+        Box(
+            modifier = modifier.fillMaxSize().background(bgColor),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(88.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, ShapeLg)
+                        .border(1.dp, MaterialTheme.colorScheme.primary, ShapeLg),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.Person,
+                        contentDescription = null,
+                        tint     = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp),
+                    )
+                }
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        return
     }
 
     Column(
@@ -120,18 +152,16 @@ fun AuthScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    // Logo badge (40x40 surfaceVariant, icon glyph)
+                    // AU-3: logo badge — 40×40, ShapeLg (20dp radius), 1dp primary border, app icon
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                CircleShape,
-                            ),
+                            .background(MaterialTheme.colorScheme.surfaceVariant, ShapeLg)
+                            .border(1.dp, MaterialTheme.colorScheme.primary, ShapeLg),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            Icons.Filled.Person,
+                            Icons.Outlined.Person,
                             contentDescription = null,
                             tint               = MaterialTheme.colorScheme.primary,
                             modifier           = Modifier.size(24.dp),
@@ -142,10 +172,12 @@ fun AuthScreen(
 
             GlassCard(variant = GlassCardVariant.Default, modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    // AU-2: leading person icon on both fields
                     OutlinedTextField(
                         value         = fullName,
                         onValueChange = { v -> fullName = v; banner = null },
                         label         = { Text("Full Name") },
+                        leadingIcon   = { Icon(Icons.Outlined.Person, contentDescription = null) },
                         singleLine    = true,
                         modifier      = Modifier.fillMaxWidth(),
                     )
@@ -153,6 +185,7 @@ fun AuthScreen(
                         value         = username,
                         onValueChange = { v -> username = v; banner = null },
                         label         = { Text("Username (optional)") },
+                        leadingIcon   = { Icon(Icons.Outlined.Person, contentDescription = null) },
                         singleLine    = true,
                         modifier      = Modifier.fillMaxWidth(),
                     )

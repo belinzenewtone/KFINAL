@@ -5,7 +5,6 @@ import com.belinze.lifeos.data.db.entity.BudgetEntity
 
 @Dao
 interface BudgetDao {
-
     @Query("SELECT * FROM budgets WHERE deleted_at IS NULL AND is_active = 1 ORDER BY category ASC")
     suspend fun getActive(): List<BudgetEntity>
 

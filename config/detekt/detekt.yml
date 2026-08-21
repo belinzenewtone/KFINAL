@@ -1,0 +1,64 @@
+# LifeOS detekt configuration (Phase 4 hardening).
+# Builds on detekt's defaults; only deviations are listed.
+# The baseline (config/detekt/baseline.xml) records pre-existing findings —
+# CI fails on NEW violations only. Burn the baseline down over time.
+
+build:
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 220   # Compose screens run long; baseline covers existing offenders
+  LongParameterList:
+    active: true
+    functionThreshold: 12
+    constructorThreshold: 14
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 30
+  NestedBlockDepth:
+    active: true
+    threshold: 6     # worker/pipeline dispatch code nests legitimately
+  ComplexCondition:
+    active: true
+    threshold: 9     # category-membership conditions in the parser are flat OR chains
+  TooManyFunctions:
+    active: false    # ViewModels/DAOs legitimately expose many ops
+  LargeClass:
+    active: false
+
+style:
+  MagicNumber:
+    active: false    # parser regex thresholds and UI spacing constants everywhere
+  MaxLineLength:
+    active: true
+    maxLineLength: 260   # fixture SMS bodies and raw-string regexes run long; real code stays ≤140
+    excludePackageStatements: true
+    excludeImportStatements: true
+  ReturnCount:
+    active: false
+  UnusedPrivateMember:
+    active: true
+  UnusedPrivateProperty:
+    active: false    # Hilt @Inject constructor vals + Compose previews false-positive
+  WildcardImport:
+    active: false    # androidx.* wildcard imports are idiomatic in this codebase
+  LoopWithTooManyJumpStatements:
+    active: false    # parser/ingest loops use break+continue intentionally
+  UnusedParameter:
+    active: false    # API-compat params kept for call-site stability
+
+naming:
+  FunctionNaming:
+    active: false    # Composable PascalCase functions trigger this by default
+  VariableNaming:
+    active: false    # SCREAMING_SNAKE `private val` SQL/regex constants are intentional
+  MatchingDeclarationName:
+    active: false    # fixture files declare data class + list by design
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false    # DbWriter/workers deliberately catch broad exceptions
+  SwallowedException:
+    active: false    # same rationale; logged where it matters

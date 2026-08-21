@@ -17,10 +17,11 @@ import javax.inject.Inject
  * Mirrors CategorizeScreen.tsx.
  */
 @HiltViewModel
-class CategorizeViewModel @Inject constructor(
+class CategorizeViewModel
+    @Inject
+    constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
-
     data class CategorizeUiState(
         val isLoading:    Boolean = true,
         val transactions: List<TransactionEntity> = emptyList(),

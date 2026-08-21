@@ -20,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.FloatingTabBar
 import com.belinze.lifeos.ui.components.LifeOsTab
@@ -114,7 +113,6 @@ fun MainScaffold(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-
         // ── Tab content (fills the full screen) ───────────────────────────────
         when (selectedTab) {
             LifeOsTab.Home      -> HomeTabContent(navController)

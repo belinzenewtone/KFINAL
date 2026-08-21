@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.screen.tasks
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -63,7 +61,7 @@ fun TaskDetailScreen(
         actions = {
             if (task != null) {
                 IconButton(onClick = { showDelete = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
         },
@@ -114,7 +112,7 @@ fun TaskDetailScreen(
                     task.deadline?.let {
                         Spacer(Modifier.height(Spacing.sm))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.AccessTime, contentDescription = null,
+                            Icon(Icons.Outlined.AccessTime, contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.size(Spacing.xs))
                             Text(formatDateTime(it), style = MaterialTheme.typography.bodyMedium,
@@ -162,4 +160,6 @@ fun TaskDetailScreen(
 
 private fun formatDateTime(iso: String): String = try {
     LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
-} catch (_: Exception) { iso.take(16) }
+} catch (_: Exception) {
+    iso.take(16)
+}

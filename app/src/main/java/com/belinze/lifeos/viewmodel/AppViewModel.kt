@@ -26,11 +26,12 @@ data class AppUiState(
 )
 
 @HiltViewModel
-class AppViewModel @Inject constructor(
+class AppViewModel
+    @Inject
+    constructor(
     private val appPreferences: AppPreferences,
     private val budgetAlertService: BudgetAlertService,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 

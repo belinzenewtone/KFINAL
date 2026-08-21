@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:AppPreferences.kt$AppPreferences$private fun Preferences.toState()</ID>
+    <ID>CyclomaticComplexMethod:ExportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ExportScreen( navController: NavHostController, viewModel: ExportViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:InsightsScreen.kt$@Composable fun InsightsScreen( navController: NavHostController, viewModel: InsightsViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:InsightsViewModel.kt$InsightsViewModel$private suspend fun loadInsightsTabInner()</ID>
+    <ID>CyclomaticComplexMethod:SearchScreen.kt$@Composable fun SearchScreen( navController: NavHostController, viewModel: SearchViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen( navController: NavHostController, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:SmsImportHealthScreen.kt$@Composable fun SmsImportHealthScreen( navController: NavHostController, viewModel: SmsImportHealthViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:TransactionDetailScreen.kt$@Composable fun TransactionDetailScreen( transactionId: String, navController: NavHostController, viewModel: TransactionViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:CalendarScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CalendarScreen( navController: NavHostController, eventViewModel: EventViewModel = hiltViewModel(), taskViewModel: TaskViewModel = hiltViewModel(), settingsViewModel: SettingsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:ExportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ExportScreen( navController: NavHostController, viewModel: ExportViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:FinanceScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun FinanceScreen( navController: NavHostController, viewModel: TransactionViewModel = hiltViewModel(), smsImportViewModel: SmsImportViewModel = hiltViewModel(), budgetViewModel: BudgetViewModel = hiltViewModel(), plannerViewModel: PlannerViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:ImportSmsScreen.kt$@Composable fun ImportSmsScreen( navController: NavHostController, viewModel: SmsImportViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:InsightsScreen.kt$@Composable fun InsightsScreen( navController: NavHostController, viewModel: InsightsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:MonthlyWrappedScreen.kt$@Composable fun MonthlyWrappedScreen( initialMonthOffset: Int = 0, navController: NavHostController, viewModel: MonthlyWrappedViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:ProfileScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ProfileScreen( navController: NavHostController, viewModel: ProfileViewModel = hiltViewModel(), settingsViewModel: SettingsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:RecurringFormScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecurringFormScreen( ruleId: String?, navController: NavHostController, viewModel: PlannerViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:ScreenLockScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ScreenLockScreen( navController: NavHostController, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:SearchScreen.kt$@Composable fun SearchScreen( navController: NavHostController, viewModel: SearchViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( navController: NavHostController, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:SmsImportHealthScreen.kt$@Composable fun SmsImportHealthScreen( navController: NavHostController, viewModel: SmsImportHealthViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:TaskFormScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TaskFormScreen( taskId: String?, navController: NavHostController, viewModel: TaskViewModel = hiltViewModel(), )</ID>
+    <ID>LongParameterList:EventFormScreen.kt$( form: EventFormState, isEdit: Boolean, viewModel: EventViewModel, guestInput: String, onGuestInputChange: (String) -&gt; Unit, onDismiss: () -&gt; Unit, onDeleteConfirm: () -&gt; Unit, onOpenStartDate: () -&gt; Unit, onOpenStartTime: () -&gt; Unit, onOpenEndDate: () -&gt; Unit, onOpenEndTime: () -&gt; Unit, onOpenRepeat: () -&gt; Unit, onOpenReminders: () -&gt; Unit, onOpenTimezone: () -&gt; Unit, onOpenRepeatEnd: () -&gt; Unit, onOpenCdTime: () -&gt; Unit, onSave: () -&gt; Unit, )</ID>
+    <ID>LongParameterList:SettingsRow.kt$( icon: ImageVector? = null, iconColor: Color? = null, label: String, subtitle: String? = null, value: String? = null, onPress: (() -&gt; Unit)? = null, toggle: Boolean = false, toggleValue: Boolean = false, onToggleChange: ((Boolean) -&gt; Unit)? = null, destructive: Boolean = false, showChevron: Boolean = false, disabled: Boolean = false, isLast: Boolean = false, modifier: Modifier = Modifier, )</ID>
+    <ID>MaxLineLength:BudgetsScreen.kt$Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)</ID>
+    <ID>MaxLineLength:BudgetsScreen.kt$Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)</ID>
+    <ID>MaxLineLength:CalendarScreen.kt$Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))</ID>
+    <ID>MaxLineLength:ChangelogScreen.kt$.</ID>
+    <ID>MaxLineLength:EventDao.kt$EventDao$@Query("SELECT * FROM events WHERE deleted_at IS NULL AND (title LIKE '%' || :q || '%' OR location LIKE '%' || :q || '%') ORDER BY date ASC LIMIT :limit")</ID>
+    <ID>MaxLineLength:ExportScreen.kt$modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f), CircleShape)</ID>
+    <ID>MaxLineLength:ExportScreen.kt$private val DATE_WINDOWS = listOf("all" to "All Time", "week" to "This Week", "month" to "This Month", "last30" to "Last 30 Days", "custom" to "Custom")</ID>
+    <ID>MaxLineLength:ExportViewModel.kt$ExportViewModel$sb.appendLine("${tx.id},${tx.amount},\"${tx.merchant ?: ""}\",\"${tx.category ?: ""}\",\"${tx.date ?: ""}\",\"${tx.transactionType ?: ""}\",\"${tx.status}\"")</ID>
+    <ID>MaxLineLength:FinanceScreen.kt$"${(alertBudget.pct * 100).toInt()}% of ${formatCurrency(alertBudget.budget.limitAmount, decimals = 0)} ${alertBudget.budget.category} budget used"</ID>
+    <ID>MaxLineLength:FrostCard.kt$Brush.linearGradient(colors = listOf(Color(0xFF101014), Color(0xFF0E1B2E), Color(0xFF101014)), start = Offset.Zero, end = Offset.Infinite)</ID>
+    <ID>MaxLineLength:FrostCard.kt$Brush.linearGradient(colors = listOf(Color(0xFF101014), Color(0xFF0E1F24), Color(0xFF101014)), start = Offset.Zero, end = Offset.Infinite)</ID>
+    <ID>MaxLineLength:FrostCard.kt$Brush.linearGradient(colors = listOf(Color(0xFF12304A), Color(0xFF0E1B2E), Color(0xFF101014)), start = Offset.Zero, end = Offset.Infinite)</ID>
+    <ID>MaxLineLength:FrostCard.kt$Brush.linearGradient(colors = listOf(Color(0xFFEFF6FF), Color(0xFFDBEAFE), Color(0xFFF8FAFC)), start = Offset.Zero, end = Offset.Infinite)</ID>
+    <ID>MaxLineLength:FrostCard.kt$Brush.linearGradient(colors = listOf(Color(0xFFF0FDFA), Color(0xFFCCFBF1), Color(0xFFF8FAFC)), start = Offset.Zero, end = Offset.Infinite)</ID>
+    <ID>MaxLineLength:FrostCard.kt$Brush.linearGradient(colors = listOf(Color(0xFFFFFFFF), Color(0xFFEFF6FF), Color(0xFFFFFFFF)), start = Offset.Zero, end = Offset.Infinite)</ID>
+    <ID>MaxLineLength:HomeScreen.kt$HomeMetricCard(label = "Today's Spend", amount = todayCash, glow = FrostCardGlow.Blue, modifier = Modifier.weight(1f))</ID>
+    <ID>MaxLineLength:HomeScreen.kt$HomeMetricCard(label = "Week's Spend", amount = weekCash, glow = FrostCardGlow.Teal, modifier = Modifier.weight(1f))</ID>
+    <ID>MaxLineLength:InsightsScreen.kt$"${if (isOver) "Spent" else "Saved"} ${formatCurrency(kotlin.math.abs(delta), decimals = 0)} ${if (isOver) "more" else "less"} than last month"</ID>
+    <ID>MaxLineLength:InsightsScreen.kt$text = "${state.uncategorizedCount} transactions (${formatCurrency(state.uncategorizedAmount, decimals = 0)}) uncategorized — charts may be incomplete"</ID>
+    <ID>MaxLineLength:LifeOsDatabase.kt$LifeOsDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS `index_sms_ingest_queue_status_claimed_at` ON `sms_ingest_queue` (`status`, `claimed_at`)")</ID>
+    <ID>MaxLineLength:LifeOsDatabase.kt$LifeOsDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS `index_sms_ingest_queue_status_next_retry_at` ON `sms_ingest_queue` (`status`, `next_retry_at`)")</ID>
+    <ID>MaxLineLength:Migration2To3Test.kt$Migration2To3Test$listOf("id", "body", "body_hash", "status", "attempts", "last_error", "received_at", "next_retry_at", "claimed_at", "sender_address")</ID>
+    <ID>MaxLineLength:MonthlyWrappedScreen.kt$text = "${state.fulizaCount} time${if (state.fulizaCount != 1) "s" else ""} · ${formatCurrency(state.fulizaTotal)}"</ID>
+    <ID>MaxLineLength:OnboardingScreen.kt$PillarCard(Icons.Outlined.RocketLaunch, "Automatic imports", "Receive money or buy airtime — the transaction appears without opening the app.")</ID>
+    <ID>MaxLineLength:OnboardingScreen.kt$PillarCard(Icons.Outlined.Shield, "Keep it running", "You may need to allow unrestricted battery use so Android does not block the receiver.")</ID>
+    <ID>MaxLineLength:OnboardingScreen.kt$body = "Allow notifications so task timers and reminders can reach you even when the app is in the background."</ID>
+    <ID>MaxLineLength:OnboardingScreen.kt$extraPillar = Triple(Icons.Outlined.RocketLaunch, "Zero manual entry", "M-Pesa debits, credits, and Fuliza draws appear automatically.")</ID>
+    <ID>MaxLineLength:OnboardingScreen.kt$extraPillar = Triple(Icons.Outlined.Speed, "Timely nudges", "Get reminded about tasks, bills, and events right when they're due.")</ID>
+    <ID>MaxLineLength:TaskDao.kt$TaskDao$@Query("SELECT * FROM tasks WHERE deleted_at IS NULL AND (title LIKE '%' || :q || '%' OR description LIKE '%' || :q || '%') ORDER BY deadline ASC LIMIT :limit")</ID>
+    <ID>MaxLineLength:TransactionDao.kt$TransactionDao$@Query("UPDATE transactions SET status = :status, sync_state = :syncState, updated_at = :ts WHERE mpesa_code = :code AND deleted_at IS NULL")</ID>
+    <ID>UnusedPrivateMember:FinanceScreen.kt$private fun currentMonthLabel(): String</ID>
+  </CurrentIssues>
+</SmellBaseline>

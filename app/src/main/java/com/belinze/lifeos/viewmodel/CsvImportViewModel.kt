@@ -38,10 +38,11 @@ data class CsvImportCandidate(
  * CsvImportViewModel — file-based CSV import with column mapping and validation.
  */
 @HiltViewModel
-class CsvImportViewModel @Inject constructor(
+class CsvImportViewModel
+    @Inject
+    constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
-
     data class CsvImportUiState(
         val isLoading:  Boolean = false,
         val headers:    List<String> = emptyList(),
@@ -154,8 +155,10 @@ class CsvImportViewModel @Inject constructor(
             val date = normalizeDate(row.getOrNull(dateIdx))
             if (date.isBlank()) errors += "Invalid date"
 
-            if (amount == null) null
-            else CsvImportCandidate(
+            if (amount == null) {
+                null
+            } else {
+                CsvImportCandidate(
                 amount = amount,
                 merchant = merchant,
                 date = date,
@@ -167,6 +170,7 @@ class CsvImportViewModel @Inject constructor(
                 description = row.getOrNull(descIdx)?.trim()?.ifBlank { null },
                 errors = errors,
             )
+            }
         }
 
         _uiState.value = CsvImportUiState(
@@ -204,7 +208,9 @@ class CsvImportViewModel @Inject constructor(
                     "${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}T00:00:00"
                 else -> ""
             }
-        } catch (_: Exception) { "" }
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     private fun parseCsv(raw: String): List<List<String>> {
@@ -219,9 +225,12 @@ class CsvImportViewModel @Inject constructor(
             when {
                 inQuotes -> {
                     if (c == '"') {
-                        if (i + 1 < s.length && s[i + 1] == '"') { field.append('"'); i++ }
-                        else inQuotes = false
-                    } else field.append(c)
+                        if (i + 1 < s.length && s[i + 1] == '"') { field.append('"'); i++ } else {
+                            inQuotes = false
+                        }
+                    } else {
+                        field.append(c)
+                    }
                 }
                 c == '"' -> inQuotes = true
                 c == ',' -> { row.add(field.toString()); field = StringBuilder() }

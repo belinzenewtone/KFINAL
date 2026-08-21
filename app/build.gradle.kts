@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
+}
+// Release signing (Phase 5): credentials live in keystore.properties (git-ignored).
+// CI provides the same file from secrets — see .github/workflows/release.yml.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
 }
 
 android {
@@ -11,11 +21,11 @@ android {
     compileSdk   = 35
 
     defaultConfig {
-        applicationId   = "com.belinze.lifeos.compose"
-        minSdk          = 26
-        targetSdk       = 35
-        versionCode     = 1
-        versionName     = "1.0.0"
+        applicationId = "com.belinze.lifeos.compose"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -23,18 +33,28 @@ android {
 
     signingConfigs {
         create("release") {
-            // TODO: configure release signing before production build
+            if (keystorePropsFile.exists()) {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled  = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+            signingConfig = if (keystorePropsFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                null // unsigned local builds; CI always signs
+            }
         }
     }
 
@@ -46,13 +66,13 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
-        freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-        )
+        freeCompilerArgs +=
+            listOf(
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            )
     }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -65,6 +85,11 @@ android {
             excludes += "META-INF/DEPENDENCIES"
         }
     }
+}
+
+ksp {
+    // Export Room schemas for migration review/testing (Phase 4 hardening).
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -98,7 +123,12 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.room.paging)
     ksp(libs.room.compiler)
+
+    // Paging 3
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
 
     // DataStore
     implementation(libs.datastore)
@@ -129,4 +159,16 @@ dependencies {
 
     // SMS module (parser — source included, zero parser changes)
     implementation(project(":sms"))
+
+    // Unit tests (Robolectric — Phase 3 migration test)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.coroutines.test)
+}
+
+// Static analysis (Phase 4) — shared YAML, strict gate
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
 }

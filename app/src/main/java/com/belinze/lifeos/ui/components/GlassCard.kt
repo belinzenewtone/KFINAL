@@ -3,7 +3,6 @@ package com.belinze.lifeos.ui.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -22,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.belinze.lifeos.ui.theme.LocalDarkTheme
 import com.belinze.lifeos.ui.theme.ShapeLg
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ fun GlassCard(
     onClick:   (() -> Unit)?       = null,
     content:   @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark  = isSystemInDarkTheme()
+    val isDark  = LocalDarkTheme.current
     val primary = MaterialTheme.colorScheme.primary
 
     // ── Layer 1: gradient background ─────────────────────────────────────────
@@ -70,31 +70,40 @@ fun GlassCard(
     // light; default rgba(30,35,45,.55) dark / rgba(241,245,249,.55) light.
     val tintColor: Color = when (variant) {
         GlassCardVariant.Accent   -> primary.copy(alpha = 0x22 / 255f)
-        GlassCardVariant.Elevated -> if (isDark)
+        GlassCardVariant.Elevated -> if (isDark) {
             Color(0xFF282F3C).copy(alpha = 0.60f)
-        else
+        } else {
             Color(0xFFE2E8F0).copy(alpha = 0.60f)
-        GlassCardVariant.Default  -> if (isDark)
+        }
+        GlassCardVariant.Default  -> if (isDark) {
             Color(0xFF1E232D).copy(alpha = 0.55f)
-        else
+        } else {
             Color(0xFFF1F5F9).copy(alpha = 0.55f)
+        }
     }
 
     // ── Layer 3: frost film ───────────────────────────────────────────────────
-    val frostColor: Color = if (isDark)
+    val frostColor: Color = if (isDark) {
         Color(0xFF14161C).copy(alpha = 0.45f)
-    else
+    } else {
         Color(0xFFF8FAFC).copy(alpha = 0.50f)
+    }
 
     // ── Layer 4: hairline border ──────────────────────────────────────────────
     // React: accent primary33; elevated white 12% dark / black 10% light;
     // default white 8% dark / black 7% light.
     val hairlineColor: Color = when (variant) {
         GlassCardVariant.Accent   -> primary.copy(alpha = 0x33 / 255f)
-        GlassCardVariant.Elevated -> if (isDark) Color.White.copy(alpha = 0.12f)
-                                     else        Color.Black.copy(alpha = 0.10f)
-        GlassCardVariant.Default  -> if (isDark) Color.White.copy(alpha = 0.08f)
-                                     else        Color.Black.copy(alpha = 0.07f)
+        GlassCardVariant.Elevated -> if (isDark) {
+            Color.White.copy(alpha = 0.12f)
+        } else {
+            Color.Black.copy(alpha = 0.10f)
+        }
+        GlassCardVariant.Default  -> if (isDark) {
+            Color.White.copy(alpha = 0.08f)
+        } else {
+            Color.Black.copy(alpha = 0.07f)
+        }
     }
 
     val clickModifier = if (onClick != null) {
@@ -104,7 +113,9 @@ fun GlassCard(
             indication        = ripple(color = primary.copy(alpha = 0.20f)),
             onClick           = onClick,
         )
-    } else Modifier
+    } else {
+        Modifier
+    }
 
     Box(
         modifier = modifier
@@ -122,10 +133,11 @@ fun GlassCard(
         // Provide it explicitly so Text/Icon without an explicit color argument reads
         // correctly against the dark glass background in both light and dark mode.
         CompositionLocalProvider(
-            LocalContentColor provides if (isDark)
+            LocalContentColor provides if (isDark) {
                 MaterialTheme.colorScheme.onSurface
-            else
-                MaterialTheme.colorScheme.onSurface,
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
         ) {
             Column(
                 modifier = Modifier.padding(12.dp),    // internal padding 12dp

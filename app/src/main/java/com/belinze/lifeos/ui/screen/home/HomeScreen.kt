@@ -1,10 +1,8 @@
 package com.belinze.lifeos.ui.screen.home
 
-// (animation imports reserved for Phase 8 shimmer refinement)
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -22,15 +20,14 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -52,16 +49,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FrostCard
 import com.belinze.lifeos.ui.components.FrostCardGlow
 import com.belinze.lifeos.ui.components.ShimmerLoadingState
 import com.belinze.lifeos.ui.components.TopBanner
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
-import com.belinze.lifeos.util.compactCurrency
+import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.EventViewModel
+import com.belinze.lifeos.viewmodel.ProfileViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDate
@@ -89,31 +86,24 @@ fun HomeScreen(
     transactionViewModel: TransactionViewModel = hiltViewModel(),
     taskViewModel:        TaskViewModel        = hiltViewModel(),
     eventViewModel:       EventViewModel       = hiltViewModel(),
+    profileViewModel:     ProfileViewModel     = hiltViewModel(),
 ) {
     val isDark       = isSystemInDarkTheme()
     val txState      by transactionViewModel.uiState.collectAsState()
     val taskState    by taskViewModel.uiState.collectAsState()
     val eventState   by eventViewModel.uiState.collectAsState()
+    val prefState    by profileViewModel.prefState.collectAsState()
 
-    // Derived metrics (computed from available state)
-    val monthSpend  = txState.monthTotals?.expense ?: 0.0
-    val todayStr    = remember { java.time.LocalDate.now().toString() }
-    val weekMonday  = remember { java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).toString() }
-    val todaySpend  = remember(txState.transactions) {
-        txState.transactions
-            .filter { it.date?.take(10) == todayStr && it.transactionType in listOf("expense", "transfer", "fuliza") }
-            .sumOf { it.amount }
-    }
-    val weekSpend   = remember(txState.transactions) {
-        txState.transactions
-            .filter {
-                val d = it.date?.take(10) ?: ""
-                d >= weekMonday && it.transactionType in listOf("expense", "transfer", "fuliza")
-            }
-            .sumOf { it.amount }
-    }
+    // Spend metrics for Today and Week — sourced from ViewModel-computed totals
+    // (accurate across all data, not just the current paging window).
+    val todayCash = txState.todayExpense
+    val weekCash  = txState.weekExpense
 
-    val greeting  = remember { greeting() }
+    val firstName = remember(prefState.profileName, prefState.profileUsername) {
+        val raw = prefState.profileName.trim().ifBlank { prefState.profileUsername.trim() }
+        raw.split(" ").firstOrNull { it.isNotBlank() } ?: ""
+    }
+    val greeting  = remember(firstName) { greeting(firstName) }
     val todayLabel = remember {
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH))
     }
@@ -125,7 +115,6 @@ fun HomeScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().drawBehind { drawRect(brush = bgGrad) }) {
-
         // ── Aurora glow rings (non-interactive, behind content) ───────────────
         AuroraGlow(isDark = isDark)
 
@@ -141,7 +130,6 @@ fun HomeScreen(
                     .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm)
                     .padding(bottom = Spacing.bottomNavSafeArea),
             ) {
-
                 // ── Header row ────────────────────────────────────────────────
                 Row(
                     modifier              = Modifier.fillMaxWidth().padding(bottom = Spacing.xl),
@@ -152,25 +140,25 @@ fun HomeScreen(
                         Text(
                             text  = "Today",
                             style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text  = todayLabel,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.60f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     FilledIconButton(
-                        onClick = { /* navigate to Profile tab handled by tab switch */ },
+                        onClick = { navController.navigate(Route.PERSONAL_INFORMATION) },
                         colors  = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         ),
                         modifier = Modifier.size(40.dp),
                     ) {
                         Icon(
-                            imageVector        = Icons.Filled.Person,
+                            imageVector        = Icons.Outlined.Person,
                             contentDescription = "Profile",
-                            tint               = MaterialTheme.colorScheme.onBackground,
+                            tint               = MaterialTheme.colorScheme.onSurface,
                             modifier           = Modifier.size(20.dp),
                         )
                     }
@@ -191,30 +179,28 @@ fun HomeScreen(
                     Text(
                         text      = greeting,
                         style     = MaterialTheme.typography.headlineLarge,   // 30sp/700
-                        color     = MaterialTheme.colorScheme.onBackground,
+                        color     = MaterialTheme.colorScheme.onSurface,
                         maxLines  = 2,
                     )
                     Text(
                         text  = "Review priorities, schedule, and your spend trend.",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.60f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 // ── Metrics row (horizontal scroll) ───────────────────────────
-                if (txState.isLoading) {
+                if (txState.monthTotals == null) {
                     ShimmerLoadingState(rowCount = 1)
                 } else {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
                             .padding(bottom = Spacing.xl),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.base),
                     ) {
-                        HomeMetricCard(label = "Today",  amount = todaySpend, glow = FrostCardGlow.Blue)
-                        HomeMetricCard(label = "Week",   amount = weekSpend,  glow = FrostCardGlow.Teal)
-                        HomeMetricCard(label = "Month",  amount = monthSpend, glow = FrostCardGlow.Blue)
+                        HomeMetricCard(label = "Today's Spend",  amount = todayCash,  glow = FrostCardGlow.Blue,  modifier = Modifier.weight(1f))
+                        HomeMetricCard(label = "Week's Spend",   amount = weekCash,   glow = FrostCardGlow.Teal,  modifier = Modifier.weight(1f))
                     }
                 }
 
@@ -278,21 +264,22 @@ private fun AuroraGlow(isDark: Boolean) {
 
 @Composable
 private fun HomeMetricCard(
-    label:  String,
-    amount: Double,
-    glow:   FrostCardGlow,
+    label:    String,
+    amount:   Double,
+    glow:     FrostCardGlow,
+    modifier: Modifier = Modifier,
 ) {
-    FrostCard(glow = glow, modifier = Modifier.width(140.dp)) {
+    FrostCard(glow = glow, modifier = modifier) {
         Text(
             text  = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.60f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(Spacing.sm))
         Text(
-            text       = compactCurrency(amount),
+            text       = formatCurrency(amount, decimals = 0),
             style      = MaterialTheme.typography.headlineMedium,  // 24sp/700
-            color      = MaterialTheme.colorScheme.onBackground,
+            color      = MaterialTheme.colorScheme.onSurface,
             maxLines   = 1,
         )
     }
@@ -317,28 +304,28 @@ private fun HomeMenuCard(
             MenuRow(
                 label = "Tasks",
                 value = "$pendingTaskCount pending",
-                icon = Icons.Filled.TaskAlt,
+                icon = Icons.Outlined.TaskAlt,
                 onClick = onTasks,
             )
             Spacer(Modifier.height(Spacing.base))
             MenuRow(
                 label = "Next Event",
                 value = nextEventTitle ?: "No event",
-                icon = Icons.Filled.CalendarMonth,
+                icon = Icons.Outlined.CalendarMonth,
                 onClick = onEvents,
             )
             Spacer(Modifier.height(Spacing.base))
             MenuRow(
                 label = "Analytics",
                 value = "Trends",
-                icon = Icons.Filled.Analytics,
+                icon = Icons.Outlined.Analytics,
                 onClick = onInsights,
             )
             Spacer(Modifier.height(Spacing.base))
             MenuRow(
                 label = "Search",
                 value = "Explore",
-                icon = Icons.Filled.Search,
+                icon = Icons.Outlined.Search,
                 onClick = onSearch,
             )
         },
@@ -439,11 +426,14 @@ private fun WeeklyResetCard(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-private fun greeting(): String {
+private fun greeting(firstName: String = ""): String {
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-    return when {
+    val base = when {
         hour < 12 -> "Good morning"
         hour < 17 -> "Good afternoon"
         else      -> "Good evening"
     }
+    return if (firstName.isNotBlank()) "$base, $firstName" else base
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────

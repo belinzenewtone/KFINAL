@@ -26,12 +26,13 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel
+    @Inject
+    constructor(
     private val prefs: AppPreferences,
     private val db: LifeOsDatabase,
     private val smsService: SmsService,
 ) : ViewModel() {
-
     /** The full prefs snapshot, shared with AppViewModel but scoped here. */
     val settings: StateFlow<com.belinze.lifeos.data.datastore.AppPreferenceState> =
         prefs.state.stateIn(
@@ -49,22 +50,32 @@ class SettingsViewModel @Inject constructor(
     fun setNotificationsEnabled(enabled: Boolean) =
         update { it[PreferenceKeys.NOTIFICATIONS_ENABLED] = enabled }
 
-    fun setNotifReminders(v: Boolean)     = update { it[PreferenceKeys.NOTIF_REMINDERS] = v }
-    fun setNotifBudgetAlerts(v: Boolean)  = update { it[PreferenceKeys.NOTIF_BUDGET_ALERTS] = v }
-    fun setNotifDailyDigest(v: Boolean)   = update { it[PreferenceKeys.NOTIF_DAILY_DIGEST] = v }
-    fun setNotifRecurring(v: Boolean)     = update { it[PreferenceKeys.NOTIF_RECURRING_RULES] = v }
-    fun setNotifTxAlerts(v: Boolean)      = update { it[PreferenceKeys.NOTIF_TX_ALERTS] = v }
+    fun setNotifReminders(v: Boolean) = update { it[PreferenceKeys.NOTIF_REMINDERS] = v }
+
+    fun setNotifBudgetAlerts(v: Boolean) = update { it[PreferenceKeys.NOTIF_BUDGET_ALERTS] = v }
+
+    fun setNotifDailyDigest(v: Boolean) = update { it[PreferenceKeys.NOTIF_DAILY_DIGEST] = v }
+
+    fun setNotifRecurring(v: Boolean) = update { it[PreferenceKeys.NOTIF_RECURRING_RULES] = v }
+
+    fun setNotifTxAlerts(v: Boolean) = update { it[PreferenceKeys.NOTIF_TX_ALERTS] = v }
+
     fun setDailyDigestMorning(v: Boolean) = update { it[PreferenceKeys.DAILY_DIGEST_MORNING] = v }
-    fun setDailyDigestTime(v: String)     = update { it[PreferenceKeys.DAILY_DIGEST_TIME] = v }
+
+    fun setDailyDigestTime(v: String) = update { it[PreferenceKeys.DAILY_DIGEST_TIME] = v }
+
     fun setAssistantQuickSuggestions(v: Boolean) =
         update { it[PreferenceKeys.ASSISTANT_QUICK_SUGGESTIONS] = v }
 
     // ── Screen lock ───────────────────────────────────────────────────────────
 
-    fun setScreenLockEnabled(v: Boolean)  = update { it[PreferenceKeys.SCREEN_LOCK_ENABLED] = v }
-    fun setPinCode(pin: String)           = update { it[PreferenceKeys.PIN_CODE] = pin }
+    fun setScreenLockEnabled(v: Boolean) = update { it[PreferenceKeys.SCREEN_LOCK_ENABLED] = v }
+
+    fun setPinCode(pin: String) = update { it[PreferenceKeys.PIN_CODE] = pin }
+
     fun setFingerprintEnabled(v: Boolean) = update { it[PreferenceKeys.FINGERPRINT_ENABLED] = v }
-    fun setLockTimeout(minutes: Int)      = update { it[PreferenceKeys.LOCK_TIMEOUT_MINUTES] = minutes }
+
+    fun setLockTimeout(minutes: Int) = update { it[PreferenceKeys.LOCK_TIMEOUT_MINUTES] = minutes }
 
     // Convenience: disable screen lock and clear PIN
     fun disableScreenLock() = viewModelScope.launch {
@@ -77,10 +88,13 @@ class SettingsViewModel @Inject constructor(
 
     // ── Budget alerts ─────────────────────────────────────────────────────────
 
-    fun setBudgetAlerts(v: Boolean)       = update { it[PreferenceKeys.BUDGET_THRESHOLD_ALERTS] = v }
-    fun setAlertThresholdHigh(v: Int)     = update { it[PreferenceKeys.ALERT_THRESHOLD_HIGH] = v }
-    fun setAlertThresholdMedium(v: Int)   = update { it[PreferenceKeys.ALERT_THRESHOLD_MEDIUM] = v }
-    fun setAlertThresholdLow(v: Int)      = update { it[PreferenceKeys.ALERT_THRESHOLD_LOW] = v }
+    fun setBudgetAlerts(v: Boolean) = update { it[PreferenceKeys.BUDGET_THRESHOLD_ALERTS] = v }
+
+    fun setAlertThresholdHigh(v: Int) = update { it[PreferenceKeys.ALERT_THRESHOLD_HIGH] = v }
+
+    fun setAlertThresholdMedium(v: Int) = update { it[PreferenceKeys.ALERT_THRESHOLD_MEDIUM] = v }
+
+    fun setAlertThresholdLow(v: Int) = update { it[PreferenceKeys.ALERT_THRESHOLD_LOW] = v }
 
     // ── SMS ───────────────────────────────────────────────────────────────────
 
@@ -100,25 +114,30 @@ class SettingsViewModel @Inject constructor(
 
     // ── Currency ──────────────────────────────────────────────────────────────
 
-    fun setCurrency(v: String)            = update { it[PreferenceKeys.CURRENCY] = v }
+    fun setCurrency(v: String) = update { it[PreferenceKeys.CURRENCY] = v }
 
     // ── Profile ───────────────────────────────────────────────────────────────
 
-    fun setProfileAvatarUri(uri: String)  = update { it[PreferenceKeys.PROFILE_AVATAR_URI] = uri }
+    fun setProfileAvatarUri(uri: String) = update { it[PreferenceKeys.PROFILE_AVATAR_URI] = uri }
 
     // ── Display ───────────────────────────────────────────────────────────────
 
-    fun setDateFormat(v: String)          = update { it[PreferenceKeys.DATE_FORMAT] = v }
-    fun setTimeFormat(v: String)          = update { it[PreferenceKeys.TIME_FORMAT] = v }
-    fun setDecimalPrecision(v: Int)       = update { it[PreferenceKeys.DECIMAL_PRECISION] = v }
+    fun setDateFormat(v: String) = update { it[PreferenceKeys.DATE_FORMAT] = v }
+
+    fun setTimeFormat(v: String) = update { it[PreferenceKeys.TIME_FORMAT] = v }
+
+    fun setDecimalPrecision(v: Int) = update { it[PreferenceKeys.DECIMAL_PRECISION] = v }
+
     fun setHapticFeedback(v: Boolean) {
         Haptics.enabled = v
         update { it[PreferenceKeys.HAPTIC_FEEDBACK] = v }
         // Mirrors RN: a success pulse when the user enables haptics.
         if (v) Haptics.success()
     }
-    fun setCalendarSwipe(v: Boolean)      = update { it[PreferenceKeys.CALENDAR_SWIPE] = v }
-    fun setDefaultCategory(v: String)     = update { it[PreferenceKeys.DEFAULT_TX_CATEGORY] = v }
+
+    fun setCalendarSwipe(v: Boolean) = update { it[PreferenceKeys.CALENDAR_SWIPE] = v }
+
+    fun setDefaultCategory(v: String) = update { it[PreferenceKeys.DEFAULT_TX_CATEGORY] = v }
 
     // ─── Danger zone ───────────────────────────────────────────────────────────
 

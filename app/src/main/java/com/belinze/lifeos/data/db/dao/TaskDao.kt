@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
-
     @Query("SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY deadline ASC, created_at DESC")
     suspend fun getAll(): List<TaskEntity>
 

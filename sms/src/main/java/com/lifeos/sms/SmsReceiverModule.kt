@@ -14,7 +14,6 @@ import android.util.Log
  * without modification.
  */
 class SmsReceiverModule {
-
     /**
      * Called by SmsProcessWorker after a successful transaction insert.
      * Routes to SmsEventBus so Compose ViewModels can refresh their UI.

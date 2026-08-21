@@ -19,9 +19,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object SmsModule {
-
     @Provides
     @Singleton
-    fun provideSmsService(@ApplicationContext context: Context): SmsService =
+    fun provideSmsService(
+        @ApplicationContext context: Context
+    ): SmsService =
         SmsService(context)
 }

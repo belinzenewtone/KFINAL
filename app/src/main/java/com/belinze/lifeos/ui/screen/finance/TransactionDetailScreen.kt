@@ -15,8 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -25,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,9 +58,18 @@ fun TransactionDetailScreen(
     navController:  NavHostController,
     viewModel:      TransactionViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val tx = state.transactions.firstOrNull { it.id == transactionId }
+    val selectedTx by viewModel.selectedTransaction.collectAsState()
+    // The transaction is loaded into selectedTransaction via loadTransaction(id)
+    // in the LaunchedEffect below. With Paging 3 the Finance screen no longer
+    // holds a flat transactions list, so selectedTx is the single source of truth.
+    val tx = selectedTx?.takeIf { it.id == transactionId }
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Load by ID whenever we enter this screen — ensures the detail is always
+    // available regardless of which paginated page was loaded in Finance.
+    LaunchedEffect(transactionId) {
+        viewModel.loadTransaction(transactionId)
+    }
     val context = LocalContext.current
 
     PageScaffold(
@@ -78,11 +91,11 @@ fun TransactionDetailScreen(
                     }
                     context.startActivity(Intent.createChooser(intent, "Share"))
                 }) {
-                    Icon(Icons.Filled.Share, contentDescription = "Share",
+                    Icon(Icons.Outlined.Share, contentDescription = "Share",
                         tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
                 }
                 IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete",
+                    Icon(Icons.Outlined.Delete, contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
                 }
             }
@@ -90,7 +103,7 @@ fun TransactionDetailScreen(
         scrollable = false,
     ) {
         if (tx == null) {
-            Text("Transaction not found.", color = MaterialTheme.colorScheme.onBackground.copy(0.55f))
+            Text("Transaction not found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@PageScaffold
         }
 
@@ -121,7 +134,11 @@ fun TransactionDetailScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            Icons.Filled.Share,
+                            when (tx.transactionType) {
+                                "income"   -> Icons.Outlined.ArrowDownward
+                                "transfer" -> Icons.Outlined.SwapHoriz
+                                else       -> Icons.Outlined.ArrowUpward
+                            },
                             contentDescription = null,
                             tint = categoryColor,
                             modifier = Modifier.size(32.dp),

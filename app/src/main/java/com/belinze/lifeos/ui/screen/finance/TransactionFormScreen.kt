@@ -203,14 +203,33 @@ fun TransactionFormScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = Spacing.sm),
             )
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                STATUSES.forEachIndexed { idx, status ->
-                    SegmentedButton(
-                        selected = formState.status == status,
-                        onClick = { viewModel.updateFormStatus(status) },
-                        shape = SegmentedButtonDefaults.itemShape(index = idx, count = STATUSES.size),
-                        label = { Text(status.replaceFirstChar { it.uppercase() }) },
-                    )
+            var statusExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = statusExpanded,
+                onExpandedChange = { statusExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = formState.status.replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Status") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(statusExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = statusExpanded,
+                    onDismissRequest = { statusExpanded = false },
+                ) {
+                    STATUSES.forEach { status ->
+                        DropdownMenuItem(
+                            text = { Text(status.replaceFirstChar { it.uppercase() }) },
+                            onClick = {
+                                viewModel.updateFormStatus(status)
+                                Haptics.light()
+                                statusExpanded = false
+                            },
+                        )
+                    }
                 }
             }
 

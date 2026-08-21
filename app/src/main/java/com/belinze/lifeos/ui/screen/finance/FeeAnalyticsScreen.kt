@@ -14,10 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -64,7 +63,7 @@ fun FeeAnalyticsScreen(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x2l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.CheckCircle, contentDescription = null,
+                Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No service charges this month", style = MaterialTheme.typography.titleMedium,
@@ -100,8 +99,11 @@ fun FeeAnalyticsScreen(
                                 val maxTotal = state.categories.maxOfOrNull { it.total } ?: 1.0
                                 state.categories.forEachIndexed { i, cat ->
                                     FeeBar(cat, maxTotal)
+                                    // FA-2: 2dp vertical margin around each category divider
                                     if (i < state.categories.size - 1) {
+                                        Spacer(Modifier.height(2.dp))
                                         Divider()
+                                        Spacer(Modifier.height(2.dp))
                                     }
                                 }
                             }
@@ -192,4 +194,6 @@ private fun Divider() {
 
 private fun formatMonthDay(iso: String?): String = try {
     LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM d"))
-} catch (_: Exception) { iso?.take(10) ?: "" }
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}

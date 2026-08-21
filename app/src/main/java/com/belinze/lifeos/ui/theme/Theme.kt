@@ -1,6 +1,5 @@
 package com.belinze.lifeos.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -78,7 +77,12 @@ private val LightAppColors = AppColors(
     info              = Color(0xFF0369A1),
 )
 
-val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
+val LocalAppColors  = staticCompositionLocalOf { DarkAppColors }
+
+/** True when the current theme is dark. Read this instead of calling
+ *  isSystemInDarkTheme() inside individual composables — one read at the
+ *  theme root, propagated everywhere. */
+val LocalDarkTheme  = staticCompositionLocalOf { true }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LifeOsTheme — the root composable. Wraps MaterialTheme with our colour
@@ -93,7 +97,10 @@ fun LifeOsTheme(
     val colorScheme = if (darkTheme) LifeOsDarkColorScheme else LifeOsLightColorScheme
     val appColors   = if (darkTheme) DarkAppColors        else LightAppColors
 
-    CompositionLocalProvider(LocalAppColors provides appColors) {
+    CompositionLocalProvider(
+        LocalAppColors provides appColors,
+        LocalDarkTheme provides darkTheme,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography  = LifeOsTypography,

@@ -71,9 +71,11 @@ fun LifeOsNavHost(
                             prefs.pinCode.isNotEmpty()
 
                         if (isLockable) {
-                            val graceMs   = if (prefs.fingerprintEnabled)
+                            val graceMs   = if (prefs.fingerprintEnabled) {
                                 prefs.lockTimeoutMinutes * 60_000L
-                            else 0L
+                            } else {
+                                0L
+                            }
                             val elapsedMs = System.currentTimeMillis() - backgroundedAt
                             if (elapsedMs >= graceMs) {
                                 appViewModel.setAppLocked(true)

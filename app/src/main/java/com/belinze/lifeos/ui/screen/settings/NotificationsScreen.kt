@@ -10,23 +10,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Wallet
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -37,6 +40,7 @@ import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.SettingsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     navController: NavHostController,
@@ -44,6 +48,7 @@ fun NotificationsScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     var infoMessage by remember { mutableStateOf<String?>(null) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     PageScaffold(
         title = "Notifications",
@@ -66,7 +71,7 @@ fun NotificationsScreen(
             SectionLabel("Notifications")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.Notifications,
+                    icon = Icons.Outlined.Notifications,
                     label = "Enable notifications",
                     toggle = true,
                     toggleValue = settings.notificationsEnabled,
@@ -81,7 +86,7 @@ fun NotificationsScreen(
             SectionLabel("Budget Alerts")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.Wallet,
+                    icon = Icons.Outlined.Wallet,
                     label = "Budget threshold alerts",
                     subtitle = "Notify when spending exceeds a budget category",
                     toggle = true,
@@ -97,20 +102,25 @@ fun NotificationsScreen(
             if (settings.budgetThresholdAlerts) {
                 SectionLabel("Alert Levels")
                 GlassCard {
+                    // Local state keeps the slider thumb smooth during drag;
+                    // the ViewModel is only notified when the user lifts their finger
+                    // (onValueChangeFinished), which prevents the GlassCard from
+                    // recomposing on every drag frame and causing background jumps.
                     AlertLevelStepper(
                         label = "High",
-                        value = settings.alertThresholdHigh,
-                        onChange = { viewModel.setAlertThresholdHigh(it) },
+                        savedValue = settings.alertThresholdHigh,
+                        onCommit = { viewModel.setAlertThresholdHigh(it) },
                     )
                     AlertLevelStepper(
                         label = "Medium",
-                        value = settings.alertThresholdMedium,
-                        onChange = { viewModel.setAlertThresholdMedium(it) },
+                        savedValue = settings.alertThresholdMedium,
+                        onCommit = { viewModel.setAlertThresholdMedium(it) },
                     )
                     AlertLevelStepper(
                         label = "Low",
-                        value = settings.alertThresholdLow,
-                        onChange = { viewModel.setAlertThresholdLow(it) },
+                        savedValue = settings.alertThresholdLow,
+                        onCommit = { viewModel.setAlertThresholdLow(it) },
+                        isLast = true,
                     )
                 }
             }
@@ -118,7 +128,7 @@ fun NotificationsScreen(
             SectionLabel("Daily Digest")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.WbSunny,
+                    icon = Icons.Outlined.WbSunny,
                     label = "Morning summary",
                     subtitle = "Morning summary of tasks, spending and upcoming events",
                     toggle = true,
@@ -132,10 +142,7 @@ fun NotificationsScreen(
                     label = "Delivery time",
                     value = formatTime(settings.dailyDigestDeliveryTime),
                     showChevron = true,
-                    onPress = {
-                        // simplified time edit via dialog
-                        infoMessage = "Delivery time: ${formatTime(settings.dailyDigestDeliveryTime)}"
-                    },
+                    onPress = { showTimePicker = true },
                     disabled = !settings.dailyDigestMorningSummary,
                     isLast = true,
                 )
@@ -144,38 +151,93 @@ fun NotificationsScreen(
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))
         }
     }
+
+    // ── Delivery time picker dialog ───────────────────────────────────────────
+    if (showTimePicker) {
+        val parts   = settings.dailyDigestDeliveryTime.split(":")
+        val initH   = parts.getOrNull(0)?.toIntOrNull() ?: 7
+        val initM   = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        val tState  = rememberTimePickerState(
+            initialHour   = initH,
+            initialMinute = initM,
+            is24Hour      = false,
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title            = { Text("Delivery time") },
+            text             = { TimePicker(state = tState) },
+            confirmButton    = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                    val hStr = tState.hour.toString().padStart(2, '0')
+                    val mStr = tState.minute.toString().padStart(2, '0')
+                    val time = "$hStr:$mStr"
+                    viewModel.setDailyDigestTime(time)
+                    infoMessage = "Delivery time: ${formatTime(time)}"
+                }) { Text("Save") }
+            },
+            dismissButton    = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+        )
+    }
 }
+
+// ─── AlertLevelStepper ────────────────────────────────────────────────────────
+
+@Composable
+private fun AlertLevelStepper(
+    label:      String,
+    savedValue: Int,
+    onCommit:   (Int) -> Unit,
+    isLast:     Boolean = false,
+) {
+    // Local drag state: keeps the thumb responsive without writing to the
+    // ViewModel (and triggering recomposition of the whole card) on every frame.
+    var draft by remember(savedValue) { mutableFloatStateOf(savedValue.toFloat()) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                top    = Spacing.sm,
+                bottom = if (isLast) Spacing.xs else Spacing.sm,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style    = MaterialTheme.typography.bodyMedium,
+            color    = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Slider(
+            value                = draft,
+            onValueChange        = { draft = it },          // local state only — no recompose above
+            onValueChangeFinished = { onCommit(draft.toInt()) },   // write ViewModel when thumb released
+            valueRange           = 0f..100f,
+            steps                = 9,
+            modifier             = Modifier.weight(2f),
+        )
+        Text(
+            "${draft.toInt()}%",
+            style    = MaterialTheme.typography.bodyMedium,
+            color    = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = Spacing.sm),
+        )
+    }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SectionLabel(label: String) {
     Text(
         label,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style    = MaterialTheme.typography.titleMedium,
+        color    = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.base),
     )
-}
-
-@Composable
-private fun AlertLevelStepper(label: String, value: Int, onChange: (Int) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f))
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { onChange(it.toInt()) },
-            valueRange = 0f..100f,
-            steps = 9,
-            modifier = Modifier.weight(2f),
-        )
-        Text("$value%", style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = Spacing.sm))
-    }
 }
 
 private fun formatTime(time: String): String {
@@ -183,7 +245,7 @@ private fun formatTime(time: String): String {
     if (parts.size < 2) return time
     val h = parts[0].toIntOrNull() ?: return time
     val m = parts[1].toIntOrNull() ?: return time
-    val period = if (h >= 12) "PM" else "AM"
+    val period      = if (h >= 12) "PM" else "AM"
     val displayHour = if (h % 12 == 0) 12 else h % 12
     return "${displayHour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} $period"
 }

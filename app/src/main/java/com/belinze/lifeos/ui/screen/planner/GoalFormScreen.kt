@@ -1,5 +1,7 @@
 package com.belinze.lifeos.ui.screen.planner
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -10,15 +12,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,17 +36,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
-import java.util.Calendar
-import java.util.TimeZone
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.PlannerViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.TimeZone
 
 private val GOAL_STATUSES = listOf("active", "completed", "archived")
 
@@ -59,6 +64,25 @@ fun GoalFormScreen(
 ) {
     val form by viewModel.goalForm.collectAsState()
     val isEdit = !goalId.isNullOrEmpty()
+    val scope = rememberCoroutineScope()
+    // CC-3: success banner
+    var successMsg by remember { mutableStateOf<String?>(null) }
+    // CC-4: fade-in entry animation
+    var contentVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { contentVisible = true }
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (contentVisible) 1f else 0f,
+        animationSpec = tween(300),
+        label = "formFadeIn",
+    )
+
+    TopBanner(
+        visible       = successMsg != null,
+        message       = successMsg ?: "",
+        tone          = BannerTone.Success,
+        onDismiss     = { successMsg = null },
+        autoDismissMs = 2000,
+    )
 
     var showDeadlinePicker by remember { mutableStateOf(false) }
     val deadlinePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
@@ -91,23 +115,43 @@ fun GoalFormScreen(
         viewModel.openGoalForm(goalId?.ifEmpty { null })
     }
 
+    // CC-2: delete confirmation
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    if (showDeleteConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { androidx.compose.material3.Text("Delete goal?") },
+            text  = { androidx.compose.material3.Text("This goal will be permanently removed.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showDeleteConfirm = false
+                    viewModel.deleteGoal(form.id.orEmpty())
+                    navController.popBackStack()
+                }) { androidx.compose.material3.Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showDeleteConfirm = false }) {
+                    androidx.compose.material3.Text("Cancel")
+                }
+            },
+        )
+    }
+
     PageScaffold(
         title = if (isEdit) "Edit Goal" else "Add Goal",
         onBack = { navController.popBackStack() },
         actions = {
             if (isEdit) {
-                IconButton(onClick = {
-                    viewModel.deleteGoal(form.id.orEmpty())
-                    navController.popBackStack()
-                }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                IconButton(onClick = { showDeleteConfirm = true }) {
+                    Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
         },
         scrollable = false,
     ) {
+        // CC-4: fade-in entry animation
         Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).alpha(contentAlpha),
             verticalArrangement = Arrangement.spacedBy(Spacing.base),
         ) {
             OutlinedTextField(
@@ -159,7 +203,7 @@ fun GoalFormScreen(
                     readOnly = true,
                     label = { Text("Deadline (optional)") },
                     trailingIcon = {
-                        Icon(Icons.Filled.CalendarToday, contentDescription = "Pick date",
+                        Icon(Icons.Outlined.CalendarToday, contentDescription = "Pick date",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     },
                     singleLine = true,
@@ -192,19 +236,28 @@ fun GoalFormScreen(
             }
 
             Button(
-                onClick = { viewModel.saveGoal { navController.popBackStack() } },
+                onClick = {
+                    // CC-3: success banner + delayed navigation
+                    viewModel.saveGoal {
+                        successMsg = if (isEdit) "Goal updated" else "Goal added"
+                        scope.launch {
+                            delay(1200)
+                            navController.popBackStack()
+                        }
+                    }
+                },
                 enabled = !form.isSaving,
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
             ) {
-                if (form.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                } else {
-                    Text(if (isEdit) "Update Goal" else "Add Goal")
-                }
+                Text(
+                    if (form.isSaving) {
+                        "Saving…"
+                    } else if (isEdit) {
+                        "Update Goal"
+                    } else {
+                        "Add Goal"
+                    }
+                )
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

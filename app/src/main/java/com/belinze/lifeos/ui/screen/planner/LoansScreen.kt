@@ -11,11 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircleOutline
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -63,9 +63,9 @@ fun LoansScreen(
     var payAmount by remember { mutableStateOf("") }
     var banner by remember { mutableStateOf<String?>(null) }
 
-    val openLoans = state.loans.filter { it.status == "active" }
-    val closedLoans = state.loans.filter { it.status != "active" }.take(10)
-    val netOutstanding = openLoans.sumOf { it.drawAmountKes - it.totalRepaidKes }
+    val openLoans      = remember(state.loans) { state.loans.filter { it.status == "active" } }
+    val closedLoans    = remember(state.loans) { state.loans.filter { it.status != "active" }.take(10) }
+    val netOutstanding = remember(openLoans)   { openLoans.sumOf { it.drawAmountKes - it.totalRepaidKes } }
 
     PageScaffold(
         eyebrow = "Finance Tools",
@@ -75,7 +75,7 @@ fun LoansScreen(
         scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.loanForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add loan", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add loan", tint = MaterialTheme.colorScheme.primary)
             }
         },
         topBanner = {
@@ -93,7 +93,7 @@ fun LoansScreen(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x3l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.Payments, contentDescription = null,
+                Icon(Icons.Outlined.Payments, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No Fuliza history yet", style = MaterialTheme.typography.titleLarge,
@@ -117,8 +117,11 @@ fun LoansScreen(
                             color = if (netOutstanding > 0) WARNING else SUCCESS,
                             modifier = Modifier.padding(top = Spacing.xs))
                         Text(
-                            if (netOutstanding <= 0) "All Fuliza draws are fully repaid."
-                            else "${openLoans.size} open draw${if (openLoans.size == 1) "" else "s"}. Pay to avoid daily interest.",
+                            if (netOutstanding <= 0) {
+                                "All Fuliza draws are fully repaid."
+                            } else {
+                                "${openLoans.size} open draw${if (openLoans.size == 1) "" else "s"}. Pay to avoid daily interest."
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp),
@@ -247,7 +250,7 @@ private fun LoanCard(
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
                 onLogRepayment?.let {
                     TextButton(onClick = it) {
-                        Icon(Icons.Filled.AddCircleOutline, contentDescription = null,
+                        Icon(Icons.Outlined.AddCircleOutline, contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.size(4.dp))
                         Text("Log Repayment", color = MaterialTheme.colorScheme.primary)
@@ -255,7 +258,7 @@ private fun LoanCard(
                 }
                 onMarkRepaid?.let {
                     TextButton(onClick = it) {
-                        Icon(Icons.Filled.CheckCircle, contentDescription = null,
+                        Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                             tint = SUCCESS, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.size(4.dp))
                         Text("Mark Repaid", color = SUCCESS)
@@ -268,4 +271,6 @@ private fun LoanCard(
 
 private fun formatDate(iso: String?): String = try {
     LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
-} catch (_: Exception) { iso?.take(10) ?: "" }
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}

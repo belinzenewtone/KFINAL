@@ -14,10 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +59,7 @@ fun BillsScreen(
     val state by viewModel.uiState.collectAsState()
     var banner by remember { mutableStateOf<String?>(null) }
 
-    val activeBills = state.bills.filter { it.isActive != 0 }
+    val activeBills = remember(state.bills) { state.bills.filter { it.isActive != 0 } }
 
     PageScaffold(
         eyebrow = "Recurring Obligations",
@@ -68,7 +69,7 @@ fun BillsScreen(
         scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.billForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add bill", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add bill", tint = MaterialTheme.colorScheme.primary)
             }
         },
         topBanner = {
@@ -86,7 +87,7 @@ fun BillsScreen(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x3l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.Receipt, contentDescription = null,
+                Icon(Icons.Outlined.Receipt, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No bills yet", style = MaterialTheme.typography.titleLarge,
@@ -142,7 +143,7 @@ private fun BillCard(
                     bill.nextDueDate?.let {
                         BillChip("Due ${formatDate(it)}", dueColor)
                     }
-                    BillChip(bill.cycle ?: "", MaterialTheme.colorScheme.onSurfaceVariant)
+                    BillChip(formatCycleLabel(bill.cycle), MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 bill.notes?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall,
@@ -162,7 +163,7 @@ private fun BillCard(
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
             TextButton(onClick = onTogglePaid) {
                 Icon(
-                    if (paid) Icons.Filled.CheckCircle else Icons.Filled.CheckCircle,
+                    if (paid) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                     contentDescription = null,
                     tint = if (paid) WARNING else SUCCESS,
                     modifier = Modifier.size(16.dp),
@@ -171,7 +172,7 @@ private fun BillCard(
                 Text(if (paid) "Mark Unpaid" else "Mark Paid", color = if (paid) WARNING else SUCCESS)
             }
             TextButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = null,
+                Icon(Icons.Outlined.Delete, contentDescription = null,
                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.size(4.dp))
                 Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -191,6 +192,18 @@ private fun BillChip(text: String, color: Color) {
     }
 }
 
+private fun formatCycleLabel(cycle: String?): String = when (cycle) {
+    "one_time"  -> "One-time"
+    "weekly"    -> "Weekly"
+    "biweekly"  -> "Biweekly"
+    "monthly"   -> "Monthly"
+    "quarterly" -> "Quarterly"
+    "yearly"    -> "Yearly"
+    else        -> cycle?.replaceFirstChar { it.uppercase() } ?: ""
+}
+
 private fun formatDate(iso: String?): String = try {
     LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
-} catch (_: Exception) { iso?.take(10) ?: "" }
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}

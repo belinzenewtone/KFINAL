@@ -12,9 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -59,7 +58,7 @@ fun MerchantDetailScreen(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x2l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.Receipt, contentDescription = null,
+                Icon(Icons.Outlined.Receipt, contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No transactions", style = MaterialTheme.typography.titleMedium,
@@ -99,7 +98,8 @@ fun MerchantDetailScreen(
                                     ) {
                                         StatColumn("Active days", "${s.activeDays}")
                                         StatDivider()
-                                        StatColumn("Avg per day", formatCurrency(s.avgPerDay))
+                                        // MD-1: whole-number avg per day
+                                        StatColumn("Avg per day", formatCurrency(s.avgPerDay, decimals = 0))
                                         StatDivider()
                                         StatColumn("Peak day", s.peakDay?.let { formatPeakDay(it) } ?: "—")
                                     }
@@ -125,8 +125,15 @@ fun MerchantDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
+                                        // MD-4: category → first char upper, rest lower
                                         Text(
-                                            tx.category.orEmpty().replaceFirstChar { it.uppercase() },
+                                            tx.category.orEmpty().let {
+                                                if (it.isBlank()) {
+                                                    it
+                                                } else {
+                                                    it[0].uppercaseChar() + it.substring(1).lowercase()
+                                                }
+                                            },
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface,
                                         )
@@ -174,14 +181,22 @@ private fun StatDivider() {
         .background(MaterialTheme.colorScheme.outlineVariant))
 }
 
+// MD-3: zero-pad day with "dd"
 private fun formatDate(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
-} catch (_: Exception) { iso?.take(10) ?: "" }
+    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}
 
+// MD-2: 12-hour clock with AM/PM
 private fun formatTime(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("HH:mm"))
-} catch (_: Exception) { "" }
+    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("hh:mm a"))
+} catch (_: Exception) {
+    ""
+}
 
 private fun formatPeakDay(day: String): String = try {
     java.time.LocalDate.parse(day).format(DateTimeFormatter.ofPattern("MMM d"))
-} catch (_: Exception) { day }
+} catch (_: Exception) {
+    day
+}

@@ -1,31 +1,16 @@
 /**
- * :sms — Android library module wrapping the existing Kotlin SMS parser.
+ * :sms — Android library module containing the SMS parser.
  *
- * Parser sources are referenced IN-PLACE from modules/lifeos-sms and staged into
- * a build directory at configuration time, so edits to the originals are
- * reflected here automatically. Only SmsReceiverModule.kt (the Expo bridge) is
- * excluded; it is replaced by SmsService.kt in this module's own source set.
+ * All parser sources live in-repo under src/main/java (vendored from
+ * RFINAL/modules/lifeos-sms; see PHASE0_DECISIONS.md D1/D2). This module is
+ * fully self-contained and must build without any sibling repo present.
  */
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
-}
-
-/**
- * Stage the SMS parser sources from modules/lifeos-sms into a build directory,
- * excluding the Expo bridge stub (SmsReceiverModule.kt) which is replaced by
- * SmsService.kt in this module's own source set.
- */
-val parserStagingDir = layout.buildDirectory.dir("generated/sms-parser")
-
-val stageParserSources by tasks.registering(Copy::class) {
-    from("../../RFINAL/modules/lifeos-sms/android/src/main/java")
-    exclude("**/SmsReceiverModule.kt")
-    into(parserStagingDir)
-}
-tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(stageParserSources)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
 }
 
 android {
@@ -45,13 +30,18 @@ android {
         jvmTarget = "17"
     }
 
-    sourceSets {
-        named("main") {
-            java.srcDir(parserStagingDir)
-            java.srcDir("src/main/java")
-
-            manifest.srcFile("src/main/AndroidManifest.xml")
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    systemProperty("robolectric.logging.enabled", "true")
+    testLogging {
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }
 
@@ -70,4 +60,18 @@ dependencies {
 
     // Hilt — SmsService.kt uses @Inject / @Singleton
     implementation(libs.hilt.android)
+
+    // Unit tests (ported from RFINAL modules/lifeos-sms — see Phase 2)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.work.testing)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.coroutines.test)
+}
+
+// Static analysis (Phase 4) — shared YAML, strict gate
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
 }

@@ -13,9 +13,9 @@ object Spacing {
     val xs   = 4.dp    // extra-small
     val sm   = 8.dp    // small
     val md   = 12.dp   // medium (same as screenHorizontal)
-    val base = 14.dp   // base (used for padding inside cards, section gaps)
+    val base = 12.dp   // base — tightened from 14dp; matches md for consistent card/section gaps
     val lg   = 16.dp   // large
-    val xl   = 24.dp   // extra-large
+    val xl   = 20.dp   // extra-large — tightened from 24dp; removes the jarring lg→xl jump
     val x2l  = 28.dp   // 2xl
     val x3l  = 36.dp   // 3xl
     val x4l  = 48.dp   // 4xl
@@ -37,7 +37,7 @@ object TabBarDimens {
     val borderRadius = 24.dp      // ShapeXl
     val sideInset    = 12.dp      // Spacing.screenHorizontal
     val iconSize     = 24.dp
-    val labelSize    = 10          // sp (Spacing.xs - 2 in the RN version = 10 sp)
+    const val labelSize = 10          // sp (Spacing.xs - 2 in the RN version = 10 sp)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

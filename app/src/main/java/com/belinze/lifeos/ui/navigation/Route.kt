@@ -11,7 +11,6 @@ package com.belinze.lifeos.ui.navigation
 // ─────────────────────────────────────────────────────────────────────────────
 
 object Route {
-
     // ── Auth / onboarding flow ────────────────────────────────────────────────
 
     /** Shown while DataStore is hydrating. No navigation stack. */
@@ -28,10 +27,12 @@ object Route {
 
     /** Detail view for a single transaction. Required param: transactionId */
     const val TRANSACTION_DETAIL      = "transaction_detail/{transactionId}"
+
     /** Create or edit a transaction. Optional param: transactionId */
     const val TRANSACTION_FORM        = "transaction_form?transactionId={transactionId}"
     const val CATEGORIZE              = "categorize"
     const val FEE_ANALYTICS           = "fee_analytics"
+
     /** Detail for a merchant. Required param: merchant (name, URL-encoded) */
     const val MERCHANT_DETAIL         = "merchant_detail/{merchant}"
 
@@ -59,13 +60,17 @@ object Route {
     const val GOAL_FORM               = "goal_form?goalId={goalId}"
 
     const val EXPORT                  = "export"
+
     /** Alias for EXPORT used by Finance/Profile screens */
     const val EXPORT_DATA             = "export"
     const val CSV_IMPORT              = "csv_import?fileUri={fileUri}&fileName={fileName}"
+
     /** Alias for CSV_IMPORT used by FinanceScreen chip */
     const val IMPORT_CSV              = "csv_import?fileUri=&fileName="
+
     /** SMS import sheet */
     const val IMPORT_SMS              = "sms_import"
+
     /** Uncategorized / pending review queue */
     const val UNCATEGORIZED           = "review_queue"
 
@@ -79,6 +84,7 @@ object Route {
 
     const val EVENTS                  = "events"
     const val EVENT_DETAIL            = "event_detail/{eventId}"
+
     /**
      * Optional params: eventId, type (event|birthday|anniversary|countdown)
      */
@@ -112,6 +118,7 @@ object Route {
 
     /** Profile edit → maps to PERSONAL_INFORMATION */
     const val EDIT_PROFILE            = "personal_information"
+
     /** Security / screen lock → maps to SCREEN_LOCK */
     const val SECURITY                = "screen_lock"
 }
@@ -121,18 +128,21 @@ object Route {
 // ─────────────────────────────────────────────────────────────────────────────
 
 object NavTo {
-
     fun transactionDetail(transactionId: String) =
         "transaction_detail/$transactionId"
 
     fun transactionForm(transactionId: String? = null) =
-        if (transactionId != null) "transaction_form?transactionId=$transactionId"
-        else "transaction_form?transactionId="
+        if (transactionId != null) {
+            "transaction_form?transactionId=$transactionId"
+        } else {
+            "transaction_form?transactionId="
+        }
 
     fun merchantDetail(merchant: String) =
         "merchant_detail/${merchant.encodeForRoute()}"
 
     fun budgetDetail(budgetId: String) = "budget_detail/$budgetId"
+
     fun budgetForm(budgetId: String? = null) =
         "budget_form?budgetId=${budgetId ?: ""}"
 
@@ -152,10 +162,12 @@ object NavTo {
         "goal_form?goalId=${goalId ?: ""}"
 
     fun taskDetail(taskId: String) = "task_detail/$taskId"
+
     fun taskForm(taskId: String? = null) =
         "task_form?taskId=${taskId ?: ""}"
 
     fun eventDetail(eventId: String) = "event_detail/$eventId"
+
     fun eventForm(
         eventId: String? = null,
         type: String? = null,

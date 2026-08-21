@@ -51,6 +51,8 @@ data class ChatMessage(
     val content:     String,
     val isStreaming: Boolean = false,
     val createdAt:   String  = nowIso(),
+    // AS-1: structured action chips derived from response content
+    val actions:     List<String> = emptyList(),
 )
 
 data class AssistantUiState(
@@ -80,7 +82,9 @@ private val KNOWN_MERCHANTS = setOf(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @HiltViewModel
-class AssistantViewModel @Inject constructor(
+class AssistantViewModel
+    @Inject
+    constructor(
     private val assistantDao:   AssistantDao,
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
@@ -88,7 +92,6 @@ class AssistantViewModel @Inject constructor(
     private val eventDao:       EventDao,
     private val appPreferences: AppPreferences,
 ) : ViewModel() {
-
     /** Mirrors React `settings.assistantQuickSuggestions`. */
     val quickSuggestionsEnabled: StateFlow<Boolean> =
         appPreferences.state
@@ -485,7 +488,9 @@ class AssistantViewModel @Inject constructor(
         val lines = events.joinToString("\n") { ev ->
             val dateLabel = try {
                 LocalDate.parse(ev.date.take(10)).format(dateFmt)
-            } catch (e: Exception) { ev.date.take(10) }
+            } catch (e: Exception) {
+                ev.date.take(10)
+            }
             "  • $dateLabel — ${ev.title}${if (!ev.location.isNullOrBlank()) " @ ${ev.location}" else ""}"
         }
         return "📆 Upcoming events:\n$lines"
@@ -573,6 +578,7 @@ class AssistantViewModel @Inject constructor(
     /** Format as "KES 1,234" */
     private fun kes(amount: Double): String =
         "KES ${String.format(java.util.Locale.US, "%,.0f", amount)}"
+
     /** Check if the string contains any of the given keywords */
     private fun String.containsAny(vararg keywords: String): Boolean =
         keywords.any { this.contains(it) }

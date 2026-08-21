@@ -1,13 +1,13 @@
 package com.belinze.lifeos.ui.components
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,11 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
@@ -51,7 +46,6 @@ import com.belinze.lifeos.ui.theme.Spacing
 //               nesting a lazy list inside verticalScroll gives it infinite
 //               height constraints and crashes at runtime. Use scrollable=false
 //               and let the LazyColumn handle its own scrolling instead.
-//  ‣ gradient  — page background uses gradient when true (default true)
 //
 // Layout:
 //  ┌─ StatusBar inset ──────────────────────┐
@@ -71,34 +65,16 @@ fun PageScaffold(
     onBack:     (() -> Unit)?          = null,
     actions:    @Composable (() -> Unit)? = null,
     scrollable: Boolean                = true,
-    gradient:   Boolean                = true,
     // Optional banner overlay — floats over content at the top of the content
     // area without pushing anything down. Pass your TopBanner here so it
     // animates in/out on top of the page instead of shifting layout.
     topBanner: (@Composable BoxScope.() -> Unit)? = null,
     content:    @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
-
-    // Page background gradient matching RN LinearGradient in index.ts
-    val bgGradient: Brush = if (gradient) {
-        if (isDark) {
-            Brush.verticalGradient(
-                colors = listOf(Color(0xFF0A0A0B), Color(0xFF0D1117), Color(0xFF0A0A0B)),
-            )
-        } else {
-            Brush.verticalGradient(
-                colors = listOf(Color(0xFFE8EDF3), Color(0xFFDDE4EE), Color(0xFFE8EDF3)),
-            )
-        }
-    } else {
-        Brush.linearGradient(colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background))
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
-            .drawBehind { drawRect(brush = bgGradient) }
+            .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
         // ── AppBar ───────────────────────────────────────────────────────────
@@ -124,7 +100,7 @@ fun PageScaffold(
                         Icon(
                             imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint               = MaterialTheme.colorScheme.onBackground,
+                            tint               = MaterialTheme.colorScheme.onSurface,
                             modifier           = Modifier.size(AppBarDimens.iconSize),
                         )
                     }
@@ -148,7 +124,7 @@ fun PageScaffold(
                     Text(
                         text       = title,
                         style      = MaterialTheme.typography.titleLarge,
-                        color      = MaterialTheme.colorScheme.onBackground,
+                        color      = MaterialTheme.colorScheme.onSurface,
                         maxLines   = 1,
                     )
                 }
@@ -162,10 +138,14 @@ fun PageScaffold(
                 }
             }
 
-            // Trailing actions slot (min width 36 to keep the title centered).
-            Box(
-                modifier = Modifier.size(width = 36.dp, height = 36.dp),
-                contentAlignment = Alignment.CenterEnd,
+            // Trailing actions slot — Row so multiple icons sit side-by-side.
+            // defaultMinSize mirrors the back-button width so the title stays
+            // centred when there is only one action.
+            Row(
+                modifier = Modifier
+                    .height(AppBarDimens.backBtnSize)
+                    .defaultMinSize(minWidth = AppBarDimens.backBtnSize),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (actions != null) actions()
             }

@@ -28,6 +28,7 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum class TaskFilter { All, Active, Completed, Overdue }
+
 enum class TaskSort { Deadline, CreatedAt, Priority }
 
 data class TaskUiState(
@@ -56,10 +57,11 @@ data class TaskFormState(
 )
 
 @HiltViewModel
-class TaskViewModel @Inject constructor(
+class TaskViewModel
+    @Inject
+    constructor(
     private val dao: TaskDao,
 ) : ViewModel() {
-
     private val _uiState   = MutableStateFlow(TaskUiState())
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
 
@@ -140,8 +142,10 @@ class TaskViewModel @Inject constructor(
         viewModelScope.launch {
             val entity = taskId?.let { dao.getById(it) }
             _formState.update {
-                if (entity == null) TaskFormState()
-                else TaskFormState(
+                if (entity == null) {
+                    TaskFormState()
+                } else {
+                    TaskFormState(
                     id          = entity.id,
                     title       = entity.title,
                     notes       = entity.description ?: "",
@@ -149,15 +153,20 @@ class TaskViewModel @Inject constructor(
                     deadline    = entity.deadline,
                     alarmEnabled = entity.alarmEnabled != 0,
                 )
+                }
             }
         }
     }
 
-    fun updateTitle(v: String)       = _formState.update { it.copy(title = v) }
-    fun updateNotes(v: String)       = _formState.update { it.copy(notes = v) }
-    fun updatePriority(v: String)    = _formState.update { it.copy(priority = v) }
-    fun updateDeadline(v: String?)   = _formState.update { it.copy(deadline = v) }
-    fun toggleAlarm(v: Boolean)      = _formState.update { it.copy(alarmEnabled = v) }
+    fun updateTitle(v: String) = _formState.update { it.copy(title = v) }
+
+    fun updateNotes(v: String) = _formState.update { it.copy(notes = v) }
+
+    fun updatePriority(v: String) = _formState.update { it.copy(priority = v) }
+
+    fun updateDeadline(v: String?) = _formState.update { it.copy(deadline = v) }
+
+    fun toggleAlarm(v: Boolean) = _formState.update { it.copy(alarmEnabled = v) }
 
     fun saveForm(onSuccess: () -> Unit) {
         val form = _formState.value
@@ -259,8 +268,11 @@ class TaskViewModel @Inject constructor(
     /** Total displayed seconds for a task — live if timer is active, saved otherwise. */
     fun displaySeconds(task: TaskEntity): Int {
         val s = _uiState.value
-        return if (s.activeTimerTaskId == task.id) s.timerBaseSeconds + s.timerSeconds
-        else task.timeSpentSeconds
+        return if (s.activeTimerTaskId == task.id) {
+            s.timerBaseSeconds + s.timerSeconds
+        } else {
+            task.timeSpentSeconds
+        }
     }
 
     /** Format seconds as m:ss (e.g. "5:03"). */

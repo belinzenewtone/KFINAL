@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,9 +95,9 @@ fun WeekReviewScreen(
                     item {
                         Text(
                             text  = greeting,
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
@@ -113,7 +113,7 @@ fun WeekReviewScreen(
                             GlassCard {
                                 Text(
                                     text       = "What Changed?",
-                                    style      = MaterialTheme.typography.titleMedium,
+                                    style      = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                                 Spacer(Modifier.height(Spacing.sm))
@@ -129,7 +129,7 @@ fun WeekReviewScreen(
                     item {
                         GlassCard {
                             Text("Spending",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(Spacing.xs))
                             Text(
@@ -151,7 +151,7 @@ fun WeekReviewScreen(
                     item {
                         GlassCard {
                             Text("Tasks",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(Spacing.sm))
                             Row(
@@ -209,7 +209,7 @@ private fun HealthScoreCard(score: Int, label: String, color: Color) {
         ) {
             Text(
                 text       = "Financial Health Score",
-                style      = MaterialTheme.typography.titleMedium,
+                style      = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(Spacing.lg))
@@ -263,7 +263,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
     GlassCard {
         Text(
             text       = "7-Day Spend Pattern",
-            style      = MaterialTheme.typography.titleMedium,
+            style      = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(Modifier.height(Spacing.base))
@@ -328,10 +328,13 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(barColor)
                                     .then(
-                                        if (isSelected) Modifier.border(1.dp,
+                                        if (isSelected) {
+                                            Modifier.border(1.dp,
                                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                             RoundedCornerShape(3.dp))
-                                        else Modifier
+                                        } else {
+                                            Modifier
+                                        }
                                     )
                             )
                         }
@@ -340,8 +343,11 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                     Text(
                         text  = dowLabel(bar.dayOfWeek),
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         fontSize = 9.sp,
                     )
                 }
@@ -389,12 +395,12 @@ private fun ChangeItemRow(icon: String, text: String, sentiment: String) {
         else      -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val imageVector: ImageVector = when (icon) {
-        "trending-down-outline"    -> Icons.Filled.TrendingDown
-        "trending-up-outline"      -> Icons.Filled.TrendingUp
-        "warning-outline"          -> Icons.Filled.Warning
-        "alert-circle-outline"     -> Icons.Filled.Error
-        "checkmark-circle-outline" -> Icons.Filled.CheckCircle
-        else                       -> Icons.Filled.BarChart
+        "trending-down-outline"    -> Icons.Outlined.TrendingDown
+        "trending-up-outline"      -> Icons.Outlined.TrendingUp
+        "warning-outline"          -> Icons.Outlined.Warning
+        "alert-circle-outline"     -> Icons.Outlined.Error
+        "checkmark-circle-outline" -> Icons.Outlined.CheckCircle
+        else                       -> Icons.Outlined.BarChart
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(imageVector, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))

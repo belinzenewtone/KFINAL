@@ -126,7 +126,9 @@ data class AppPreferenceState(
 )
 
 @Singleton
-class AppPreferences @Inject constructor(
+class AppPreferences
+    @Inject
+    constructor(
     @ApplicationContext private val context: Context,
 ) {
     private val store = context.appDataStore

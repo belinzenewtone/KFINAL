@@ -16,10 +16,11 @@ import javax.inject.Inject
  * Mirrors MerchantDetailScreen.tsx.
  */
 @HiltViewModel
-class MerchantDetailViewModel @Inject constructor(
+class MerchantDetailViewModel
+    @Inject
+    constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
-
     data class MerchantStats(
         val totalSpend:  Double,
         val txCount:     Int,

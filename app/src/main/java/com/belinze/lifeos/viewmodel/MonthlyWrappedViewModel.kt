@@ -2,7 +2,6 @@ package com.belinze.lifeos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.belinze.lifeos.data.db.dao.CategoryTotal
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +13,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,10 +50,11 @@ data class MonthlyWrappedUiState(
 )
 
 @HiltViewModel
-class MonthlyWrappedViewModel @Inject constructor(
+class MonthlyWrappedViewModel
+    @Inject
+    constructor(
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(MonthlyWrappedUiState())
     val uiState: StateFlow<MonthlyWrappedUiState> = _uiState.asStateFlow()
 
@@ -100,7 +99,9 @@ class MonthlyWrappedViewModel @Inject constructor(
                     val minYm = YearMonth.from(LocalDate.parse(minDateStr.take(10)))
                     val curYm = YearMonth.from(today)
                     minYm.until(curYm, java.time.temporal.ChronoUnit.MONTHS).toInt().let { -it }
-                } else -60
+                } else {
+                    -60
+                }
 
                 // Top 3 categories
                 val top3 = catTotals

@@ -27,19 +27,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ElectricBolt
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ElectricBolt
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -49,6 +49,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -72,7 +73,6 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
-import com.belinze.lifeos.util.compactCurrency
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.AnalyticsFeesData
 import com.belinze.lifeos.viewmodel.AnalyticsRange
@@ -81,9 +81,9 @@ import com.belinze.lifeos.viewmodel.CategorySparklineItem
 import com.belinze.lifeos.viewmodel.InsightsTrend
 import com.belinze.lifeos.viewmodel.InsightsViewModel
 import com.belinze.lifeos.viewmodel.MonthBar
-import com.belinze.lifeos.viewmodel.MonthBreakdownItem
 import com.belinze.lifeos.viewmodel.PaydayPulse
 import com.belinze.lifeos.viewmodel.SizeBreakdown
+import kotlinx.coroutines.launch
 
 // ─────────────────────────────────────────────────────────────────────────────
 // InsightsScreen — 1:1 port of AnalyticsScreen.tsx (tab bar) +
@@ -101,7 +101,10 @@ fun InsightsScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     // Accordion state lives in the screen (pure UI state)
-    var expandedMonthKey by remember { mutableStateOf<String?>(null) }
+    var expandedMonthKey    by remember { mutableStateOf<String?>(null) }
+    // Show-more toggles for category sparklines and month history
+    var showAllCategories   by remember { mutableStateOf(false) }
+    var showAllMonths       by remember { mutableStateOf(false) }
 
     PageScaffold(
         eyebrow  = "Analytics",
@@ -137,10 +140,8 @@ fun InsightsScreen(
             }
 
             when (state.activeTab) {
-
                 // ── Analytics tab ─────────────────────────────────────────────
                 AnalyticsTab.Analytics -> {
-
                     // Date range chips
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -192,7 +193,7 @@ fun InsightsScreen(
                                 modifier = Modifier.size(16.dp),
                             )
                             Text(
-                                text     = "${state.uncategorizedCount} transactions (${compactCurrency(state.uncategorizedAmount)}) uncategorized — charts may be incomplete",
+                                text     = "${state.uncategorizedCount} transactions (${formatCurrency(state.uncategorizedAmount, decimals = 0)}) uncategorized — charts may be incomplete",
                                 style    = MaterialTheme.typography.bodySmall,
                                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
@@ -202,7 +203,7 @@ fun InsightsScreen(
                                 modifier = Modifier.size(24.dp),
                             ) {
                                 Icon(
-                                    Icons.Filled.Close,
+                                    Icons.Outlined.Close,
                                     contentDescription = "Dismiss",
                                     tint     = MaterialTheme.colorScheme.outline,
                                     modifier = Modifier.size(16.dp),
@@ -228,20 +229,39 @@ fun InsightsScreen(
                         )
                     }
 
-                    // Category spend cards (up to 8)
+                    // Category spend cards — first 5, expand via Show more
                     if (state.categorySparklines.isNotEmpty()) {
                         Spacer(Modifier.height(Spacing.base))
                         Text(
                             "SPENDING BY CATEGORY",
                             fontSize      = 12.sp,
                             fontWeight    = FontWeight.SemiBold,
-                            color         = MaterialTheme.colorScheme.onBackground.copy(0.55f),
+                            color         = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 0.5.sp,
                             modifier      = Modifier.padding(vertical = Spacing.sm),
                         )
-                        state.categorySparklines.forEach { item ->
+                        val visibleCategories = if (showAllCategories) {
+                            state.categorySparklines
+                        } else {
+                            state.categorySparklines.take(5)
+                        }
+                        visibleCategories.forEach { item ->
                             CategorySpendCard(item = item)
                             Spacer(Modifier.height(Spacing.sm))
+                        }
+                        if (state.categorySparklines.size > 5) {
+                            TextButton(
+                                onClick  = { showAllCategories = !showAllCategories },
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                            ) {
+                                Text(
+                                    if (showAllCategories) {
+                                        "Show less"
+                                    } else {
+                                        "Show ${state.categorySparklines.size - 5} more"
+                                    },
+                                )
+                            }
                         }
                     }
 
@@ -319,7 +339,7 @@ fun InsightsScreen(
                         ) {
                             GlassCard(modifier = Modifier.weight(1f)) {
                                 Icon(
-                                    Icons.Filled.BarChart,
+                                    Icons.Outlined.BarChart,
                                     contentDescription = null,
                                     tint     = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp),
@@ -331,7 +351,7 @@ fun InsightsScreen(
                                     modifier = Modifier.padding(top = Spacing.xs),
                                 )
                                 Text(
-                                    compactCurrency(state.avgExpense),
+                                    formatCurrency(state.avgExpense, decimals = 0),
                                     style      = MaterialTheme.typography.titleMedium,
                                     color      = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
@@ -340,7 +360,7 @@ fun InsightsScreen(
                             }
                             GlassCard(modifier = Modifier.weight(1f)) {
                                 Icon(
-                                    Icons.Filled.Wallet,
+                                    Icons.Outlined.Wallet,
                                     contentDescription = null,
                                     tint     = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp),
@@ -352,7 +372,7 @@ fun InsightsScreen(
                                     modifier = Modifier.padding(top = Spacing.xs),
                                 )
                                 Text(
-                                    compactCurrency(state.totalTracked),
+                                    formatCurrency(state.totalTracked, decimals = 0),
                                     style      = MaterialTheme.typography.titleMedium,
                                     color      = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
@@ -383,7 +403,7 @@ fun InsightsScreen(
                                 modifier = Modifier.padding(bottom = Spacing.base),
                             ) {
                                 IconBox(
-                                    icon     = Icons.Filled.Lightbulb,
+                                    icon     = Icons.Outlined.Lightbulb,
                                     iconTint = MaterialTheme.colorScheme.primary,
                                     bgColor  = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
                                 )
@@ -398,11 +418,11 @@ fun InsightsScreen(
                             // Highest month (pressable)
                             state.highestMonth?.let { highest ->
                                 InsightRow(
-                                    icon      = Icons.Filled.BarChart,
+                                    icon      = Icons.Outlined.BarChart,
                                     iconTint  = BAD,
                                     bgColor   = BAD.copy(0.13f),
                                     label     = "Highest Month",
-                                    value     = "${highest.fullLabel} · ${compactCurrency(highest.expense)}",
+                                    value     = "${highest.fullLabel} · ${formatCurrency(highest.expense, decimals = 0)}",
                                     pressable = true,
                                     onClick   = { navController.navigate(NavTo.monthlyWrapped(highest.monthOffset)) },
                                 )
@@ -416,7 +436,7 @@ fun InsightsScreen(
                                     iconTint  = GOOD,
                                     bgColor   = GOOD.copy(0.13f),
                                     label     = "Lowest Month",
-                                    value     = "${lowest.fullLabel} · ${compactCurrency(lowest.expense)}",
+                                    value     = "${lowest.fullLabel} · ${formatCurrency(lowest.expense, decimals = 0)}",
                                     pressable = true,
                                     onClick   = { navController.navigate(NavTo.monthlyWrapped(lowest.monthOffset)) },
                                 )
@@ -427,7 +447,7 @@ fun InsightsScreen(
                                 HorizontalDivider()
                                 val catColor = parseHexColor(InsightsViewModel.categoryColor(cat))
                                 InsightRow(
-                                    icon      = Icons.Filled.LocalOffer,
+                                    icon      = Icons.Outlined.LocalOffer,
                                     iconTint  = catColor,
                                     bgColor   = catColor.copy(0.13f),
                                     label     = "Top Category",
@@ -451,7 +471,7 @@ fun InsightsScreen(
 
                         Spacer(Modifier.height(Spacing.base))
 
-                        // 4. History Accordion
+                        // 4. History Accordion — first 3 months, expand via Show more
                         Text(
                             "History",
                             style      = MaterialTheme.typography.titleSmall,
@@ -460,7 +480,12 @@ fun InsightsScreen(
                             modifier   = Modifier.padding(horizontal = 2.dp, vertical = Spacing.sm),
                         )
 
-                        state.monthBreakdown.forEach { m ->
+                        val visibleMonths = if (showAllMonths) {
+                            state.monthBreakdown
+                        } else {
+                            state.monthBreakdown.take(3)
+                        }
+                        visibleMonths.forEach { m ->
                             val isExpanded = expandedMonthKey == m.monthKey
                             val deltaColor = when {
                                 m.delta == null || m.delta == 0.0 -> MaterialTheme.colorScheme.outlineVariant
@@ -528,7 +553,7 @@ fun InsightsScreen(
                                             }
                                             Spacer(Modifier.weight(1f))
                                             Text(
-                                                compactCurrency(m.expense),
+                                                formatCurrency(m.expense, decimals = 0),
                                                 style      = MaterialTheme.typography.titleSmall,
                                                 color      = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.Bold,
@@ -541,7 +566,7 @@ fun InsightsScreen(
                                         )
                                     }
                                     Icon(
-                                        if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                        if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                                         contentDescription = null,
                                         tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(16.dp),
@@ -612,7 +637,7 @@ fun InsightsScreen(
                                                     modifier = Modifier.width(72.dp),
                                                 ) {
                                                     Text(
-                                                        compactCurrency(cat.amount),
+                                                        formatCurrency(cat.amount, decimals = 0),
                                                         style      = MaterialTheme.typography.bodySmall,
                                                         color      = MaterialTheme.colorScheme.onSurface,
                                                         fontWeight = FontWeight.SemiBold,
@@ -629,6 +654,21 @@ fun InsightsScreen(
                                 }
                             }
                             Spacer(Modifier.height(Spacing.base))
+                        }
+                        if (state.monthBreakdown.size > 3) {
+                            TextButton(
+                                onClick  = { showAllMonths = !showAllMonths },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    if (showAllMonths) {
+                                        "Show less"
+                                    } else {
+                                        "Show ${state.monthBreakdown.size - 3} more months"
+                                    },
+                                )
+                            }
+                            Spacer(Modifier.height(Spacing.sm))
                         }
 
                         // 5. Payday Pulse
@@ -697,13 +737,13 @@ private fun SpendingComparisonCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
                 Icon(
-                    if (isOver) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                    if (isOver) Icons.Outlined.ArrowUpward else Icons.Outlined.ArrowDownward,
                     contentDescription = null,
                     tint     = currentColor,
                     modifier = Modifier.size(12.dp),
                 )
                 Text(
-                    "${if (isOver) "Spent" else "Saved"} ${compactCurrency(kotlin.math.abs(delta))} ${if (isOver) "more" else "less"} than last month",
+                    "${if (isOver) "Spent" else "Saved"} ${formatCurrency(kotlin.math.abs(delta), decimals = 0)} ${if (isOver) "more" else "less"} than last month",
                     style = MaterialTheme.typography.bodySmall,
                     color = currentColor,
                 )
@@ -746,7 +786,7 @@ private fun ComparisonRow(
             )
         }
         Text(
-            compactCurrency(amount),
+            formatCurrency(amount, decimals = 0),
             style      = MaterialTheme.typography.bodySmall,
             color      = amtColor,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
@@ -770,10 +810,10 @@ private fun AnalyticsSummaryCards(
         Triple("Average", average, MaterialTheme.colorScheme.primary),
     )
     val icons = listOf(
-        Icons.Filled.ArrowUpward,
-        Icons.Filled.ArrowDownward,
-        Icons.Filled.Wallet,
-        Icons.Filled.BarChart,
+        Icons.Outlined.ArrowUpward,
+        Icons.Outlined.ArrowDownward,
+        Icons.Outlined.Wallet,
+        Icons.Outlined.BarChart,
     )
     Row(
         modifier              = Modifier.fillMaxWidth(),
@@ -787,7 +827,7 @@ private fun AnalyticsSummaryCards(
                     Icon(icon, contentDescription = null,
                         tint = triple.third, modifier = Modifier.size(18.dp))
                     Text(
-                        compactCurrency(kotlin.math.abs(triple.second)),
+                        formatCurrency(kotlin.math.abs(triple.second), decimals = 0),
                         style    = MaterialTheme.typography.titleLarge,
                         color    = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -805,7 +845,7 @@ private fun AnalyticsSummaryCards(
                     Icon(icon, contentDescription = null,
                         tint = triple.third, modifier = Modifier.size(18.dp))
                     Text(
-                        compactCurrency(kotlin.math.abs(triple.second)),
+                        formatCurrency(kotlin.math.abs(triple.second), decimals = 0),
                         style    = MaterialTheme.typography.titleLarge,
                         color    = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -838,7 +878,7 @@ private fun CategorySpendCard(item: CategorySparklineItem) {
             )
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    compactCurrency(item.total),
+                    formatCurrency(item.total, decimals = 0),
                     style      = MaterialTheme.typography.bodyMedium,
                     color      = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
@@ -863,7 +903,9 @@ private fun CategorySpendCard(item: CategorySparklineItem) {
                     maxLines = 1,
                     modifier = Modifier.weight(1f).padding(end = Spacing.sm),
                 )
-            } else Spacer(Modifier.weight(1f))
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
             MiniSparkline(amounts = item.weeklyAmounts, color = dotColor)
         }
     }
@@ -901,7 +943,7 @@ private fun FeesCard(fees: AnalyticsFeesData) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             modifier = Modifier.padding(bottom = Spacing.sm),
         ) {
-            Icon(Icons.Filled.Receipt, contentDescription = null,
+            Icon(Icons.Outlined.Receipt, contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp))
             Text(
                 "TRANSACTION FEES",
@@ -910,7 +952,7 @@ private fun FeesCard(fees: AnalyticsFeesData) {
             )
         }
         Text(
-            compactCurrency(fees.total),
+            formatCurrency(fees.total, decimals = 0),
             style    = MaterialTheme.typography.headlineSmall,
             color    = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(vertical = Spacing.sm),
@@ -932,7 +974,7 @@ private fun FeesCard(fees: AnalyticsFeesData) {
             Column(horizontalAlignment = Alignment.End) {
                 Text("Avg fee", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${compactCurrency(fees.avgFee)} · ${fees.txCount} tx",
+                Text("${formatCurrency(fees.avgFee, decimals = 0)} · ${fees.txCount} tx",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface)
             }
@@ -955,11 +997,16 @@ private fun InsightsBarChart(
     val anims = remember(months.size) { months.map { Animatable(0f) } }
     LaunchedEffect(months) {
         anims.forEach { it.snapTo(0f) }
-        months.forEachIndexed { i, m ->
-            anims[i].animateTo(
-                targetValue   = (m.expense / maxVal).toFloat().coerceIn(0f, 1f),
-                animationSpec = tween(durationMillis = 400 + i * 60, delayMillis = 0),
-            )
+        // All bars animate simultaneously — mirrors RN's parallel Animated.timing calls
+        kotlinx.coroutines.coroutineScope {
+            months.forEachIndexed { i, m ->
+                launch {
+                    anims[i].animateTo(
+                        targetValue   = (m.expense / maxVal).toFloat().coerceIn(0f, 1f),
+                        animationSpec = tween(durationMillis = 400),
+                    )
+                }
+            }
         }
     }
 
@@ -1009,8 +1056,11 @@ private fun InsightsBarChart(
                     bar.label,
                     fontSize   = 10.sp,
                     lineHeight = 14.sp,
-                    color      = if (isCurrent) MaterialTheme.colorScheme.primary
-                                 else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color      = if (isCurrent) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     textAlign  = TextAlign.Center,
                 )
             }
@@ -1061,11 +1111,15 @@ private fun InsightRow(
         modifier = Modifier
             .fillMaxWidth()
             .then(
-                if (pressable) Modifier.clickable(
+                if (pressable) {
+                    Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick,
-                ) else Modifier
+                )
+                } else {
+                    Modifier
+                }
             )
             .padding(vertical = Spacing.sm),
         verticalAlignment     = Alignment.CenterVertically,
@@ -1079,7 +1133,7 @@ private fun InsightRow(
                 color = valueColor)
         }
         if (pressable) {
-            Icon(Icons.Filled.ChevronRight, contentDescription = null,
+            Icon(Icons.Outlined.ChevronRight, contentDescription = null,
                 tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(14.dp))
         }
     }
@@ -1099,9 +1153,11 @@ private fun HorizontalDivider() {
 private fun PaydayPulseCard(pulse: PaydayPulse) {
     val postHigher = pulse.postPaydayAvgPerDay > pulse.otherDaysAvgPerDay
     val maxVal     = maxOf(pulse.postPaydayAvgPerDay, pulse.otherDaysAvgPerDay, 1.0)
-    val diffPct    = if (pulse.otherDaysAvgPerDay > 0)
+    val diffPct    = if (pulse.otherDaysAvgPerDay > 0) {
         kotlin.math.abs((pulse.postPaydayAvgPerDay - pulse.otherDaysAvgPerDay) / pulse.otherDaysAvgPerDay) * 100.0
-    else 0.0
+    } else {
+        0.0
+    }
 
     GlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -1115,7 +1171,7 @@ private fun PaydayPulseCard(pulse: PaydayPulse) {
                     .background(Color(0xFFF59E0B).copy(0.13f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.ElectricBolt, contentDescription = null,
+                Icon(Icons.Outlined.ElectricBolt, contentDescription = null,
                     tint = Color(0xFFF59E0B), modifier = Modifier.size(14.dp))
             }
             Text("Payday Pulse", style = MaterialTheme.typography.titleSmall,
@@ -1128,10 +1184,11 @@ private fun PaydayPulseCard(pulse: PaydayPulse) {
             modifier = Modifier.padding(bottom = Spacing.sm),
         )
         Text(
-            if (postHigher)
+            if (postHigher) {
                 "You spend ${"%.0f".format(diffPct)}% more in the 7 days after income arrives"
-            else
-                "You spend ${"%.0f".format(diffPct)}% less right after income — disciplined!",
+            } else {
+                "You spend ${"%.0f".format(diffPct)}% less right after income — disciplined!"
+            },
             style      = MaterialTheme.typography.bodyMedium,
             color      = if (postHigher) BAD else GOOD,
             fontWeight = FontWeight.SemiBold,
@@ -1148,7 +1205,7 @@ private fun PaydayPulseCard(pulse: PaydayPulse) {
                 ) {
                     Text(label, style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${compactCurrency(value)}/day",
+                    Text("${formatCurrency(value, decimals = 0)}/day",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                 }
@@ -1191,7 +1248,7 @@ private fun SpendAnatomyCard(sb: SizeBreakdown, totalCount: Int) {
                     .background(Color(0xFF8B5CF6).copy(0.13f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Layers, contentDescription = null,
+                Icon(Icons.Outlined.Layers, contentDescription = null,
                     tint = Color(0xFF8B5CF6), modifier = Modifier.size(14.dp))
             }
             Text("Spend Anatomy", style = MaterialTheme.typography.titleSmall,
@@ -1252,4 +1309,6 @@ private fun SpendAnatomyCard(sb: SizeBreakdown, totalCount: Int) {
 
 private fun parseHexColor(hex: String): Color = try {
     Color(android.graphics.Color.parseColor(hex))
-} catch (_: Exception) { Color(0xFF6B7280) }
+} catch (_: Exception) {
+    Color(0xFF6B7280)
+}

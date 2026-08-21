@@ -17,91 +17,98 @@ import androidx.compose.ui.unit.sp
 private val default = FontFamily.Default
 
 /**
- * Full type scale matching the RN app's paperTheme.ts exactly.
+ * Full type scale — tightened from the original 1:1 RN port.
  *
- * Token mapping:
- *   headlineLarge  → 30sp / weight 700 / ls -0.5
- *   headlineMedium → 24sp / weight 700 / ls -0.4
- *   headlineSmall  → 20sp / weight 700 / ls -0.3
- *   titleLarge     → 18sp / weight 600 / ls -0.2
- *   titleMedium    → 16sp / weight 600 / ls 0
- *   titleSmall     → 14sp / weight 600
- *   bodyLarge      → 16sp / weight 400
- *   bodyMedium     → 15sp / weight 400
- *   bodySmall      → 13sp / weight 400
- *   labelLarge     → 14sp / weight 600 (matches typography.sizes.sm)
- *   labelMedium    → 12sp / weight 500
- *   labelSmall     → 11sp / weight 500 / ls +0.08em
+ * Changes vs v1:
+ *   • bodyLarge  16sp → 15sp  (creates clear 1sp gap to bodyMedium's 14sp)
+ *   • bodyMedium 15sp → 14sp  (matches compact Android convention)
+ *   • Line heights reduced ~15% across all styles — Android system font has
+ *     tighter default metrics than React Native's JS bridge renderer, so the
+ *     old heights (1.5× font size) felt loose and "too tall".
+ *
+ * Token mapping (updated):
+ *   headlineLarge  → 30sp / lh 34sp / weight 700 / ls -0.5
+ *   headlineMedium → 24sp / lh 28sp / weight 700 / ls -0.4
+ *   headlineSmall  → 20sp / lh 24sp / weight 700 / ls -0.3
+ *   titleLarge     → 18sp / lh 22sp / weight 600 / ls -0.2
+ *   titleMedium    → 16sp / lh 20sp / weight 600 / ls 0
+ *   titleSmall     → 14sp / lh 18sp / weight 600
+ *   bodyLarge      → 15sp / lh 20sp / weight 400
+ *   bodyMedium     → 14sp / lh 18sp / weight 400
+ *   bodySmall      → 13sp / lh 16sp / weight 400
+ *   labelLarge     → 14sp / lh 18sp / weight 600
+ *   labelMedium    → 12sp / lh 16sp / weight 500
+ *   labelSmall     → 11sp / lh 14sp / weight 500 / ls +0.08em
  */
 val LifeOsTypography = Typography(
     headlineLarge = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Bold,
         fontSize     = 30.sp,
-        lineHeight   = 36.sp,
+        lineHeight   = 34.sp,
         letterSpacing = (-0.5).sp,
     ),
     headlineMedium = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Bold,
         fontSize     = 24.sp,
-        lineHeight   = 30.sp,
+        lineHeight   = 28.sp,
         letterSpacing = (-0.4).sp,
     ),
     headlineSmall = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Bold,
         fontSize     = 20.sp,
-        lineHeight   = 26.sp,
+        lineHeight   = 24.sp,
         letterSpacing = (-0.3).sp,
     ),
     titleLarge = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.SemiBold,
         fontSize     = 18.sp,
-        lineHeight   = 24.sp,
+        lineHeight   = 22.sp,
         letterSpacing = (-0.2).sp,
     ),
     titleMedium = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.SemiBold,
         fontSize     = 16.sp,
-        lineHeight   = 22.sp,
+        lineHeight   = 20.sp,
         letterSpacing = 0.sp,
     ),
     titleSmall = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.SemiBold,
         fontSize     = 14.sp,
-        lineHeight   = 20.sp,
+        lineHeight   = 18.sp,
         letterSpacing = 0.sp,
     ),
     bodyLarge = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Normal,
-        fontSize     = 16.sp,
-        lineHeight   = 24.sp,
+        fontSize     = 15.sp,
+        lineHeight   = 20.sp,
         letterSpacing = 0.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Normal,
-        fontSize     = 15.sp,
-        lineHeight   = 21.sp,
+        fontSize     = 14.sp,
+        lineHeight   = 18.sp,
         letterSpacing = 0.sp,
     ),
     bodySmall = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Normal,
         fontSize     = 13.sp,
-        lineHeight   = 18.sp,
+        lineHeight   = 16.sp,
         letterSpacing = 0.sp,
     ),
     labelLarge = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.SemiBold,
         fontSize     = 14.sp,
-        lineHeight   = 20.sp,
+        lineHeight   = 18.sp,
         letterSpacing = 0.sp,
     ),
     labelMedium = TextStyle(

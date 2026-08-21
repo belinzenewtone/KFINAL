@@ -22,7 +22,6 @@ import android.os.Vibrator
  * so call sites can fire pulses without DI ceremony.
  */
 object Haptics {
-
     private var appContext: Context? = null
 
     /** Set by the app at startup from the persisted preference; updated by Settings. */
@@ -33,12 +32,17 @@ object Haptics {
         appContext = context.applicationContext
     }
 
-    fun light()   = pulse(LIGHT)
-    fun medium()  = pulse(MEDIUM)
-    fun heavy()   = pulse(HEAVY)
+    fun light() = pulse(LIGHT)
+
+    fun medium() = pulse(MEDIUM)
+
+    fun heavy() = pulse(HEAVY)
+
     fun success() = pulse(SUCCESS)
+
     fun warning() = pulse(WARNING)
-    fun error()   = pulse(ERROR)
+
+    fun error() = pulse(ERROR)
 
     private fun pulse(pattern: LongArray) {
         if (!enabled) return

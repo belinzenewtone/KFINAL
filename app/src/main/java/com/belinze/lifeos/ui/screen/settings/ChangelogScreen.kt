@@ -13,7 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -97,8 +97,11 @@ fun ChangelogScreen(navController: NavHostController) {
                             Text(
                                 "v${entry.version}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (index == 0) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (index == 0) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Spacer(Modifier.size(Spacing.sm))
@@ -125,7 +128,7 @@ fun ChangelogScreen(navController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
                                 verticalAlignment = Alignment.Top,
                             ) {
-                                Icon(Icons.Filled.CheckCircle, contentDescription = null,
+                                Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp).padding(top = 2.dp))
                                 Spacer(Modifier.size(Spacing.sm))

@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,15 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,16 +25,21 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -71,11 +70,13 @@ fun BudgetsScreen(
     }
 
     val state by viewModel.uiState.collectAsState()
-    val active = state.budgets.filter { it.budget.isActive != 0 }
-    val totalLimit = active.sumOf { it.budget.limitAmount }
-    val totalSpend = active.sumOf { it.spend }
-    val overCount = active.count { it.spend > it.budget.limitAmount }
-    val summaryPct = if (totalLimit > 0) (totalSpend / totalLimit * 100).roundToInt() else 0
+    val active       = remember(state.budgets) { state.budgets.filter { it.budget.isActive != 0 } }
+    val totalLimit   = remember(active)        { active.sumOf { it.budget.limitAmount } }
+    val totalSpend   = remember(active)        { active.sumOf { it.spend } }
+    val overCount    = remember(active)        { active.count { it.spend > it.budget.limitAmount } }
+    val summaryPct   = remember(totalLimit, totalSpend) {
+        if (totalLimit > 0) (totalSpend / totalLimit * 100).roundToInt() else 0
+    }
     val summaryColor = if (summaryPct > 100) DANGER else if (summaryPct > 80) WARNING else SUCCESS
 
     PageScaffold(
@@ -84,7 +85,7 @@ fun BudgetsScreen(
         scrollable = false, // LazyColumn below provides its own scrolling
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.budgetForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add budget", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add budget", tint = MaterialTheme.colorScheme.primary)
             }
         },
     ) {
@@ -102,45 +103,58 @@ fun BudgetsScreen(
                     variant = com.belinze.lifeos.ui.components.GlassCardVariant.Elevated,
                     modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xl),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Column {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Chip sits on its own top row next to the short label so a
+                        // long "$X / $Y" amount below can never push or hide it.
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             Text(
                                 "This Month",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Text(
-                                "${formatCurrency(totalSpend)} / ${formatCurrency(totalLimit)}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .background(summaryColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
+                                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+                            ) {
+                                Text(
+                                    if (summaryPct > 100) {
+                                        "Over budget"
+                                    } else if (summaryPct > 80) {
+                                        "Nearing limit"
+                                    } else {
+                                        "On track"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = summaryColor,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
                         }
-                        Box(
-                            modifier = Modifier
-                                .background(summaryColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
-                                .padding(horizontal = Spacing.base, vertical = Spacing.xs),
-                        ) {
-                            Text(
-                                if (summaryPct > 100) "Over budget"
-                                else if (summaryPct > 80) "Nearing limit" else "On track",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = summaryColor,
-                            )
-                        }
+                        Spacer(Modifier.height(Spacing.sm))
+                        Text(
+                            "${formatCurrency(totalSpend)} / ${formatCurrency(totalLimit)}",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                        )
                     }
                     Spacer(Modifier.height(Spacing.base))
                     BudgetProgressBar(pct = (summaryPct.coerceIn(0, 100)).toFloat() / 100f, color = summaryColor)
                     Spacer(Modifier.height(Spacing.sm))
                     Text(
-                        if (overCount > 0)
+                        if (overCount > 0) {
                             "$overCount categor${if (overCount > 1) "ies" else "y"} over budget"
-                        else if (state.budgets.isEmpty()) "No budgets set"
-                        else "All categories within budget",
+                        } else if (state.budgets.isEmpty()) {
+                            "No budgets set"
+                        } else {
+                            "All categories within budget"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -217,6 +231,7 @@ private fun BudgetCard(
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
                 Text(
@@ -229,17 +244,20 @@ private fun BudgetCard(
             Box(
                 modifier = Modifier
                     .background(statusColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
-                    .padding(horizontal = Spacing.base, vertical = Spacing.xs),
+                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
             ) {
-                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor)
+                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor,
+                    maxLines = 1, softWrap = false)
             }
             Switch(
                 checked = bws.budget.isActive != 0,
                 onCheckedChange = onToggle,
                 colors = SwitchDefaults.colors(
-                    uncheckedThumbColor  = MaterialTheme.colorScheme.onSurfaceVariant,
-                    uncheckedTrackColor  = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                    uncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor    = MaterialTheme.colorScheme.primary,
+                    uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
+                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
                 ),
             )
         }
@@ -258,8 +276,11 @@ private fun BudgetCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                if (isOver) "+${formatCurrency(bws.spend - bws.budget.limitAmount)}"
-                else "${formatCurrency(bws.budget.limitAmount - bws.spend)} left",
+                if (isOver) {
+                    "+${formatCurrency(bws.spend - bws.budget.limitAmount)}"
+                } else {
+                    "${formatCurrency(bws.budget.limitAmount - bws.spend)} left"
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (isOver) DANGER else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
@@ -272,12 +293,12 @@ private fun BudgetCard(
             horizontalArrangement = Arrangement.End,
         ) {
             TextButton(onClick = onEdit) {
-                Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.size(4.dp))
                 Text("Edit", color = MaterialTheme.colorScheme.primary)
             }
             TextButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
                 Spacer(Modifier.size(4.dp))
                 Text("Delete", color = MaterialTheme.colorScheme.error)
             }

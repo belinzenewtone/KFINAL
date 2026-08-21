@@ -5,7 +5,6 @@ import com.belinze.lifeos.data.db.entity.IncomeEntity
 
 @Dao
 interface IncomeDao {
-
     @Query("SELECT * FROM incomes WHERE deleted_at IS NULL ORDER BY date DESC")
     suspend fun getAll(): List<IncomeEntity>
 

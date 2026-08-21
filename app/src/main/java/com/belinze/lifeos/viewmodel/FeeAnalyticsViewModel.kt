@@ -23,10 +23,11 @@ import javax.inject.Inject
  * Mirrors FeeAnalyticsScreen.tsx.
  */
 @HiltViewModel
-class FeeAnalyticsViewModel @Inject constructor(
+class FeeAnalyticsViewModel
+    @Inject
+    constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
-
     data class FeeAnalyticsUiState(
         val isLoading:    Boolean = true,
         val totalFees:    Double  = 0.0,

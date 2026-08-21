@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,7 +66,7 @@ fun MetricCard(
                     text       = label,
                     fontSize   = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+                    color      = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -75,7 +74,7 @@ fun MetricCard(
                 text       = label,
                 fontSize   = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+                color      = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -85,7 +84,7 @@ fun MetricCard(
         Text(
             text       = amount,
             style      = MaterialTheme.typography.headlineMedium,   // 24sp, weight 700
-            color      = MaterialTheme.colorScheme.onBackground,
+            color      = MaterialTheme.colorScheme.onSurface,
             modifier   = Modifier.fillMaxWidth(),
         )
 
@@ -95,7 +94,7 @@ fun MetricCard(
             Text(
                 text     = subtext,
                 fontSize = 12.sp,
-                color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

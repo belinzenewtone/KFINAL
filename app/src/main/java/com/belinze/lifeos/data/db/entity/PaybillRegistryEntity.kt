@@ -9,11 +9,10 @@ data class PaybillRegistryEntity(
     @PrimaryKey
     @ColumnInfo(name = "paybill_number")
     val paybillNumber: String,
-
-    @ColumnInfo(name = "display_name")          val displayName: String?,
-    @ColumnInfo(name = "last_seen_at")          val lastSeenAt: String?,
+    @ColumnInfo(name = "display_name") val displayName: String?,
+    @ColumnInfo(name = "last_seen_at") val lastSeenAt: String?,
     @ColumnInfo(name = "usage_count", defaultValue = "0")
                                                 val usageCount: Int,
-    @ColumnInfo(name = "last_amount_kes")       val lastAmountKes: Double?,
-    @ColumnInfo(name = "user_id")               val userId: String?,
+    @ColumnInfo(name = "last_amount_kes") val lastAmountKes: Double?,
+    @ColumnInfo(name = "user_id") val userId: String?,
 )

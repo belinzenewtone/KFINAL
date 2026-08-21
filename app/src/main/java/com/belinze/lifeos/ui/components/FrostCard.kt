@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -22,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.belinze.lifeos.ui.theme.LocalDarkTheme
 import com.belinze.lifeos.ui.theme.ShapeLg
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,37 +46,42 @@ fun FrostCard(
     onClick:  (() -> Unit)?  = null,
     content:  @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark  = isSystemInDarkTheme()
+    val isDark  = LocalDarkTheme.current
 
     // ── Layer 1: gradient ────────────────────────────────────────────────────
     val gradient: Brush = when (glow) {
-        FrostCardGlow.Blue -> if (isDark)
+        FrostCardGlow.Blue -> if (isDark) {
             Brush.linearGradient(colors = listOf(Color(0xFF12304A), Color(0xFF0E1B2E), Color(0xFF101014)), start = Offset.Zero, end = Offset.Infinite)
-        else
+        } else {
             Brush.linearGradient(colors = listOf(Color(0xFFEFF6FF), Color(0xFFDBEAFE), Color(0xFFF8FAFC)), start = Offset.Zero, end = Offset.Infinite)
+        }
 
-        FrostCardGlow.Teal -> if (isDark)
+        FrostCardGlow.Teal -> if (isDark) {
             Brush.linearGradient(colors = listOf(Color(0xFF101014), Color(0xFF0E1F24), Color(0xFF101014)), start = Offset.Zero, end = Offset.Infinite)
-        else
+        } else {
             Brush.linearGradient(colors = listOf(Color(0xFFF0FDFA), Color(0xFFCCFBF1), Color(0xFFF8FAFC)), start = Offset.Zero, end = Offset.Infinite)
+        }
 
-        FrostCardGlow.None -> if (isDark)
+        FrostCardGlow.None -> if (isDark) {
             Brush.linearGradient(colors = listOf(Color(0xFF101014), Color(0xFF0E1B2E), Color(0xFF101014)), start = Offset.Zero, end = Offset.Infinite)
-        else
+        } else {
             Brush.linearGradient(colors = listOf(Color(0xFFFFFFFF), Color(0xFFEFF6FF), Color(0xFFFFFFFF)), start = Offset.Zero, end = Offset.Infinite)
+        }
     }
 
     // ── Layer 3: frost film ──────────────────────────────────────────────────
-    val frostColor: Color = if (isDark)
+    val frostColor: Color = if (isDark) {
         Color(0xFF14161C).copy(alpha = 0.45f)
-    else
+    } else {
         Color(0xFFFFFFFF).copy(alpha = 0.55f)
+    }
 
     // ── Layer 4: hairline ────────────────────────────────────────────────────
-    val hairlineColor: Color = if (isDark)
+    val hairlineColor: Color = if (isDark) {
         Color.White.copy(alpha = 0.10f)
-    else
+    } else {
         Color.Black.copy(alpha = 0.07f)
+    }
 
     val clickModifier = if (onClick != null) {
         val interactionSource = remember { MutableInteractionSource() }
@@ -85,7 +90,9 @@ fun FrostCard(
             indication = ripple(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
             onClick = onClick,
         )
-    } else Modifier
+    } else {
+        Modifier
+    }
 
     Box(
         modifier = modifier
@@ -94,7 +101,6 @@ fun FrostCard(
             .drawBehind { drawRect(brush = gradient) }  // Layer 1
             .then(clickModifier),
     ) {
-
         // ── Layer 2: glow rings (Canvas — drawn above gradient, below frost) ──
         if (glow != FrostCardGlow.None) {
             Canvas(modifier = Modifier.matchParentSize()) {

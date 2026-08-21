@@ -2,9 +2,6 @@ package com.belinze.lifeos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.belinze.lifeos.data.db.dao.CategoryTotal
-import com.belinze.lifeos.data.db.dao.MerchantTotal
-import com.belinze.lifeos.data.db.dao.MonthTotals
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
@@ -21,7 +18,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
-import kotlin.math.abs
 
 // ─────────────────────────────────────────────────────────────────────────────
 // InsightsViewModel
@@ -30,8 +26,11 @@ import kotlin.math.abs
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 enum class InsightsPeriod { ThisMonth, LastMonth, Last3Months, Last6Months, ThisYear }
+
 enum class AnalyticsTab   { Analytics, Insights }
+
 enum class AnalyticsRange { ThisWeek, ThisMonth }
+
 enum class InsightsTrend  { Increasing, Decreasing, Stable }
 
 // ── Data classes shared with screen ──────────────────────────────────────────
@@ -96,12 +95,10 @@ data class AnalyticsFeesData(
 
 data class InsightsUiState(
     val isLoading: Boolean = true,
-
     // Tab & range
     val activeTab:     AnalyticsTab   = AnalyticsTab.Analytics,
     val dateRange:     AnalyticsRange = AnalyticsRange.ThisMonth,
     val nudgeDismissed: Boolean       = false,
-
     // ── Analytics tab (range-dependent) ─────────────────────────────────────
     val totalSpend:          Double                      = 0.0,
     val totalIncome:         Double                      = 0.0,
@@ -114,7 +111,6 @@ data class InsightsUiState(
     // SpendingComparisonCard (always current/prev month)
     val currentMonthSpend:   Double                      = 0.0,
     val prevMonthSpend:      Double                      = 0.0,
-
     // ── Insights tab ─────────────────────────────────────────────────────────
     // Bar chart
     val monthBars:           List<MonthBar>              = emptyList(),
@@ -132,22 +128,15 @@ data class InsightsUiState(
     val paydayPulse:         PaydayPulse?                = null,
     // Spend Anatomy
     val sizeBreakdown:       SizeBreakdown               = SizeBreakdown(),
-
-    // Legacy (kept for compatibility)
-    val period:         InsightsPeriod      = InsightsPeriod.ThisMonth,
-    val currentTotals:  MonthTotals?        = null,
-    val previousTotals: MonthTotals?        = null,
-    val uncategorized:  Int                 = 0,
-    val pendingReview:  Int                 = 0,
-    val feeTotal:       Double              = 0.0,
-    val error:          String?             = null,
+    val error: String? = null,
 )
 
 @HiltViewModel
-class InsightsViewModel @Inject constructor(
+class InsightsViewModel
+    @Inject
+    constructor(
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(InsightsUiState())
     val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
 
@@ -158,16 +147,16 @@ class InsightsViewModel @Inject constructor(
 
     init { load() }
 
-    fun setActiveTab(tab: AnalyticsTab)     { _uiState.update { it.copy(activeTab = tab) } }
+    fun setActiveTab(tab: AnalyticsTab) { _uiState.update { it.copy(activeTab = tab) } }
+
     fun setDateRange(range: AnalyticsRange) {
         _uiState.update { it.copy(dateRange = range) }
         loadAnalyticsTab()
     }
-    fun dismissNudge()                      { _uiState.update { it.copy(nudgeDismissed = true) } }
-    fun setPeriod(period: InsightsPeriod)   {
-        _uiState.update { it.copy(period = period) }
-        load()
-    }
+
+    fun dismissNudge() { _uiState.update { it.copy(nudgeDismissed = true) } }
+
+
 
     fun load() {
         viewModelScope.launch {
@@ -185,8 +174,11 @@ class InsightsViewModel @Inject constructor(
 
     private fun loadAnalyticsTab() {
         viewModelScope.launch {
-            try { loadAnalyticsTabInner() }
-            catch (e: Exception) { _uiState.update { it.copy(error = e.message) } }
+            try {
+                loadAnalyticsTabInner()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
         }
     }
 
@@ -271,20 +263,12 @@ class InsightsViewModel @Inject constructor(
         // 6-month window: 5 months ago (start of month) → now
         val sixMonthsAgo = now.minusMonths(5).withDayOfMonth(1).toString() + "T00:00:00"
         val endIso       = now.toString() + "T23:59:59"
-        val curKey       = currentMonthKey()
-        val prevKey      = previousMonthKey()
 
         val monthRows   = transactionDao.getMonthlyTotalsRange(sixMonthsAgo)
         val catRows     = transactionDao.getMonthlyCategoryBreakdown(sixMonthsAgo)
         val incomeDates = transactionDao.getIncomeDates(sixMonthsAgo).map { it.dt }
         val daySpends   = transactionDao.getDaySpends(sixMonthsAgo, endIso)
         val sizeRow     = transactionDao.getSizeBreakdown(sixMonthsAgo)
-        val curTotals   = transactionDao.getMonthTotals(curKey)
-        val prevTotals  = transactionDao.getMonthTotals(prevKey)
-        val (curStart, curEnd) = isoRange(curKey)
-        val feeTotal    = transactionDao.getFeeTotal(curStart, curEnd) ?: 0.0
-        val uncat       = transactionDao.countUncategorized()
-        val pending     = transactionDao.countPendingReview()
 
         // Build 6-slot array (oldest → newest), filling in missing months with zeros
         val months = (5 downTo 0).map { monthsAgo ->
@@ -313,9 +297,11 @@ class InsightsViewModel @Inject constructor(
                 )
             }
             val prev  = months.getOrNull(i - 1)
-            val delta = if (prev != null && prev.expense > 0)
+            val delta = if (prev != null && prev.expense > 0) {
                 ((m.expense - prev.expense) / prev.expense) * 100.0
-            else null
+            } else {
+                null
+            }
             MonthBreakdownItem(
                 monthKey      = m.monthKey,
                 label         = m.label,
@@ -335,8 +321,11 @@ class InsightsViewModel @Inject constructor(
         val avgExpense       = if (monthsWithData.isNotEmpty()) totalTracked / monthsWithData.size else 0.0
         val highestMonth     = monthsWithData.maxByOrNull { it.expense }
             ?: months.last()
-        val lowestMonthWithData = if (monthsWithData.size > 1)
-            monthsWithData.minByOrNull { it.expense } else null
+        val lowestMonthWithData = if (monthsWithData.size > 1) {
+            monthsWithData.minByOrNull { it.expense }
+        } else {
+            null
+        }
 
         // Top category all-time (6-month window)
         val allCatMap = mutableMapOf<String, Double>()
@@ -373,8 +362,7 @@ class InsightsViewModel @Inject constructor(
             var postTotal = 0.0; var postDays = 0
             var otherTotal = 0.0; var otherDays = 0
             for ((day, total) in dailySpendMap) {
-                if (postDaySet.contains(day)) { postTotal += total; postDays++ }
-                else { otherTotal += total; otherDays++ }
+                if (postDaySet.contains(day)) { postTotal += total; postDays++ } else { otherTotal += total; otherDays++ }
             }
             if (postDays > 0 && otherDays > 0) {
                 PaydayPulse(
@@ -382,8 +370,12 @@ class InsightsViewModel @Inject constructor(
                     otherDaysAvgPerDay  = otherTotal / otherDays,
                     incomeEventsCount   = incomeDates.size,
                 )
-            } else null
-        } else null
+            } else {
+                null
+            }
+        } else {
+            null
+        }
 
         // Size breakdown
         val sizeBd = SizeBreakdown(
@@ -408,11 +400,6 @@ class InsightsViewModel @Inject constructor(
                 monthBreakdown      = breakdown,
                 paydayPulse         = paydayPulse,
                 sizeBreakdown       = sizeBd,
-                currentTotals       = curTotals,
-                previousTotals      = prevTotals,
-                feeTotal            = feeTotal,
-                uncategorized       = uncat,
-                pendingReview       = pending,
             )
         }
     }

@@ -58,11 +58,12 @@ data class BudgetFormState(
 )
 
 @HiltViewModel
-class BudgetViewModel @Inject constructor(
+class BudgetViewModel
+    @Inject
+    constructor(
     private val budgetDao:      BudgetDao,
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
-
     private val _uiState   = MutableStateFlow(BudgetUiState())
     val uiState: StateFlow<BudgetUiState> = _uiState.asStateFlow()
 
@@ -116,8 +117,10 @@ class BudgetViewModel @Inject constructor(
         viewModelScope.launch {
             val entity = budgetId?.let { budgetDao.getById(it) }
             _formState.update {
-                if (entity == null) BudgetFormState()
-                else BudgetFormState(
+                if (entity == null) {
+                    BudgetFormState()
+                } else {
+                    BudgetFormState(
                     id             = entity.id,
                     category       = entity.category,
                     limitAmount    = entity.limitAmount.toString(),
@@ -125,15 +128,20 @@ class BudgetViewModel @Inject constructor(
                     alertThreshold = ((entity.alertThreshold ?: 0.8) * 100).toInt().toString(),
                     isActive       = entity.isActive != 0,
                 )
+                }
             }
         }
     }
 
-    fun updateCategory(v: String)    = _formState.update { it.copy(category = v) }
+    fun updateCategory(v: String) = _formState.update { it.copy(category = v) }
+
     fun updateLimitAmount(v: String) = _formState.update { it.copy(limitAmount = v) }
-    fun updatePeriod(v: String)      = _formState.update { it.copy(period = v) }
+
+    fun updatePeriod(v: String) = _formState.update { it.copy(period = v) }
+
     fun updateAlertThreshold(v: String) = _formState.update { it.copy(alertThreshold = v) }
-    fun updateActive(v: Boolean)     = _formState.update { it.copy(isActive = v) }
+
+    fun updateActive(v: Boolean) = _formState.update { it.copy(isActive = v) }
 
     // Backward-compatible alias used by BudgetFormScreen
     fun updateLimit(v: String) = updateLimitAmount(v)

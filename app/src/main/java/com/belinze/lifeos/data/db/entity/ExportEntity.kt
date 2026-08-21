@@ -9,10 +9,9 @@ data class ExportEntity(
     @PrimaryKey
     @ColumnInfo(name = "id")
     val id: String,
-
-    @ColumnInfo(name = "file_path")     val filePath: String?,
-    @ColumnInfo(name = "file_size")     val fileSize: Long?,
-    @ColumnInfo(name = "format")        val format: String?,
-    @ColumnInfo(name = "created_at")    val createdAt: String?,
-    @ColumnInfo(name = "record_count")  val recordCount: Int?,
+    @ColumnInfo(name = "file_path") val filePath: String?,
+    @ColumnInfo(name = "file_size") val fileSize: Long?,
+    @ColumnInfo(name = "format") val format: String?,
+    @ColumnInfo(name = "created_at") val createdAt: String?,
+    @ColumnInfo(name = "record_count") val recordCount: Int?,
 )

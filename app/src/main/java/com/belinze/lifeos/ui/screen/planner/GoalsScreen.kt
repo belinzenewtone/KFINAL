@@ -15,12 +15,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircleOutline
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,9 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -67,7 +66,7 @@ fun GoalsScreen(
     var logGoalId by remember { mutableStateOf<String?>(null) }
     var logAmount by remember { mutableStateOf("") }
 
-    val activeGoals = state.goals.filter { it.status == "active" }
+    val activeGoals = remember(state.goals) { state.goals.filter { it.status == "active" } }
 
     PageScaffold(
         eyebrow = "Personal Growth",
@@ -77,7 +76,7 @@ fun GoalsScreen(
         scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.goalForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add goal", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add goal", tint = MaterialTheme.colorScheme.primary)
             }
         },
         topBanner = {
@@ -99,7 +98,7 @@ fun GoalsScreen(
                     modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Flag, contentDescription = null,
+                    Icon(Icons.Outlined.Flag, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
                 Spacer(Modifier.height(Spacing.base))
@@ -173,8 +172,11 @@ private fun GoalCard(
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val percent = if (goal.targetValue > 0)
-        (goal.currentValue / goal.targetValue * 100).toInt().coerceIn(0, 100) else 0
+    val percent = if (goal.targetValue > 0) {
+        (goal.currentValue / goal.targetValue * 100).toInt().coerceIn(0, 100)
+    } else {
+        0
+    }
     val isCompleted = goal.status == "completed"
 
     GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {
@@ -224,20 +226,20 @@ private fun GoalCard(
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
             if (!isCompleted) {
                 TextButton(onClick = onLogProgress) {
-                    Icon(Icons.Filled.AddCircleOutline, contentDescription = null,
+                    Icon(Icons.Outlined.AddCircleOutline, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(4.dp))
                     Text("Log Progress", color = MaterialTheme.colorScheme.primary)
                 }
                 TextButton(onClick = onComplete) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = null,
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                         tint = SUCCESS, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(4.dp))
                     Text("Mark Complete", color = SUCCESS)
                 }
             }
             TextButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = null,
+                Icon(Icons.Outlined.Delete, contentDescription = null,
                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.size(4.dp))
                 Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -248,4 +250,6 @@ private fun GoalCard(
 
 private fun formatDate(iso: String): String = try {
     LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
-} catch (_: Exception) { iso.take(10) }
+} catch (_: Exception) {
+    iso.take(10)
+}

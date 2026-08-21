@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,19 +30,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.CardGiftcard
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -68,7 +67,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -101,13 +99,13 @@ private data class ToolItem(
 )
 
 private val TOOL_HUB = listOf(
-    ToolItem("Analytics", Icons.Filled.Analytics,      Color(0xFF2DD4BF), Route.INSIGHTS),
-    ToolItem("Review",    Icons.Filled.Explore,        Color(0xFFA78BFA), Route.WEEK_REVIEW),
-    ToolItem("Search",    Icons.Filled.Search,         Color(0xFF60A5FA), Route.SEARCH),
-    ToolItem("Recurring", Icons.Filled.Repeat,         Color(0xFF34D399), Route.RECURRING),
-    ToolItem("Export",    Icons.Filled.Download,       Color(0xFFFBBF24), Route.EXPORT_DATA),
-    ToolItem("Hub",       Icons.Filled.LibraryBooks,   Color(0xFF22D3EE), Route.PLANNER),
-    ToolItem("Wrapped",   Icons.Filled.CardGiftcard,   Color(0xFFF472B6), Route.MONTHLY_WRAPPED),
+    ToolItem("Analytics", Icons.Outlined.Analytics,      Color(0xFF2DD4BF), Route.INSIGHTS),
+    ToolItem("Review",    Icons.Outlined.Explore,        Color(0xFFA78BFA), Route.WEEK_REVIEW),
+    ToolItem("Search",    Icons.Outlined.Search,         Color(0xFF60A5FA), Route.SEARCH),
+    ToolItem("Recurring", Icons.Outlined.Repeat,         Color(0xFF34D399), Route.RECURRING),
+    ToolItem("Export",    Icons.Outlined.Download,       Color(0xFFFBBF24), Route.EXPORT_DATA),
+    ToolItem("Hub",       Icons.Outlined.LibraryBooks,   Color(0xFF22D3EE), Route.PLANNER),
+    ToolItem("Wrapped",   Icons.Outlined.CardGiftcard,   Color(0xFFF472B6), Route.MONTHLY_WRAPPED),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,7 +141,9 @@ fun ProfileScreen(
                     .openInputStream(Uri.parse(prefState.profileAvatarUri))
                     ?.use { stream -> BitmapFactory.decodeStream(stream) }
             }.getOrNull()
-        } else null
+        } else {
+            null
+        }
     }
 
     Box(
@@ -225,8 +225,11 @@ fun ProfileScreen(
                             maxLines = 1,
                         )
                         Text(
-                            text     = if (prefState.profileUsername.isNotBlank())
-                                "@${prefState.profileUsername}" else "No username set",
+                            text     = if (prefState.profileUsername.isNotBlank()) {
+                                "@${prefState.profileUsername}"
+                            } else {
+                                "No username set"
+                            },
                             style    = MaterialTheme.typography.bodyMedium,
                             color    = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
@@ -275,7 +278,7 @@ fun ProfileScreen(
                         ),
                     ) {
                         Icon(
-                            Icons.Filled.Edit,
+                            Icons.Outlined.Edit,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary,
@@ -295,7 +298,7 @@ fun ProfileScreen(
                         ),
                     ) {
                         Icon(
-                            Icons.Filled.Settings,
+                            Icons.Outlined.Settings,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary,
@@ -387,8 +390,11 @@ fun ProfileScreen(
                         Text(
                             text = "${editUsername.length}/$USERNAME_MAX",
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (editUsername.length >= USERNAME_MAX) WARNING
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (editUsername.length >= USERNAME_MAX) {
+                                WARNING
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                         )
                     }
                     Spacer(Modifier.height(Spacing.xs))
@@ -453,7 +459,7 @@ fun ProfileScreen(
                 )
                 if (prefState.profileAvatarUri.isNotEmpty()) {
                     PhotoSheetOption(
-                        icon = Icons.Filled.Visibility,
+                        icon = Icons.Outlined.Visibility,
                         label = "View",
                         color = MaterialTheme.colorScheme.onSurface,
                         onClick = {
@@ -463,7 +469,7 @@ fun ProfileScreen(
                     )
                 }
                 PhotoSheetOption(
-                    icon = Icons.Filled.Image,
+                    icon = Icons.Outlined.Image,
                     label = "Choose from gallery",
                     color = MaterialTheme.colorScheme.onSurface,
                     onClick = {
@@ -473,7 +479,7 @@ fun ProfileScreen(
                 )
                 if (prefState.profileAvatarUri.isNotEmpty()) {
                     PhotoSheetOption(
-                        icon = Icons.Filled.Delete,
+                        icon = Icons.Outlined.Delete,
                         label = "Remove",
                         color = MaterialTheme.colorScheme.error,
                         onClick = {

@@ -8,8 +8,8 @@ import com.belinze.lifeos.data.db.dao.IncomeDao
 import com.belinze.lifeos.data.db.dao.PlannerDao
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
-import com.belinze.lifeos.data.db.entity.BudgetEntity
 import com.belinze.lifeos.data.db.entity.BillEntity
+import com.belinze.lifeos.data.db.entity.BudgetEntity
 import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
 import com.belinze.lifeos.data.db.entity.GoalEntity
@@ -32,15 +32,25 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 enum class SearchTab {
-    All, Transactions, Tasks, Events, Birthdays, Anniversaries, Countdowns,
-    Budgets, Recurring, Bills, Goals, Incomes, Loans,
+    All,
+    Transactions,
+    Tasks,
+    Events,
+    Birthdays,
+    Anniversaries,
+    Countdowns,
+    Budgets,
+    Recurring,
+    Bills,
+    Goals,
+    Incomes,
+    Loans,
 }
 
 data class SearchUiState(
     val query:         String                     = "",
     val activeTab:     SearchTab                  = SearchTab.All,
     val isLoading:     Boolean                    = false,
-
     val transactions:  List<TransactionEntity>    = emptyList(),
     val tasks:         List<TaskEntity>           = emptyList(),
     val events:        List<EventEntity>          = emptyList(),
@@ -57,7 +67,9 @@ data class SearchUiState(
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
-class SearchViewModel @Inject constructor(
+class SearchViewModel
+    @Inject
+    constructor(
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
     private val eventDao:       EventDao,
@@ -65,7 +77,6 @@ class SearchViewModel @Inject constructor(
     private val incomeDao:      IncomeDao,
     private val plannerDao:     PlannerDao,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 

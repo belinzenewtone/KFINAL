@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.asSharedFlow
  * the caller (SmsReceiverModule, which is not in the DI graph).
  */
 object SmsEventBus {
-
     /** Lightweight snapshot of an inserted transaction for heads-up alerts. */
     data class NewTransactionEvent(
         val mpesaCode: String,
@@ -52,7 +51,9 @@ object SmsEventBus {
 
     // ── Fuliza limit prompt ──────────────────────────────────────────────────
 
-    private val _fulizaLimitNeeded = MutableSharedFlow<Double>(extraBufferCapacity = 4)
+    // replay=1 ensures a late collector (e.g. MainScaffold composing after the
+    // worker emits during background import) still receives the prompt.
+    private val _fulizaLimitNeeded = MutableSharedFlow<Double>(replay = 1, extraBufferCapacity = 4)
 
     /**
      * Emitted when a Fuliza charge SMS arrives but the user has not yet configured

@@ -3,8 +3,6 @@ package com.belinze.lifeos.ui.screen.planner
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,13 +11,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -36,13 +33,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
-import com.belinze.lifeos.viewmodel.CsvColumnMapping
 import com.belinze.lifeos.viewmodel.CsvImportViewModel
 
 private val ALL_FIELDS = listOf(
@@ -97,7 +93,7 @@ fun CsvImportScreen(
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Icon(Icons.Filled.InsertDriveFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.InsertDriveFile, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(4.dp))
                     Text("Pick CSV file")
                 }
@@ -128,7 +124,7 @@ fun CsvImportScreen(
                                     label = { Text("None") },
                                 )
                             }
-                            items(state.headers) { header ->
+                            items(state.headers, key = { it }) { header ->
                                 FilterChip(
                                     selected = when (field) {
                                         "amount" -> state.mapping.amount == header

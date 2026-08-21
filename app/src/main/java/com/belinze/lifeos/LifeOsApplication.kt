@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.belinze.lifeos.data.datastore.AppPreferences
-import com.belinze.lifeos.data.db.LifeOsDatabase
 import com.belinze.lifeos.services.BudgetAlertService
 import com.belinze.lifeos.services.NotificationSync
 import com.belinze.lifeos.util.Haptics
@@ -28,7 +27,6 @@ import javax.inject.Inject
  */
 @HiltAndroidApp
 class LifeOsApplication : Application(), Configuration.Provider {
-
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -44,10 +42,6 @@ class LifeOsApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var budgetAlertService: BudgetAlertService
-
-    /** Force Room schema creation before DbWriter opens the shared lifeos.db. */
-    @Inject
-    lateinit var database: LifeOsDatabase
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -77,15 +71,6 @@ class LifeOsApplication : Application(), Configuration.Provider {
                 Log.e("LifeOS/App", "Startup sync failed", e)
                 Haptics.enabled = true
             }
-        }
-
-        // Force Room to create its full schema before the untouched SMS parser's
-        // DbWriter opens the shared lifeos.db. DbWriter only creates its own two
-        // tables (import_audit / sms_ingest_queue) and must not beat Room here.
-        try {
-            database.openHelper.writableDatabase
-        } catch (e: Exception) {
-            Log.e("LifeOS/App", "Room schema init failed", e)
         }
 
         // Arm the background SMS BroadcastReceiver, ensure the SmsReceiverModule

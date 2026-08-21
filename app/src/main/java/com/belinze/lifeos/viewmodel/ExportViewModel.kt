@@ -30,7 +30,9 @@ enum class ExportFormat { JSON, CSV, PDF }
  * Mirrors ExportScreen.tsx.
  */
 @HiltViewModel
-class ExportViewModel @Inject constructor(
+class ExportViewModel
+    @Inject
+    constructor(
     @ApplicationContext private val context: Context,
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
@@ -39,12 +41,12 @@ class ExportViewModel @Inject constructor(
     private val incomeDao:      IncomeDao,
     private val plannerDao:     PlannerDao,
 ) : ViewModel() {
-
     data class ExportUiState(
-        val isLoading:   Boolean = false,
-        val lastExport:  String? = null,
-        val error:       String? = null,
-        val history:     List<ExportEntity> = emptyList(),
+        val isLoading:    Boolean = false,
+        val lastExport:   String? = null,
+        val error:        String? = null,
+        val history:      List<ExportEntity> = emptyList(),
+        val domainCounts: Map<String, Int> = emptyMap(),
     )
 
     private val _uiState = MutableStateFlow(ExportUiState())
@@ -54,7 +56,26 @@ class ExportViewModel @Inject constructor(
 
     fun loadHistory() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(history = plannerDao.getAllExports())
+            val counts = mapOf(
+                "transactions" to transactionDao.getPage(10000, 0).size,
+                "tasks"        to taskDao.getAll().size,
+                "events"       to eventDao.getAll().size,
+                "budgets"      to budgetDao.getAll().size,
+                "incomes"      to incomeDao.getAll().size,
+                "recurring"    to plannerDao.getAllRules().size,
+                "goals"        to plannerDao.getAllGoals().size,
+            )
+            _uiState.value = _uiState.value.copy(
+                history      = plannerDao.getAllExports(),
+                domainCounts = counts,
+            )
+        }
+    }
+
+    fun clearHistory() {
+        viewModelScope.launch {
+            plannerDao.deleteAllExports()
+            _uiState.value = _uiState.value.copy(history = emptyList())
         }
     }
 
@@ -166,7 +187,7 @@ class ExportViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(
                     isLoading  = false,
-                    lastExport = "Exported ${recordCount} records to ${file.name}",
+                    lastExport = "Exported $recordCount records to ${file.name}",
                 )
                 loadHistory()
             } catch (e: Exception) {

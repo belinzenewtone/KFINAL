@@ -1,20 +1,18 @@
 package com.belinze.lifeos.ui.screen.insights
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -89,7 +87,7 @@ fun MonthlyWrappedScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint     = MaterialTheme.colorScheme.onBackground,
+                    tint     = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(AppBarDimens.iconSize),
                 )
             }
@@ -101,11 +99,13 @@ fun MonthlyWrappedScreen(
                 modifier = Modifier.size(AppBarDimens.backBtnSize),
             ) {
                 Icon(
-                    Icons.Filled.KeyboardArrowLeft,
+                    Icons.Outlined.KeyboardArrowLeft,
                     contentDescription = "Older month",
-                    tint     = if (state.monthOffset > state.minMonthOffset)
-                                   MaterialTheme.colorScheme.onSurface
-                               else MaterialTheme.colorScheme.outline,
+                    tint     = if (state.monthOffset > state.minMonthOffset) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    },
                     modifier = Modifier.size(22.dp),
                 )
             }
@@ -128,11 +128,13 @@ fun MonthlyWrappedScreen(
                 modifier = Modifier.size(AppBarDimens.backBtnSize),
             ) {
                 Icon(
-                    Icons.Filled.KeyboardArrowRight,
+                    Icons.Outlined.KeyboardArrowRight,
                     contentDescription = "Newer month",
-                    tint     = if (state.monthOffset < 0)
-                                   MaterialTheme.colorScheme.onSurface
-                               else MaterialTheme.colorScheme.outline,
+                    tint     = if (state.monthOffset < 0) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    },
                     modifier = Modifier.size(22.dp),
                 )
             }
@@ -228,10 +230,12 @@ fun MonthlyWrappedScreen(
                                     modifier      = Modifier.padding(bottom = Spacing.base),
                                 )
                                 state.topCategories.forEachIndexed { i, row ->
-                                    if (i > 0) HorizontalDivider(
+                                    if (i > 0) {
+                                        HorizontalDivider(
                                         modifier  = Modifier.padding(vertical = Spacing.xs),
                                         color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                                     )
+                                    }
                                     CategoryRow(row)
                                 }
                             }

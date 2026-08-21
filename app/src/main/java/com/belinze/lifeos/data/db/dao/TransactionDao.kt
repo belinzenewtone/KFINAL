@@ -1,12 +1,12 @@
 package com.belinze.lifeos.data.db.dao
 
+import androidx.paging.PagingSource
 import androidx.room.*
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-
     // ─── Reads ────────────────────────────────────────────────────────────────
 
     @Query("""
@@ -16,6 +16,31 @@ interface TransactionDao {
         LIMIT :limit OFFSET :offset
     """)
     suspend fun getPage(limit: Int, offset: Int): List<TransactionEntity>
+
+    /**
+     * Paging 3 source — Room auto-generates the PagingSource implementation and
+     * registers with InvalidationTracker so any write to `transactions` instantly
+     * invalidates this source, triggering a smooth list refresh without reload().
+     */
+    @Query("""
+        SELECT * FROM transactions
+        WHERE deleted_at IS NULL
+          AND (:search = '' OR merchant LIKE '%' || :search || '%' OR mpesa_code LIKE '%' || :search || '%')
+          AND (:category = 'all' OR category = :category)
+          AND (:type IS NULL OR transaction_type = :type)
+          AND (:status IS NULL OR status = :status)
+          AND (:startDate IS NULL OR date >= :startDate)
+          AND (:endDate IS NULL OR date <= :endDate)
+        ORDER BY date DESC
+    """)
+    fun getFilteredPaged(
+        search: String,
+        category: String,
+        type: String?,
+        status: String?,
+        startDate: String?,
+        endDate: String?,
+    ): PagingSource<Int, TransactionEntity>
 
     @Query("""
         SELECT * FROM transactions
@@ -102,7 +127,6 @@ interface TransactionDao {
         SELECT COUNT(*) FROM transactions
         WHERE deleted_at IS NULL
           AND (category IS NULL OR category = 'uncategorized')
-          AND status = 'completed'
     """)
     suspend fun countUncategorized(): Int
 
@@ -110,7 +134,6 @@ interface TransactionDao {
         SELECT * FROM transactions
         WHERE deleted_at IS NULL
           AND (category IS NULL OR category = 'uncategorized')
-          AND status = 'completed'
         ORDER BY date DESC
     """)
     suspend fun getUncategorized(): List<TransactionEntity>
@@ -347,6 +370,10 @@ interface TransactionDao {
     @Query("UPDATE transactions SET status = :status, updated_at = :ts WHERE mpesa_code = :code AND deleted_at IS NULL")
     suspend fun updateStatusByMpesaCode(code: String, status: String, ts: String)
 
+    /** Approve a review-queue transaction: mark completed and flag for sync. */
+    @Query("UPDATE transactions SET status = :status, sync_state = :syncState, updated_at = :ts WHERE mpesa_code = :code AND deleted_at IS NULL")
+    suspend fun updateStatusAndSyncStateByMpesaCode(code: String, status: String, syncState: String, ts: String)
+
     // ─── Insights tab deep queries ────────────────────────────────────────────────
 
     @Query("""
@@ -402,11 +429,17 @@ interface TransactionDao {
 // ─── Projection data classes ─────────────────────────────────────────────────
 
 data class MonthTotals(val income: Double?, val expense: Double?)
+
 data class CategoryTotal(val category: String?, val total: Double)
+
 data class MerchantTotal(val merchant: String?, val total: Double)
+
 data class FeeCategoryTotal(val category: String?, val total: Double, val count: Int)
+
 data class DaySpend(val day: String, val total: Double)
+
 data class BiggestSpend(val merchant: String?, val amount: Double, val date: String)
+
 data class FeeSummary(val total: Double, val avgFee: Double, val txCount: Int)
 
 data class MonthlyTotalsRow(
@@ -415,17 +448,20 @@ data class MonthlyTotalsRow(
     val income: Double,
     @ColumnInfo(name = "tx_count") val txCount: Int,
 )
+
 data class MonthlyCategoryRow(
     @ColumnInfo(name = "month_key") val monthKey: String,
     val category: String?,
     val total: Double,
 )
+
 data class IncomeDateRow(val dt: String)
+
 data class SizeBreakdownRow(
-    @ColumnInfo(name = "micro_count")  val microCount:  Int,
+    @ColumnInfo(name = "micro_count") val microCount:  Int,
     @ColumnInfo(name = "medium_count") val mediumCount: Int,
-    @ColumnInfo(name = "large_count")  val largeCount:  Int,
-    @ColumnInfo(name = "micro_total")  val microTotal:  Double,
+    @ColumnInfo(name = "large_count") val largeCount:  Int,
+    @ColumnInfo(name = "micro_total") val microTotal:  Double,
     @ColumnInfo(name = "medium_total") val mediumTotal: Double,
-    @ColumnInfo(name = "large_total")  val largeTotal:  Double,
+    @ColumnInfo(name = "large_total") val largeTotal:  Double,
 )

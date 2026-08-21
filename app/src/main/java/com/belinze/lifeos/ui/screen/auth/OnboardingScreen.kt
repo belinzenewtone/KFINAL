@@ -3,6 +3,12 @@ package com.belinze.lifeos.ui.screen.auth
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -21,16 +27,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.RocketLaunch
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.outlined.RocketLaunch
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,11 +62,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.GlassCardVariant
 import com.belinze.lifeos.ui.components.HeroSurface
 import com.belinze.lifeos.ui.components.InlineBanner
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.AppViewModel
 
@@ -95,9 +104,9 @@ private data class GoalOption(
 )
 
 private val GOALS = listOf(
-    GoalOption("productivity", "Optimize Productivity", "Sharper focus, smarter routines, better execution.", Icons.Filled.Speed),
-    GoalOption("finance",      "Strengthen Finance",    "Track spending and budgets with clear control.",    Icons.Filled.PieChart),
-    GoalOption("balanced",     "Balance Everything",    "Plan work, money, and time in one calm system.",   Icons.Filled.AutoAwesome),
+    GoalOption("productivity", "Optimize Productivity", "Sharper focus, smarter routines, better execution.", Icons.Outlined.Speed),
+    GoalOption("finance",      "Strengthen Finance",    "Track spending and budgets with clear control.",    Icons.Outlined.PieChart),
+    GoalOption("balanced",     "Balance Everything",    "Plan work, money, and time in one calm system.",   Icons.Outlined.Tune),
 )
 
 @Composable
@@ -230,43 +239,55 @@ fun OnboardingScreen(
 
             Spacer(Modifier.height(Spacing.lg))
 
-            // ── Step body ─────────────────────────────────────────────────
-            GlassCard(variant = GlassCardVariant.Default, modifier = Modifier.fillMaxWidth()) {
-                when (step) {
-                    1 -> WelcomeStep()
-                    2 -> PillarsStep()
-                    3 -> ProfileSetupStep(
-                        fullName    = fullName,
-                        onNameChange = { v -> fullName = v; errorMsg = null },
-                        selectedGoal = goal,
-                        onGoalSelect = { g -> goal = g; viewModel.setOnboardingGoal(g) },
-                    )
-                    4 -> PermissionStep(
-                        allowed = notificationsAllowed,
-                        onAllow = { notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
-                        onSkip  = { notificationsAllowed = false; viewModel.setNotificationsEnabled(false) },
-                        title   = "Stay up to date",
-                        body    = "Allow notifications so task timers and reminders can reach you even when the app is in the background.",
-                    )
-                    5 -> PermissionStep(
-                        allowed = smsAllowed,
-                        onAllow = { smsPermLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)) },
-                        onSkip  = { smsAllowed = false; smsChecked = true },
-                        title   = "Smart finance imports",
-                        body    = "Allow SMS access so M-Pesa transactions and Fuliza activity can be imported automatically.",
-                    )
-                    6 -> BackgroundReceiverStep(
-                        enabled = bgReceiverEnabled,
-                        onEnable = {
-                            bgReceiverEnabled = true
-                            viewModel.setSmsBgReceiver(true)
-                        },
-                        onSkip = {
-                            bgReceiverEnabled = false
-                            viewModel.setSmsBgReceiver(false)
-                        },
-                    )
-                    else -> FinalStep()
+            // ── Step body (ON-2: fade+slide transition between steps) ─────
+            AnimatedContent(
+                targetState = step,
+                transitionSpec = {
+                    val forward = targetState > initialState
+                    (slideInHorizontally { if (forward) it else -it } + fadeIn()) togetherWith
+                    (slideOutHorizontally { if (forward) -it else it } + fadeOut())
+                },
+                label = "onboardingStep",
+            ) { targetStep ->
+                GlassCard(variant = GlassCardVariant.Default, modifier = Modifier.fillMaxWidth()) {
+                    when (targetStep) {
+                        1 -> WelcomeStep()
+                        2 -> PillarsStep()
+                        3 -> ProfileSetupStep(
+                            fullName    = fullName,
+                            onNameChange = { v -> fullName = v; errorMsg = null },
+                            selectedGoal = goal,
+                            onGoalSelect = { g -> goal = g; viewModel.setOnboardingGoal(g) },
+                        )
+                        4 -> PermissionStep(
+                            allowed = notificationsAllowed,
+                            onAllow = { notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                            onSkip  = { notificationsAllowed = false; viewModel.setNotificationsEnabled(false) },
+                            title   = "Stay up to date",
+                            body    = "Allow notifications so task timers and reminders can reach you even when the app is in the background.",
+                            extraPillar = Triple(Icons.Outlined.Speed, "Timely nudges", "Get reminded about tasks, bills, and events right when they're due."),
+                        )
+                        5 -> PermissionStep(
+                            allowed = smsAllowed,
+                            onAllow = { smsPermLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)) },
+                            onSkip  = { smsAllowed = false; smsChecked = true },
+                            title   = "Smart finance imports",
+                            body    = "Allow SMS access so M-Pesa transactions and Fuliza activity can be imported automatically.",
+                            extraPillar = Triple(Icons.Outlined.RocketLaunch, "Zero manual entry", "M-Pesa debits, credits, and Fuliza draws appear automatically."),
+                        )
+                        6 -> BackgroundReceiverStep(
+                            enabled = bgReceiverEnabled,
+                            onEnable = {
+                                bgReceiverEnabled = true
+                                viewModel.setSmsBgReceiver(true)
+                            },
+                            onSkip = {
+                                bgReceiverEnabled = false
+                                viewModel.setSmsBgReceiver(false)
+                            },
+                        )
+                        else -> FinalStep()
+                    }
                 }
             }
 
@@ -296,11 +317,14 @@ fun OnboardingScreen(
                 repeat(TOTAL_STEPS) { index ->
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = 3.dp)
+                            .padding(horizontal = Spacing.sm)
                             .size(width = 28.dp, height = 4.dp)
                             .background(
-                                if (index < step) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outlineVariant,
+                                if (index < step) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outlineVariant
+                                },
                                 CircleShape,
                             ),
                     )
@@ -315,14 +339,29 @@ fun OnboardingScreen(
 @Composable
 private fun WelcomeStep() {
     StepColumn {
+        // ON-1: 80×80 branded logo box centered above the heading
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+                .align(Alignment.CenterHorizontally),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector        = Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint               = MaterialTheme.colorScheme.primary,
+                modifier           = Modifier.size(40.dp),
+            )
+        }
         Text("Welcome to your PersonalOS", style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface)
         Text("Your sanctuary for productivity, finance, and mindful planning.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FeatureRow(Icons.Filled.Speed, "Productivity — tasks, routines, and focused planning")
-        FeatureRow(Icons.Filled.PieChart, "Finance — budgets, spending, and trends at a glance")
-        FeatureRow(Icons.Filled.CalendarMonth, "Calendar — events, birthdays, and smart reminders")
+        FeatureRow(Icons.Outlined.Speed, "Productivity — tasks, routines, and focused planning")
+        FeatureRow(Icons.Outlined.PieChart, "Finance — budgets, spending, and trends at a glance")
+        FeatureRow(Icons.Outlined.CalendarMonth, "Calendar — events, birthdays, and smart reminders")
     }
 }
 
@@ -336,9 +375,9 @@ private fun PillarsStep() {
         Text("PersonalOS keeps your planning and money flows aligned in one calm surface.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        PillarCard(Icons.Filled.Speed, "Productivity", "Prioritize what matters and keep focused execution daily.")
-        PillarCard(Icons.Filled.CalendarMonth, "Planning & Calendar", "Events, reminders, birthdays, and countdowns — all in one view.")
-        PillarCard(Icons.Filled.PieChart, "Finance", "Track spending, watch budgets, and review trends with confidence.")
+        PillarCard(Icons.Outlined.Speed, "Productivity", "Prioritize what matters and keep focused execution daily.")
+        PillarCard(Icons.Outlined.CalendarMonth, "Planning & Calendar", "Events, reminders, birthdays, and countdowns — all in one view.")
+        PillarCard(Icons.Outlined.PieChart, "Finance", "Track spending, watch budgets, and review trends with confidence.")
     }
 }
 
@@ -358,10 +397,12 @@ private fun ProfileSetupStep(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
 
+        // ON-6: person-outline icon on name field
         OutlinedTextField(
             value          = fullName,
             onValueChange  = onNameChange,
             label          = { Text("Your name") },
+            leadingIcon    = { Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine     = true,
             modifier       = Modifier.fillMaxWidth(),
         )
@@ -379,8 +420,11 @@ private fun ProfileSetupStep(
                 ),
                 border   = androidx.compose.foundation.BorderStroke(
                     1.5.dp,
-                    if (selected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.outlineVariant,
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    },
                 ),
             ) {
                 Row(
@@ -396,7 +440,7 @@ private fun ProfileSetupStep(
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (selected) {
-                        Icon(Icons.Filled.Person, contentDescription = null,
+                        Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary)
                     }
                 }
@@ -414,16 +458,22 @@ private fun PermissionStep(
     onSkip:  () -> Unit,
     title:   String,
     body:    String,
+    // ON-5: optional second pillar card (icon, title, description)
+    extraPillar: Triple<androidx.compose.ui.graphics.vector.ImageVector, String, String>? = null,
 ) {
     StepColumn {
         Text(title, style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface)
         Text(body, style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        PillarCard(Icons.Filled.Shield, "Private & secure", "Your data stays on-device — nothing is uploaded.")
+        PillarCard(Icons.Outlined.Shield, "Private & secure", "Your data stays on-device — nothing is uploaded.")
+        // ON-5: second PillarCard when provided
+        extraPillar?.let { (icon, cardTitle, cardDesc) ->
+            PillarCard(icon, cardTitle, cardDesc)
+        }
         if (allowed) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Person, contentDescription = null,
+                Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(Spacing.sm))
                 Text("Allowed", style = MaterialTheme.typography.bodyMedium,
@@ -452,11 +502,11 @@ private fun BackgroundReceiverStep(
         Text("Even when the app is closed, new M-Pesa messages can be imported automatically.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        PillarCard(Icons.Filled.RocketLaunch, "Automatic imports", "Receive money or buy airtime — the transaction appears without opening the app.")
-        PillarCard(Icons.Filled.Shield, "Keep it running", "You may need to allow unrestricted battery use so Android does not block the receiver.")
+        PillarCard(Icons.Outlined.RocketLaunch, "Automatic imports", "Receive money or buy airtime — the transaction appears without opening the app.")
+        PillarCard(Icons.Outlined.Shield, "Keep it running", "You may need to allow unrestricted battery use so Android does not block the receiver.")
         if (enabled) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Person, contentDescription = null,
+                Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(Spacing.sm))
                 Text("Background capture enabled", style = MaterialTheme.typography.bodyMedium,
@@ -481,9 +531,9 @@ private fun FinalStep() {
         Text("Welcome to your new digital sanctuary.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        PillarCard(Icons.Filled.AutoAwesome, "Personalized Insights", "Actionable summaries tuned to your real usage.")
-        PillarCard(Icons.Filled.Speed, "Unified Workflow", "Tasks, calendar, and finance in a single rhythm.")
-        PillarCard(Icons.Filled.Shield, "Private & Secure", "Your data stays controlled, with transparent protection.")
+        PillarCard(Icons.Outlined.AutoAwesome, "Personalized Insights", "Actionable summaries tuned to your real usage.")
+        PillarCard(Icons.Outlined.Speed, "Unified Workflow", "Tasks, calendar, and finance in a single rhythm.")
+        PillarCard(Icons.Outlined.Shield, "Private & Secure", "Your data stays controlled, with transparent protection.")
     }
 }
 
@@ -492,9 +542,10 @@ private fun FinalStep() {
 @Composable
 private fun StepColumn(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier            = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        content = content,
+        content             = content,
     )
 }
 

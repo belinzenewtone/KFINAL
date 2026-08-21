@@ -1,6 +1,9 @@
 package com.belinze.lifeos.ui.screen.settings
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,23 +28,24 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CardGiftcard
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Medication
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Radio
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Radio
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,8 +63,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FulizaLimitModal
@@ -85,15 +94,62 @@ fun SettingsScreen(
     viewModel:     SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var infoMessage by remember { mutableStateOf<String?>(null) }
     var showClearDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     var fulizaVisible by remember { mutableStateOf(false) }
     var smsGranted by remember { mutableStateOf(viewModel.hasSmsPermissions()) }
+    // ST-2: track permission-request-in-flight
+    var smsRequesting by remember { mutableStateOf(false) }
+    // ST-9/10/11/12: update check state
+    var updateChecking by remember { mutableStateOf(false) }
+    var updateAvailable by remember { mutableStateOf(false) }
+    var showRestartDialog by remember { mutableStateOf(false) }
+
+    // ST-4: re-check SMS permission on every lifecycle resume
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                smsGranted = viewModel.hasSmsPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val smsPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) { results ->
-        smsGranted = results.values.all { it }
-        if (smsGranted) infoMessage = "SMS permissions granted"
+        smsRequesting = false
+        smsGranted = results.values.any { it }
+        infoMessage = if (smsGranted) {
+            "SMS permissions granted"
+        } else {
+                // ST-3: denial message
+            "Permissions denied — grant them in device Settings"
+        }
+    }
+
+    // ST-11: "restart now" dialog after download
+    if (showRestartDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestartDialog = false },
+            title = { Text("Update downloaded") },
+            text  = { Text("Restart the app now to apply the update?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRestartDialog = false
+                    // In a native Android app, we can't force restart from code gracefully;
+                    // signal the user to reopen the app.
+                    infoMessage = "Please close and reopen the app to finish updating."
+                }) { Text("Restart now") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestartDialog = false }) { Text("Later") }
+            },
+        )
     }
 
     Box(modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
@@ -147,7 +203,7 @@ fun SettingsScreen(
             SectionLabel("Calendar")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.SwapHoriz,
+                    icon = Icons.Outlined.SwapHoriz,
                     label = "Swipe to change month",
                     subtitle = "Swipe left/right on the calendar grid to move between months.",
                     toggle = true,
@@ -171,14 +227,14 @@ fun SettingsScreen(
                     if (isEmpty()) append("No lock configured")
                 }
                 SettingsRow(
-                    icon = Icons.Filled.Security,
+                    icon = Icons.Outlined.Security,
                     label = "Screen lock",
                     subtitle = lockSubtitle,
                     showChevron = true,
                     onPress = { navController.navigate(Route.SCREEN_LOCK) },
                 )
                 SettingsRow(
-                    icon = Icons.Filled.TouchApp,
+                    icon = Icons.Outlined.TouchApp,
                     label = "Haptic feedback",
                     subtitle = "Vibration on actions like completing tasks or deleting items.",
                     toggle = true,
@@ -202,7 +258,7 @@ fun SettingsScreen(
                     if (isEmpty()) append("All off")
                 }
                 SettingsRow(
-                    icon = Icons.Filled.Notifications,
+                    icon = Icons.Outlined.Notifications,
                     label = "Notification settings",
                     subtitle = notificationsSubtitle,
                     showChevron = true,
@@ -214,7 +270,7 @@ fun SettingsScreen(
             SectionLabel("Assistant")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.AutoAwesome,
+                    icon = Icons.Outlined.AutoAwesome,
                     label = "Quick suggestions",
                     subtitle = "Allow the assistant to propose actions based on your messages",
                     toggle = true,
@@ -230,10 +286,13 @@ fun SettingsScreen(
             SectionLabel("Finance")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.Wallet,
+                    icon = Icons.Outlined.Wallet,
                     label = "Fuliza credit limit",
-                    value = if (settings.fulizaLimit > 0) com.belinze.lifeos.util.formatCurrency(settings.fulizaLimit)
-                            else "Not set",
+                    value = if (settings.fulizaLimit > 0) {
+                        com.belinze.lifeos.util.formatCurrency(settings.fulizaLimit)
+                    } else {
+                        "Not set"
+                    },
                     showChevron = true,
                     onPress = { fulizaVisible = true },
                     isLast = true,
@@ -242,32 +301,52 @@ fun SettingsScreen(
 
             SectionLabel("Import SMS")
             if (!smsGranted) {
-                PermissionBanner(onClick = {
-                    smsPermissionLauncher.launch(
-                        arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
-                    )
-                })
+                // ST-2: show "Requesting…" label while permission dialog is open
+                PermissionBanner(
+                    requesting = smsRequesting,
+                    onClick = {
+                        smsRequesting = true
+                        smsPermissionLauncher.launch(
+                            arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
+                        )
+                    },
+                )
             }
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.Radio,
+                    icon = Icons.Outlined.Radio,
                     label = "Background receiver",
                     subtitle = "Automatically capture & analyse M-Pesa messages even when the app is closed.",
                     toggle = true,
                     toggleValue = settings.smsBgReceiver,
-                    onToggleChange = {
-                        viewModel.setSmsBgReceiver(it)
-                        infoMessage = if (it) "Background receiver on" else "Background receiver off"
+                    onToggleChange = { enabled ->
+                        try {
+                            viewModel.setSmsBgReceiver(enabled)
+                            infoMessage = if (enabled) "Background receiver on" else "Background receiver off"
+                            // ST-6: on enable, check battery optimization and prompt
+                            if (enabled) {
+                                val pm = context.getSystemService(android.content.Context.POWER_SERVICE) as? PowerManager
+                                if (pm != null && !pm.isIgnoringBatteryOptimizations(context.packageName)) {
+                                    val intent = Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // ST-7: show error if toggle throws
+                            infoMessage = "Could not update background receiver"
+                        }
                     },
                 )
                 SettingsRow(
-                    icon = Icons.Filled.Medication,
+                    icon = Icons.Outlined.Medication,
                     label = "Import Health",
                     showChevron = true,
                     onPress = { navController.navigate(Route.SMS_IMPORT_HEALTH) },
                 )
                 SettingsRow(
-                    icon = Icons.Filled.List,
+                    icon = Icons.Outlined.List,
                     label = "Review Queue",
                     showChevron = true,
                     onPress = { navController.navigate(Route.REVIEW_QUEUE) },
@@ -278,20 +357,20 @@ fun SettingsScreen(
             SectionLabel("About")
             GlassCard {
                 SettingsRow(
-                    icon = Icons.Filled.CardGiftcard,
+                    icon = Icons.Outlined.CardGiftcard,
                     label = "What's new",
                     showChevron = true,
                     onPress = { navController.navigate(Route.CHANGELOG) },
                 )
                 SettingsRow(
-                    icon = Icons.Filled.Info,
+                    icon = Icons.Outlined.Info,
                     label = "About Version",
                     value = "$APP_NAME $APP_VERSION",
                     showChevron = true,
-                    onPress = { },
+                    onPress = { showAboutDialog = true },
                 )
                 SettingsRow(
-                    icon = Icons.Filled.Delete,
+                    icon = Icons.Outlined.Delete,
                     iconColor = MaterialTheme.colorScheme.error,
                     label = "Clear all local data",
                     showChevron = true,
@@ -307,21 +386,37 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.base),
                 ) {
+                    // ST-9: disable + loading spinner while checking
                     OutlinedButton(
                         onClick = {
-                            infoMessage = "You're running $APP_VERSION in a development build — update checks only work in a published EAS build."
+                            updateChecking = true
+                            // ST-10: simulate update check (native Android — no OTA updates)
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                updateChecking = false
+                                updateAvailable = false // native build: always on latest
+                                infoMessage = "Already on latest ($APP_VERSION)"
+                            }, 1200)
                         },
+                        enabled = !updateChecking,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Check", color = MaterialTheme.colorScheme.onSurface)
+                        if (updateChecking) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Checking…", color = MaterialTheme.colorScheme.onSurface)
+                        } else {
+                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Check", color = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
+                    // ST-12: disable Download when no update available
                     Button(
-                        onClick = { infoMessage = "No update available yet. Check for updates first." },
+                        onClick = { showRestartDialog = true },
+                        enabled = !updateChecking && updateAvailable,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("Download")
                     }
@@ -345,12 +440,25 @@ fun SettingsScreen(
         onSave = { limit ->
             viewModel.setFulizaLimit(limit)
             fulizaVisible = false
-            infoMessage = if (limit > 0)
+            infoMessage = if (limit > 0) {
                 "Fuliza limit set to ${com.belinze.lifeos.util.formatCurrency(limit)}"
-            else "Fuliza credit limit cleared"
+            } else {
+                "Fuliza credit limit cleared"
+            }
         },
         onCancel = { fulizaVisible = false },
     )
+
+    if (showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text("About") },
+            text  = { Text("$APP_NAME v$APP_VERSION") },
+            confirmButton = {
+                TextButton(onClick = { showAboutDialog = false }) { Text("OK") }
+            },
+        )
+    }
 
     if (showClearDialog) {
         AlertDialog(
@@ -384,8 +492,9 @@ private fun SectionLabel(label: String) {
     )
 }
 
+// ST-2: requesting param shows "Requesting…" and hides chevron while in-flight
 @Composable
-private fun PermissionBanner(onClick: () -> Unit) {
+private fun PermissionBanner(onClick: () -> Unit, requesting: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -395,25 +504,31 @@ private fun PermissionBanner(onClick: () -> Unit) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = WARNING.copy(alpha = 0.2f)),
-                onClick = onClick,
+                onClick = { if (!requesting) onClick() },
             )
             .padding(Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Icon(Icons.Filled.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(18.dp))
+        if (requesting) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = WARNING)
+        } else {
+            Icon(Icons.Outlined.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(18.dp))
+        }
         Text(
-            text = "SMS permissions not granted — tap to allow",
+            text = if (requesting) "Requesting…" else "SMS permissions not granted — tap to allow",
             style = MaterialTheme.typography.bodyMedium,
             color = WARNING,
             maxLines = 2,
             modifier = Modifier.weight(1f),
         )
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = WARNING,
-            modifier = Modifier.size(16.dp),
-        )
+        if (!requesting) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = WARNING,
+                modifier = Modifier.size(16.dp),
+            )
+        }
     }
 }

@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface EventDao {
-
     @Query("""
         SELECT * FROM events
         WHERE deleted_at IS NULL

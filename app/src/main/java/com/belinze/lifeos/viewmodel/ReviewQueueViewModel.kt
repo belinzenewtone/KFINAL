@@ -6,11 +6,13 @@ import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.nowIso
 import com.lifeos.sms.SmsService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -19,10 +21,19 @@ import javax.inject.Inject
 // Data source: SmsService audit log filtered to pending outcomes.
 // (NOT TransactionViewModel — the old implementation was wrong.)
 //
-// Pending outcomes: quarantined | imported_review | batch_pending | pending
+// Pending outcomes (substring match, mirroring React's outcome.includes()):
+//   contains "quarantin" | contains "pending" | contains "review"
+//   but NOT "imported_review_approved" / "dismissed" / "retried"
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val PENDING_OUTCOMES = setOf("quarantined", "imported_review", "batch_pending", "pending")
+/** Mirror React's outcome.includes() logic for queue membership. */
+private fun isPendingOutcome(outcome: String): Boolean =
+    (outcome.contains("quarantin") ||
+     outcome.contains("pending") ||
+     outcome.contains("review")) &&
+    !outcome.contains("approved") &&
+    !outcome.contains("dismissed") &&
+    !outcome.contains("retried")
 
 data class ReviewQueueUiState(
     val isLoading:   Boolean                    = true,
@@ -38,11 +49,12 @@ data class BannerState(
 )
 
 @HiltViewModel
-class ReviewQueueViewModel @Inject constructor(
+class ReviewQueueViewModel
+    @Inject
+    constructor(
     private val smsService:     SmsService,
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(ReviewQueueUiState())
     val uiState: StateFlow<ReviewQueueUiState> = _uiState.asStateFlow()
 
@@ -55,7 +67,7 @@ class ReviewQueueViewModel @Inject constructor(
         get() {
             val state = _uiState.value
             return state.entries.filter {
-                it.outcome in PENDING_OUTCOMES && it.id !in state.dismissed
+                isPendingOutcome(it.outcome) && it.id !in state.dismissed
             }
         }
 
@@ -66,7 +78,7 @@ class ReviewQueueViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val all = smsService.getAuditLog(500)
-                val pending = all.filter { it.outcome in PENDING_OUTCOMES }
+                val pending = all.filter { isPendingOutcome(it.outcome) }
                 _uiState.update { it.copy(isLoading = false, entries = pending) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -78,26 +90,38 @@ class ReviewQueueViewModel @Inject constructor(
 
     /**
      * Recover / Approve a single entry.
-     * - quarantined → retry via SmsService (re-parse)
-     * - imported_review → set transaction status to 'completed' in Room
-     * - others → reload (batch_pending flows through the next sweep)
+     * - quarantined → retrySingleQuarantined(id) — re-parse just this entry
+     * - imported_review → set status='completed', sync_state='pending' + mark audit approved
+     * - others → re-import sweep (batch_pending flows through the next sweep)
      */
     fun recoverEntry(entry: SmsService.AuditEntry) {
         viewModelScope.launch {
             try {
-                when (entry.outcome) {
-                    "quarantined" -> {
-                        smsService.retryQuarantinedMessages()
-                        showBanner("Recovery triggered", true)
+                when {
+                    entry.outcome.contains("quarantin") -> {
+                        val recovered = withContext(Dispatchers.IO) {
+                            smsService.retrySingleQuarantined(entry.id)
+                        }
+                        showBanner(
+                            if (recovered) "Transaction recovered" else "Could not parse — message stays quarantined",
+                            recovered,
+                        )
                     }
-                    "imported_review" -> {
-                        entry.mpesaCode?.let { code ->
-                            transactionDao.updateStatusByMpesaCode(code, "completed", nowIso())
+                    entry.outcome.contains("review") -> {
+                        withContext(Dispatchers.IO) {
+                            entry.mpesaCode?.let { code ->
+                                // Mirror React: mark completed + set sync_state pending for sync
+                                transactionDao.updateStatusAndSyncStateByMpesaCode(
+                                    code, "completed", "pending", nowIso(),
+                                )
+                            }
+                            // Mark audit row so it won't re-appear in the queue
+                            smsService.markAuditApproved(entry.id)
                         }
                         showBanner("Transaction approved", true)
                     }
                     else -> {
-                        smsService.importHistoricalSms()
+                        withContext(Dispatchers.IO) { smsService.importHistoricalSms() }
                         showBanner("Re-import triggered", true)
                     }
                 }
@@ -108,32 +132,56 @@ class ReviewQueueViewModel @Inject constructor(
         }
     }
 
-    /** Dismiss (soft-hide) a single entry without recovering it. */
+    /**
+     * Dismiss (soft-delete + audit mark) a single entry without recovering it.
+     * Mirrors React which soft-deletes the transaction and marks the audit row dismissed.
+     */
     fun dismissEntry(entry: SmsService.AuditEntry) {
+        // Optimistically hide in UI immediately
         _uiState.update { it.copy(dismissed = it.dismissed + entry.id) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    // Soft-delete the transaction row if this code exists in DB
+                    entry.mpesaCode?.let { code ->
+                        transactionDao.getByMpesaCode(code)?.let { tx ->
+                            transactionDao.softDelete(tx.id, nowIso())
+                        }
+                    }
+                    // Mark the audit row as dismissed so it won't reload into the queue
+                    smsService.dismissAuditEntry(entry.id)
+                }
+            } catch (_: Exception) {
+                // DB write failed — the in-memory dismiss still holds for this session
+            }
+        }
     }
 
     // ─── Bulk actions ─────────────────────────────────────────────────────────
 
-    /** Recover all quarantined entries at once. */
+    /** Recover all visible entries at once. */
     fun recoverAll() {
         viewModelScope.launch {
             try {
-                // Approve all imported_review entries in Room
-                val reviewEntries = _uiState.value.entries.filter {
-                    it.outcome == "imported_review" && it.id !in _uiState.value.dismissed
-                }
-                for (e in reviewEntries) {
-                    e.mpesaCode?.let { code ->
-                        transactionDao.updateStatusByMpesaCode(code, "completed", nowIso())
+                val visible = visibleEntries
+                withContext(Dispatchers.IO) {
+                    val ts = nowIso()
+                    // Approve all imported_review entries: completed + sync_state pending + mark audit
+                    val reviewEntries = visible.filter { it.outcome.contains("review") }
+                    for (e in reviewEntries) {
+                        e.mpesaCode?.let { code ->
+                            transactionDao.updateStatusAndSyncStateByMpesaCode(
+                                code, "completed", "pending", ts,
+                            )
+                        }
+                        smsService.markAuditApproved(e.id)
+                    }
+                    // Retry all quarantined entries individually
+                    val quarantinedEntries = visible.filter { it.outcome.contains("quarantin") }
+                    for (e in quarantinedEntries) {
+                        smsService.retrySingleQuarantined(e.id)
                     }
                 }
-                // Retry all quarantined via SmsService
-                val hasQuarantined = _uiState.value.entries.any {
-                    it.outcome == "quarantined" && it.id !in _uiState.value.dismissed
-                }
-                if (hasQuarantined) smsService.retryQuarantinedMessages()
-
                 showBanner("All recoveries triggered", true)
                 load()
             } catch (e: Exception) {
@@ -142,10 +190,30 @@ class ReviewQueueViewModel @Inject constructor(
         }
     }
 
-    /** Dismiss all visible entries (soft-hide, no DB action). */
+    /**
+     * Dismiss all visible entries: soft-delete their transactions and mark audits dismissed.
+     * Mirrors React's dismissAll which applies the same dismiss logic to every visible card.
+     */
     fun dismissAll() {
-        val visible = visibleEntries.map { it.id }.toSet()
-        _uiState.update { it.copy(dismissed = it.dismissed + visible) }
+        val visible = visibleEntries
+        _uiState.update { it.copy(dismissed = it.dismissed + visible.map { e -> e.id }.toSet()) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val ts = nowIso()
+                    for (e in visible) {
+                        e.mpesaCode?.let { code ->
+                            transactionDao.getByMpesaCode(code)?.let { tx ->
+                                transactionDao.softDelete(tx.id, ts)
+                            }
+                        }
+                    }
+                    smsService.dismissAllAuditEntries(visible.map { it.id })
+                }
+            } catch (_: Exception) {
+                // In-memory dismiss already applied — DB failure is non-fatal
+            }
+        }
     }
 
     // ─── Banner ───────────────────────────────────────────────────────────────

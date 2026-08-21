@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.belinze.lifeos.ui.theme.ShapeHeroBottom
@@ -72,10 +71,11 @@ fun HeroSurface(
     }
 
     // Frost overlay — subtle shimmer to match RN LinearGradient overlay
-    val frostOverlay: Color = if (isDark)
+    val frostOverlay: Color = if (isDark) {
         Color.White.copy(alpha = 0.03f)
-    else
+    } else {
         Color.White.copy(alpha = 0.12f)
+    }
 
     Box(
         modifier = modifier

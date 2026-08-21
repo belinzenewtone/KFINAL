@@ -88,10 +88,11 @@ data class EventFormState(
 )
 
 @HiltViewModel
-class EventViewModel @Inject constructor(
+class EventViewModel
+    @Inject
+    constructor(
     private val dao: EventDao,
 ) : ViewModel() {
-
     private val _uiState   = MutableStateFlow(EventUiState())
     val uiState: StateFlow<EventUiState> = _uiState.asStateFlow()
 
@@ -144,29 +145,49 @@ class EventViewModel @Inject constructor(
 
     // ─── Update functions ─────────────────────────────────────────────────────
 
-    fun updateType(v: String)           = _formState.update { it.copy(type = v, error = null) }
-    fun updateTitle(v: String)          = _formState.update { it.copy(title = v) }
-    fun updateDescription(v: String)    = _formState.update { it.copy(description = v) }
-    fun updateStartDate(v: String)      = _formState.update { it.copy(startDateStr = v) }
-    fun updateStartTime(v: String)      = _formState.update { it.copy(startTimeStr = v) }
-    fun updateEndDate(v: String?)       = _formState.update { it.copy(endDateStr = v) }
-    fun updateEndTime(v: String)        = _formState.update { it.copy(endTimeStr = v) }
-    fun updateAllDay(v: Boolean)        = _formState.update { it.copy(allDay = v) }
-    fun updateRepeatRule(v: String)     = _formState.update { it.copy(repeatRule = v) }
+    fun updateType(v: String) = _formState.update { it.copy(type = v, error = null) }
+
+    fun updateTitle(v: String) = _formState.update { it.copy(title = v) }
+
+    fun updateDescription(v: String) = _formState.update { it.copy(description = v) }
+
+    fun updateStartDate(v: String) = _formState.update { it.copy(startDateStr = v) }
+
+    fun updateStartTime(v: String) = _formState.update { it.copy(startTimeStr = v) }
+
+    fun updateEndDate(v: String?) = _formState.update { it.copy(endDateStr = v) }
+
+    fun updateEndTime(v: String) = _formState.update { it.copy(endTimeStr = v) }
+
+    fun updateAllDay(v: Boolean) = _formState.update { it.copy(allDay = v) }
+
+    fun updateRepeatRule(v: String) = _formState.update { it.copy(repeatRule = v) }
+
     fun updateRepeatEndDate(v: String?) = _formState.update { it.copy(repeatEndDate = v) }
-    fun updateLocation(v: String)       = _formState.update { it.copy(location = v) }
-    fun updateTimeZoneId(v: String)     = _formState.update { it.copy(timeZoneId = v) }
-    fun updateKind(v: String)           = _formState.update { it.copy(kind = v) }
-    fun updateImportance(v: String)     = _formState.update { it.copy(importance = v) }
-    fun updateAlarmEnabled(v: Boolean)  = _formState.update { it.copy(alarmEnabled = v) }
-    fun updateAddYear(v: Boolean)       = _formState.update { it.copy(addYear = v) }
+
+    fun updateLocation(v: String) = _formState.update { it.copy(location = v) }
+
+    fun updateTimeZoneId(v: String) = _formState.update { it.copy(timeZoneId = v) }
+
+    fun updateKind(v: String) = _formState.update { it.copy(kind = v) }
+
+    fun updateImportance(v: String) = _formState.update { it.copy(importance = v) }
+
+    fun updateAlarmEnabled(v: Boolean) = _formState.update { it.copy(alarmEnabled = v) }
+
+    fun updateAddYear(v: Boolean) = _formState.update { it.copy(addYear = v) }
+
     fun updateCountdownReminderTime(v: String) = _formState.update { it.copy(countdownReminderTime = v) }
-    fun updateRemindBefore(v: Boolean)  = _formState.update { it.copy(remindBefore = v) }
+
+    fun updateRemindBefore(v: Boolean) = _formState.update { it.copy(remindBefore = v) }
 
     fun addGuest(email: String) {
         _formState.update { s ->
-            if (email.isBlank() || s.guests.contains(email)) s
-            else s.copy(guests = s.guests + email)
+            if (email.isBlank() || s.guests.contains(email)) {
+                s
+            } else {
+                s.copy(guests = s.guests + email)
+            }
         }
     }
 
@@ -176,10 +197,11 @@ class EventViewModel @Inject constructor(
     fun toggleReminderOffset(minutesBefore: Int) {
         _formState.update { s ->
             val current = s.reminderOffsets
-            val updated = if (current.contains(minutesBefore))
+            val updated = if (current.contains(minutesBefore)) {
                 current.filter { it != minutesBefore }
-            else
+            } else {
                 (current + minutesBefore).sorted()
+            }
             s.copy(reminderOffsets = updated)
         }
     }
@@ -242,8 +264,11 @@ class EventViewModel @Inject constructor(
             reminderOffsets      = offsets,
             alarmEnabled         = e.alarmEnabled != 0,
             addYear              = e.reminderMinutesBefore != null && e.type == "birthday",
-            countdownReminderTime = if (remTimeMinutes != null)
-                                        minutesToHHmm(remTimeMinutes) else "08:00",
+            countdownReminderTime = if (remTimeMinutes != null) {
+                minutesToHHmm(remTimeMinutes)
+            } else {
+                "08:00"
+            },
             remindBefore         = e.type == "countdown" && offsets.contains(3 * 24 * 60),
         )
     }
@@ -252,17 +277,28 @@ class EventViewModel @Inject constructor(
         val startIso = buildIso(form.startDateStr, if (form.allDay) "00:00" else form.startTimeStr, form.timeZoneId)
         val endIso   = form.endDateStr?.let { buildIso(it, if (form.allDay) "23:59" else form.endTimeStr, form.timeZoneId) }
 
-        val guestsJson   = if (form.guests.isEmpty()) null
-                           else JSONArray(form.guests).toString()
-        val offsetsJson  = if (form.reminderOffsets.isEmpty()) null
-                           else JSONArray(form.reminderOffsets).toString()
-        val remTimeMin   = if (form.type == "countdown")
-                               hhmmToMinutes(form.countdownReminderTime) else null
+        val guestsJson   = if (form.guests.isEmpty()) {
+            null
+        } else {
+            JSONArray(form.guests).toString()
+        }
+        val offsetsJson  = if (form.reminderOffsets.isEmpty()) {
+            null
+        } else {
+            JSONArray(form.reminderOffsets).toString()
+        }
+        val remTimeMin   = if (form.type == "countdown") {
+            hhmmToMinutes(form.countdownReminderTime)
+        } else {
+            null
+        }
         // For countdown "remindBefore 3 days": stored as 4320 min in offsets
         val finalOffsets = if (form.type == "countdown" && form.remindBefore) {
             val base = form.reminderOffsets.filter { it != 3 * 24 * 60 }
             JSONArray(base + 3 * 24 * 60).toString()
-        } else offsetsJson
+        } else {
+            offsetsJson
+        }
 
         val base = existing ?: EventEntity(
             id        = UUID.randomUUID().toString(),
@@ -320,7 +356,7 @@ class EventViewModel @Inject constructor(
             val min   = parts.getOrNull(1)?.toIntOrNull() ?: 0
             date.atTime(hour, min).atZone(tz).format(isoOffFmt)
         } catch (_: Exception) {
-            "${dateStr}T${timeStr}:00"
+            "${dateStr}T$timeStr:00"
         }
     }
 
@@ -342,7 +378,9 @@ class EventViewModel @Inject constructor(
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { arr.getInt(it) }
-        } catch (_: Exception) { emptyList() }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     private fun parseJsonStringArray(json: String?): List<String> {
@@ -350,6 +388,8 @@ class EventViewModel @Inject constructor(
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { arr.getString(it) }
-        } catch (_: Exception) { emptyList() }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 }

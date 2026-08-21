@@ -41,10 +41,11 @@ import javax.inject.Singleton
  * per-type toggles, mirroring the RN `syncXxxReminders` gates.
  */
 @Singleton
-class NotificationScheduler @Inject constructor(
+class NotificationScheduler
+    @Inject
+    constructor(
     @ApplicationContext private val context: Context,
 ) {
-
     private val alarmManager: AlarmManager =
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 

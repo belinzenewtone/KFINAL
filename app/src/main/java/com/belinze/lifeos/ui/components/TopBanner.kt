@@ -19,18 +19,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Error
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.belinze.lifeos.ui.theme.Motion
 import com.belinze.lifeos.ui.theme.ShapeLg
 import com.belinze.lifeos.ui.theme.Spacing
+import kotlinx.coroutines.delay
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TopBanner + InlineBanner
@@ -73,28 +73,28 @@ private fun toneColors(tone: BannerTone, isDark: Boolean): ToneColors = when (to
         border = if (isDark) Color(0xFF1E4A7A) else Color(0xFFBFDBFE),
         icon   = if (isDark) Color(0xFF57B9FF) else Color(0xFF0369A1),
         text   = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF),
-        icon2  = Icons.Filled.Info,
+        icon2  = Icons.Outlined.Info,
     )
     BannerTone.Success -> ToneColors(
         bg     = if (isDark) Color(0xFF052E16) else Color(0xFFF0FDF4),
         border = if (isDark) Color(0xFF14532D) else Color(0xFFBBF7D0),
         icon   = if (isDark) Color(0xFF4ADE80) else Color(0xFF15803D),
         text   = if (isDark) Color(0xFF86EFAC) else Color(0xFF166534),
-        icon2  = Icons.Filled.CheckCircle,
+        icon2  = Icons.Outlined.CheckCircle,
     )
     BannerTone.Warning -> ToneColors(
         bg     = if (isDark) Color(0xFF1C1A00) else Color(0xFFFFFBEB),
         border = if (isDark) Color(0xFF3D3500) else Color(0xFFFDE68A),
         icon   = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309),
         text   = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E),
-        icon2  = Icons.Filled.Warning,
+        icon2  = Icons.Outlined.Warning,
     )
     BannerTone.Error   -> ToneColors(
         bg     = if (isDark) Color(0xFF2D0A0A) else Color(0xFFFFF1F2),
         border = if (isDark) Color(0xFF5A1010) else Color(0xFFFECACA),
         icon   = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
         text   = if (isDark) Color(0xFFFCA5A5) else Color(0xFF991B1B),
-        icon2  = Icons.Filled.Error,
+        icon2  = Icons.Outlined.Error,
     )
 }
 
@@ -124,10 +124,10 @@ fun TopBanner(
         icon   = toneColor,
         text   = toneColor,
         icon2  = when (tone) {
-            BannerTone.Error   -> Icons.Filled.Error
-            BannerTone.Success -> Icons.Filled.CheckCircle
-            BannerTone.Warning -> Icons.Filled.Warning
-            BannerTone.Info    -> Icons.Filled.Info
+            BannerTone.Error   -> Icons.Outlined.Error
+            BannerTone.Success -> Icons.Outlined.CheckCircle
+            BannerTone.Warning -> Icons.Outlined.Warning
+            BannerTone.Info    -> Icons.Outlined.Info
         },
     )
 
@@ -201,11 +201,15 @@ private fun BannerContent(
             .border(1.dp, colors.border, ShapeLg)
             .background(colors.bg, ShapeLg)
             .then(
-                if (onDismiss != null) Modifier.clickable(
+                if (onDismiss != null) {
+                    Modifier.clickable(
                     interactionSource = interactionSource,
                     indication        = null,
                     onClick           = onDismiss,
-                ) else Modifier
+                )
+                } else {
+                    Modifier
+                }
             )
             .padding(horizontal = Spacing.base, vertical = Spacing.sm),
     ) {
@@ -240,7 +244,7 @@ private fun BannerContent(
             } else if (onDismiss != null) {
                 Spacer(Modifier.width(Spacing.sm))
                 Icon(
-                    imageVector        = Icons.Filled.Close,
+                    imageVector        = Icons.Outlined.Close,
                     contentDescription = "Dismiss",
                     tint               = colors.icon,
                     modifier           = Modifier.size(16.dp),

@@ -1,7 +1,7 @@
 package com.belinze.lifeos.services
 
-import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.AppPreferenceState
+import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.BudgetDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.currentMonthKey
@@ -25,13 +25,14 @@ import javax.inject.Singleton
  * single category only notifies once per month per level.
  */
 @Singleton
-class BudgetAlertService @Inject constructor(
+class BudgetAlertService
+    @Inject
+    constructor(
     private val budgetDao:  BudgetDao,
     private val transactionDao: TransactionDao,
     private val prefs:      AppPreferences,
     private val scheduler:  NotificationScheduler,
 ) {
-
     private val zone = ZoneId.systemDefault()
     private val isoDtFmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 

@@ -16,8 +16,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,10 +50,13 @@ fun EventsScreen(
     val state by viewModel.uiState.collectAsState()
     var query by remember { mutableStateOf("") }
 
-    val upcoming = state.events
-        .filter { it.date.take(10) >= LocalDate.now().toString() }
-        .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
-        .sortedBy { it.date }
+    val today    = remember { LocalDate.now().toString() }
+    val upcoming = remember(state.events, query) {
+        state.events
+            .filter { it.date.take(10) >= today }
+            .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+            .sortedBy { it.date }
+    }
 
     PageScaffold(
         title = "Events",
@@ -62,7 +65,7 @@ fun EventsScreen(
         scrollable = false,
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.eventForm()) }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add event", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Add, contentDescription = "Add event", tint = MaterialTheme.colorScheme.primary)
             }
         },
     ) {
@@ -70,7 +73,7 @@ fun EventsScreen(
             value = query,
             onValueChange = { query = it },
             placeholder = { Text("Search events...") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
         )
@@ -122,4 +125,6 @@ fun EventsScreen(
 
 private fun formatDate(iso: String): String = try {
     LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
-} catch (_: Exception) { iso.take(10) }
+} catch (_: Exception) {
+    iso.take(10)
+}
