@@ -79,17 +79,15 @@ fun IncomeFormScreen(
         label = "formFadeIn",
     )
 
-    // CC-3: success banner
-    TopBanner(
-        visible       = successMsg != null,
-        message       = successMsg ?: "",
-        tone          = BannerTone.Success,
-        onDismiss     = { successMsg = null },
-        autoDismissMs = 2000,
-    )
-
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = form.date.takeIf { it.isNotBlank() }?.take(10)?.let {
+            runCatching {
+                java.time.LocalDate.parse(it)
+                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+            }.getOrNull()
+        } ?: System.currentTimeMillis(),
+    )
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -144,6 +142,15 @@ fun IncomeFormScreen(
     PageScaffold(
         title = if (isEdit) "Edit Income" else "Add Income",
         onBack = { navController.popBackStack() },
+        topBanner = {
+            TopBanner(
+                visible       = successMsg != null,
+                message       = successMsg ?: "",
+                tone          = BannerTone.Success,
+                onDismiss     = { successMsg = null },
+                autoDismissMs = 2000,
+            )
+        },
         actions = {
             if (isEdit) {
                 IconButton(onClick = { showDeleteConfirm = true }) {

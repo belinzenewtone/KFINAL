@@ -281,9 +281,11 @@ class PlannerViewModel
 
     fun saveRecurring(onSuccess: () -> Unit) {
         val form = _recurringForm.value
-        val amt  = form.amount.toDoubleOrNull()
-        if (form.name.isBlank() || amt == null || amt <= 0) {
-            _recurringForm.update { it.copy(error = "Name and valid amount required") }
+        // BUG #33: Amount is labelled "optional" in the UI — treat blank as 0.
+        // Only the rule name is required.
+        val amt  = form.amount.toDoubleOrNull()?.takeIf { it >= 0 } ?: 0.0
+        if (form.name.isBlank()) {
+            _recurringForm.update { it.copy(error = "Rule name is required") }
             return
         }
         _recurringForm.update { it.copy(isSaving = true, error = null) }

@@ -86,7 +86,14 @@ fun GoalFormScreen(
     )
 
     var showDeadlinePicker by remember { mutableStateOf(false) }
-    val deadlinePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    val deadlinePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = form.deadline?.takeIf { it.isNotBlank() }?.take(10)?.let {
+            runCatching {
+                java.time.LocalDate.parse(it)
+                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+            }.getOrNull()
+        } ?: System.currentTimeMillis(),
+    )
 
     if (showDeadlinePicker) {
         DatePickerDialog(

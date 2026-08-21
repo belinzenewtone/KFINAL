@@ -101,7 +101,14 @@ fun BillFormScreen(
     }
 
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = form.nextDueDate.takeIf { it.isNotBlank() }?.take(10)?.let {
+            runCatching {
+                java.time.LocalDate.parse(it)
+                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+            }.getOrNull()
+        } ?: System.currentTimeMillis(),
+    )
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -134,6 +141,15 @@ fun BillFormScreen(
     PageScaffold(
         title = if (isEdit) "Edit Bill" else "Add Bill",
         onBack = { navController.popBackStack() },
+        topBanner = {
+            TopBanner(
+                visible       = successMsg != null,
+                message       = successMsg ?: "",
+                tone          = BannerTone.Success,
+                onDismiss     = { successMsg = null },
+                autoDismissMs = 2000,
+            )
+        },
         actions = {
             if (isEdit) {
                 // CC-2: confirmation before delete

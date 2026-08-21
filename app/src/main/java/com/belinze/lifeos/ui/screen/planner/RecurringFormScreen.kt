@@ -102,7 +102,14 @@ fun RecurringFormScreen(
     )
 
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = form.nextRunAt.takeIf { it.isNotBlank() }?.take(10)?.let {
+            runCatching {
+                java.time.LocalDate.parse(it)
+                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+            }.getOrNull()
+        } ?: System.currentTimeMillis(),
+    )
 
     if (showDatePicker) {
         DatePickerDialog(

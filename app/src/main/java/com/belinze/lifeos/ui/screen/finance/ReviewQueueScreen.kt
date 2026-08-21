@@ -40,6 +40,7 @@ fun ReviewQueueScreen(
 ) {
     val state   by viewModel.uiState.collectAsStateWithLifecycle()
     val visible  = viewModel.visibleEntries
+    val banner   = state.banner
 
     // BUG-F5 fix: TopBanner already auto-dismisses via autoDismissMs — the extra
     // LaunchedEffect was causing a double-dismiss race. Removed.

@@ -115,11 +115,12 @@ class SearchViewModel
     }
 
     init {
+        // BUG-10: re-search when EITHER query OR activeTab changes
         _uiState
-            .map { it.query }
+            .map { it.query to it.activeTab }
             .distinctUntilChanged()
             .debounce(300)
-            .onEach { q -> if (q.length >= 2) search(q) else clearResults() }
+            .onEach { (q, _) -> if (q.length >= 2) search(q) else clearResults() }
             .launchIn(viewModelScope)
     }
 
@@ -168,30 +169,42 @@ class SearchViewModel
     }
 
     private fun search(q: String) {
+        val tab = _uiState.value.activeTab
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val lq = q.lowercase()
 
-            val txs = transactionDao.getFiltered(
+            // BUG-10: only query DAOs relevant to the active tab — skip the rest
+            val needsAll    = tab == SearchTab.All
+            val needsTx     = needsAll || tab == SearchTab.Transactions
+            val needsTasks  = needsAll || tab == SearchTab.Tasks
+            val needsEvents = needsAll || tab == SearchTab.Events || tab == SearchTab.Birthdays ||
+                              tab == SearchTab.Anniversaries || tab == SearchTab.Countdowns
+            val needsBudget = needsAll || tab == SearchTab.Budgets
+            val needsIncome = needsAll || tab == SearchTab.Incomes
+            val needsPlan   = needsAll || tab == SearchTab.Recurring || tab == SearchTab.Bills ||
+                              tab == SearchTab.Goals || tab == SearchTab.Loans
+
+            val txs = if (needsTx) transactionDao.getFiltered(
                 search = q, category = "all", type = null, status = null,
                 startDate = null, endDate = null, limit = 25, offset = 0,
-            )
-            val tasks = taskDao.search(q, 25)
-            val events = eventDao.search(q, 100)
-            val budgets = budgetDao.search(q, 25)
-            val incomes = incomeDao.search(q, 25)
-            val recurring = plannerDao.getAllRules().filter {
+            ) else emptyList()
+            val tasks = if (needsTasks) taskDao.search(q, 25) else emptyList()
+            val events = if (needsEvents) eventDao.search(q, 100) else emptyList()
+            val budgets = if (needsBudget) budgetDao.search(q, 25) else emptyList()
+            val incomes = if (needsIncome) incomeDao.search(q, 25) else emptyList()
+            val recurring = if (needsPlan) plannerDao.getAllRules().filter {
                 it.title.lowercase().contains(lq) || (it.category?.lowercase()?.contains(lq) == true)
-            }.take(25)
-            val bills = plannerDao.getAllBills().filter {
+            }.take(25) else emptyList()
+            val bills = if (needsPlan) plannerDao.getAllBills().filter {
                 it.title.lowercase().contains(lq) || (it.notes?.lowercase()?.contains(lq) == true)
-            }.take(25)
-            val goals = plannerDao.getAllGoals().filter {
+            }.take(25) else emptyList()
+            val goals = if (needsPlan) plannerDao.getAllGoals().filter {
                 it.title.lowercase().contains(lq) || (it.description?.lowercase()?.contains(lq) == true)
-            }.take(25)
-            val loans = plannerDao.getAllLoans().filter {
+            }.take(25) else emptyList()
+            val loans = if (needsPlan) plannerDao.getAllLoans().filter {
                 (it.drawCode?.lowercase()?.contains(lq) == true)
-            }.take(25)
+            }.take(25) else emptyList()
 
             _uiState.update {
                 it.copy(

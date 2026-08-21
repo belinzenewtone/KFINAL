@@ -296,20 +296,21 @@ fun OnboardingScreen(
                         6 -> BackgroundReceiverStep(
                             enabled = bgReceiverEnabled,
                             onEnable = {
+                                // Mark preference first so the checkmark appears.
                                 bgReceiverEnabled = true
                                 viewModel.setSmsBgReceiver(true)
-                                // Request battery-optimization exemption so Android doesn't
-                                // kill the background SMS receiver.
-                                val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-                                if (pm != null && !pm.isIgnoringBatteryOptimizations(context.packageName)) {
-                                    runCatching {
-                                        context.startActivity(
-                                            Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                                data = Uri.parse("package:${context.packageName}")
-                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            }
-                                        )
-                                    }
+                                // Always open the system battery-optimization dialog —
+                                // do NOT guard with isIgnoringBatteryOptimizations: if the
+                                // app is already exempt the dialog still shows the current
+                                // state, and if the guard prevents the intent the user is
+                                // left stuck with no dialog and no Skip button visible.
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                            data = Uri.parse("package:${context.packageName}")
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                    )
                                 }
                             },
                             onSkip = {

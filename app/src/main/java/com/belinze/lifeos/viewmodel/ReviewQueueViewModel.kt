@@ -187,6 +187,14 @@ class ReviewQueueViewModel
                     for (e in quarantinedEntries) {
                         smsService.retrySingleQuarantined(e.id)
                     }
+                    // BUG-F6: batch_pending entries are not quarantined/review — trigger one
+                    // re-import sweep to pick them up (mirrors recoverEntry's else branch).
+                    val batchPendingEntries = visible.filter {
+                        !it.outcome.contains("quarantin") && !it.outcome.contains("review")
+                    }
+                    if (batchPendingEntries.isNotEmpty()) {
+                        smsService.importHistoricalSms()
+                    }
                 }
                 showBanner("All recoveries triggered", true)
                 load()

@@ -86,7 +86,10 @@ fun CsvImportScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.base),
         ) {
             Button(
-                onClick = { picker.launch("text/csv") },
+                // BUG #30: "text/csv" hides most files on Android (file manager
+                // shows only CSV). Use "*/*" so the picker lists all file types;
+                // the ViewModel validates the CSV content after reading.
+                onClick = { picker.launch("*/*") },
                 enabled = !state.isLoading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {

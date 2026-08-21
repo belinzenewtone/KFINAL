@@ -1033,7 +1033,14 @@ private fun InsightsBarChart(
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
                     .weight(1f)
-                    .clickable(interactionSource = interactionSource, indication = null) { onBarTap(bar) },
+                    .let {
+                        // BUG-13: zero-spend bars should not be tappable
+                        if (bar.expense > 0.0) it.clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) { onBarTap(bar) }
+                        else it
+                    },
             ) {
                 Box(
                     modifier = Modifier

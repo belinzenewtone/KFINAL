@@ -125,12 +125,16 @@ class SmsImportViewModel
     }
 
     fun setPermissionGranted(granted: Boolean) {
+        val wasGranted = _uiState.value.permissionGranted
         _uiState.value = _uiState.value.copy(
             permissionGranted = granted,
-            banner = if (granted) {
-                "SMS access granted · ready to import"
-            } else {
-                "SMS permission denied · enable it in device Settings"
+            // BUG-F7: only show the "granted" banner on the denied→granted transition.
+            // If the screen opens while permission is already held, wasGranted==true so
+            // we preserve whatever banner is already showing (or null).
+            banner = when {
+                granted && !wasGranted -> "SMS access granted · ready to import"
+                !granted -> "SMS permission denied · enable it in device Settings"
+                else -> _uiState.value.banner  // already granted — no state change
             },
         )
     }
