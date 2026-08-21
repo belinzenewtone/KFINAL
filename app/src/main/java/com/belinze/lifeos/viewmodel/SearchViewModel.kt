@@ -85,8 +85,12 @@ class SearchViewModel
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    companion object {
+        private const val MAX_RECENT_SEARCHES = 5
+    }
+
     // Persisted for the lifetime of the ViewModel (nav back-stack entry) so
-    // recent searches survive navigation. Capped at MAX_RECENT in the screen.
+    // recent searches survive navigation. Capped at MAX_RECENT_SEARCHES.
     private val _recentSearches = MutableStateFlow<ImmutableList<String>>(persistentListOf())
     val recentSearches: StateFlow<ImmutableList<String>> = _recentSearches.asStateFlow()
 
@@ -94,7 +98,7 @@ class SearchViewModel
         val trimmed = query.trim()
         if (trimmed.isBlank()) return
         val updated = (_recentSearches.value.filter { it != trimmed } + trimmed)
-            .takeLast(10)
+            .takeLast(MAX_RECENT_SEARCHES)
             .reversed()
             .toImmutableList()
         _recentSearches.value = updated

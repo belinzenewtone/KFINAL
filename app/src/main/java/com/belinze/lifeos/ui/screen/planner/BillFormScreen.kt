@@ -82,15 +82,6 @@ fun BillFormScreen(
         label = "formFadeIn",
     )
 
-    // CC-3: success banner (outside PageScaffold so it overlays everything)
-    TopBanner(
-        visible       = successMsg != null,
-        message       = successMsg ?: "",
-        tone          = BannerTone.Success,
-        onDismiss     = { successMsg = null },
-        autoDismissMs = 2000,
-    )
-
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },

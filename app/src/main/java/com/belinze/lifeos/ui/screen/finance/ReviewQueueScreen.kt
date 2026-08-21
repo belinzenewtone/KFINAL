@@ -41,13 +41,42 @@ fun ReviewQueueScreen(
     val state   by viewModel.uiState.collectAsStateWithLifecycle()
     val visible  = viewModel.visibleEntries
 
-    // Auto-dismiss banner after 3500ms
-    val banner = state.banner
-    LaunchedEffect(banner) {
-        if (banner != null) {
-            kotlinx.coroutines.delay(3_500)
-            viewModel.clearBanner()
-        }
+    // BUG-F5 fix: TopBanner already auto-dismisses via autoDismissMs — the extra
+    // LaunchedEffect was causing a double-dismiss race. Removed.
+
+    var showRecoverAllDialog by remember { mutableStateOf(false) }
+    var showDismissAllDialog  by remember { mutableStateOf(false) }
+
+    if (showRecoverAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showRecoverAllDialog = false },
+            title            = { Text("Recover all?") },
+            text             = { Text("This will add all ${visible.size} pending transaction${if (visible.size != 1) "s" else ""} to your ledger.") },
+            confirmButton    = {
+                TextButton(onClick = { showRecoverAllDialog = false; viewModel.recoverAll() }) {
+                    Text("Recover all")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRecoverAllDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showDismissAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDismissAllDialog = false },
+            title            = { Text("Dismiss all?") },
+            text             = { Text("This will permanently discard all ${visible.size} pending entr${if (visible.size != 1) "ies" else "y"}. This cannot be undone.") },
+            confirmButton    = {
+                TextButton(onClick = { showDismissAllDialog = false; viewModel.dismissAll() }) {
+                    Text("Dismiss all", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDismissAllDialog = false }) { Text("Cancel") }
+            },
+        )
     }
 
     val subtitle = when {
@@ -132,11 +161,11 @@ fun ReviewQueueScreen(
                                 Spacer(Modifier.height(Spacing.sm))
                                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                     Button(
-                                        onClick  = { viewModel.recoverAll() },
+                                        onClick  = { showRecoverAllDialog = true },
                                         modifier = Modifier.weight(1f),
                                     ) { Text("Recover all") }
                                     OutlinedButton(
-                                        onClick  = { viewModel.dismissAll() },
+                                        onClick  = { showDismissAllDialog = true },
                                         modifier = Modifier.weight(1f),
                                         colors   = ButtonDefaults.outlinedButtonColors(
                                             contentColor = MaterialTheme.colorScheme.error,
@@ -173,6 +202,24 @@ private fun EntryCard(
     onRecover: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var showDismissDialog by remember { mutableStateOf(false) }
+
+    if (showDismissDialog) {
+        AlertDialog(
+            onDismissRequest = { showDismissDialog = false },
+            title            = { Text("Dismiss transaction?") },
+            text             = { Text("This entry will be permanently removed from the queue. This cannot be undone.") },
+            confirmButton    = {
+                TextButton(onClick = { showDismissDialog = false; onDismiss() }) {
+                    Text("Dismiss", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDismissDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
     // Capture cross-module nullable properties as local vals so smart-cast works
     val amount        = entry.amount
     val merchant      = entry.merchant
@@ -271,7 +318,7 @@ private fun EntryCard(
                 Text(recoverLabel)
             }
             OutlinedButton(
-                onClick  = onDismiss,
+                onClick  = { showDismissDialog = true },
                 modifier = Modifier.weight(1f),
                 colors   = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error,

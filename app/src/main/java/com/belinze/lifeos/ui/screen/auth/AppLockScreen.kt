@@ -92,9 +92,10 @@ fun AppLockScreen(
     val canUseBiometric = remember {
         val bm = BiometricManager.from(context)
         val ok = bm.canAuthenticate(BIOMETRIC_STRONG or BIOMETRIC_WEAK)
-        prefs.fingerprintEnabled &&
-            (ok == BiometricManager.BIOMETRIC_SUCCESS ||
-             ok == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED)
+        // Only BIOMETRIC_SUCCESS means hardware is present AND credentials enrolled.
+        // BIOMETRIC_ERROR_NONE_ENROLLED means hardware exists but no fingerprints are
+        // registered — the prompt would fail immediately, so we must NOT treat it as valid.
+        prefs.fingerprintEnabled && ok == BiometricManager.BIOMETRIC_SUCCESS
     }
 
     @Suppress("DEPRECATION")

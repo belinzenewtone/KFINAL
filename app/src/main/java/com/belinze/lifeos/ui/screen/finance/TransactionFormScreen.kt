@@ -1,22 +1,32 @@
 package com.belinze.lifeos.ui.screen.finance
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -24,9 +34,9 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,12 +51,16 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.TransactionViewModel
+import java.util.Calendar
+import java.util.TimeZone
 
 private val TX_TYPES = listOf("expense", "income", "transfer")
 private val STATUSES = listOf("completed", "pending", "failed", "reversed")
+// Unified category list — matches CategorizeScreen categories
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
     "entertainment", "health", "education", "shopping", "savings", "investment",
+    "housing", "personal_care", "subscriptions", "miscellaneous",
     "income", "uncategorized",
 )
 
@@ -60,6 +74,60 @@ fun TransactionFormScreen(
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !transactionId.isNullOrEmpty()
 
+    var showDatePicker   by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // DatePickerState is re-created each time the dialog opens so it shows the stored date
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = runCatching {
+                java.time.LocalDate.parse(formState.date.take(10))
+                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+            }.getOrDefault(System.currentTimeMillis()),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                        cal.timeInMillis = millis
+                        val dateStr = "%04d-%02d-%02dT%s".format(
+                            cal.get(Calendar.YEAR),
+                            cal.get(Calendar.MONTH) + 1,
+                            cal.get(Calendar.DAY_OF_MONTH),
+                            formState.date.substringAfter('T', "00:00:00"),
+                        )
+                        viewModel.updateFormDate(dateStr)
+                    }
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            },
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title   = { Text("Delete transaction?") },
+            text    = { Text("This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    viewModel.softDelete(transactionId.orEmpty())
+                    navController.popBackStack()
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+
     LaunchedEffect(transactionId) {
         viewModel.openForm(transactionId?.ifEmpty { null })
     }
@@ -69,10 +137,7 @@ fun TransactionFormScreen(
         onBack = { navController.popBackStack() },
         actions = {
             if (isEdit) {
-                TextButton(onClick = {
-                    viewModel.softDelete(transactionId.orEmpty())
-                    navController.popBackStack()
-                }) {
+                TextButton(onClick = { showDeleteConfirm = true }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -85,18 +150,13 @@ fun TransactionFormScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 TX_TYPES.forEachIndexed { idx, type ->
                     SegmentedButton(
                         selected = formState.transactionType == type,
-                        onClick = {
-                            viewModel.updateFormType(type)
-                            Haptics.light()
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(index = idx, count = TX_TYPES.size),
-                        label = { Text(type.replaceFirstChar { it.uppercase() }) },
+                        onClick  = { viewModel.updateFormType(type); Haptics.light() },
+                        shape    = SegmentedButtonDefaults.itemShape(index = idx, count = TX_TYPES.size),
+                        label    = { Text(type.replaceFirstChar { it.uppercase() }) },
                     )
                 }
             }
@@ -110,6 +170,29 @@ fun TransactionFormScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            // Date field — read-only with transparent overlay to open the picker
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = formState.date.take(10),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Date") },
+                    trailingIcon = {
+                        Icon(Icons.Outlined.CalendarMonth, contentDescription = "Pick date",
+                            tint = MaterialTheme.colorScheme.primary)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { showDatePicker = true },
+                )
+            }
 
             OutlinedTextField(
                 value = formState.merchant,
@@ -239,8 +322,8 @@ fun TransactionFormScreen(
             }
 
             Button(
-                onClick = { viewModel.saveForm { navController.popBackStack() } },
-                enabled = !formState.isSaving,
+                onClick  = { viewModel.saveForm { navController.popBackStack() } },
+                enabled  = !formState.isSaving,
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
             ) {
                 if (formState.isSaving) {

@@ -67,6 +67,24 @@ fun GoalsScreen(
     var banner by remember { mutableStateOf<String?>(null) }
     var logGoalId by remember { mutableStateOf<String?>(null) }
     var logAmount by remember { mutableStateOf("") }
+    var goalToDelete by remember { mutableStateOf<String?>(null) }
+
+    if (goalToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { goalToDelete = null },
+            title = { Text("Delete goal?") },
+            text  = { Text("This goal will be permanently removed.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteGoal(goalToDelete!!)
+                    goalToDelete = null
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { goalToDelete = null }) { Text("Cancel") }
+            },
+        )
+    }
 
     val activeGoals = remember(state.goals) { state.goals.filter { it.status == "active" } }
 
@@ -125,7 +143,7 @@ fun GoalsScreen(
                             viewModel.markGoalComplete(goal.id)
                             banner = "${goal.title} marked as complete"
                         },
-                        onDelete = { viewModel.deleteGoal(goal.id) },
+                        onDelete = { goalToDelete = goal.id },
                     )
                 }
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }

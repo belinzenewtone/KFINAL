@@ -121,7 +121,11 @@ fun ImportSmsScreen(
         ) {
             // ── Status banner ─────────────────────────────────────────────
             if (state.banner != null) {
-                InlineBanner(tone = BannerTone.Info, message = state.banner ?: "")
+                InlineBanner(
+                    tone      = BannerTone.Info,
+                    message   = state.banner ?: "",
+                    onDismiss = { viewModel.clearBanner() },
+                )
             }
 
             // ── Import in progress ────────────────────────────────────────

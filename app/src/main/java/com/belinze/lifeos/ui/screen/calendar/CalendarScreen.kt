@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -133,7 +134,7 @@ fun CalendarScreen(
     val isCurrentMonth = yearMonth == todayYearMonth
     val scope = rememberCoroutineScope()
 
-    val headerSubtitle = YearMonth.now().format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
+    val headerSubtitle = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
     val selectedDateLabel = remember(selectedDate) {
         runCatching {
             LocalDate.parse(selectedDate).format(DateTimeFormatter.ofPattern("EEEE, MMM dd", Locale.ENGLISH))
@@ -401,7 +402,10 @@ fun CalendarScreen(
                             items(filteredTasks, key = { it.id }) { task ->
                                 CalendarTaskItem(
                                     task = task,
-                                    onToggle = { taskViewModel.complete(task.id) },
+                                    onToggle = {
+                                    if (task.status == "completed") taskViewModel.reopen(task.id)
+                                    else taskViewModel.complete(task.id)
+                                },
                                     onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
                                 )
                             }
@@ -632,6 +636,24 @@ private fun EventListItem(
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title            = { Text("Delete event?") },
+            text             = { Text("\"${event.title}\" will be permanently removed.") },
+            confirmButton    = {
+                androidx.compose.material3.TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
     val interactionSource = remember { MutableInteractionSource() }
     GlassCard(
         modifier = Modifier.padding(bottom = Spacing.sm),
@@ -656,7 +678,7 @@ private fun EventListItem(
                     maxLines = 1,
                 )
             }
-            IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(24.dp)) {
                 Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
             }
         }

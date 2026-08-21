@@ -272,7 +272,10 @@ private fun TaskCard(
                         .background(if (task.status == "completed") MaterialTheme.colorScheme.outline else color, CircleShape),
                 )
                 IconButton(
-                    onClick = { viewModel.complete(task.id) },
+                    onClick = {
+                        if (task.status == "completed") viewModel.reopen(task.id)
+                        else viewModel.complete(task.id)
+                    },
                     modifier = Modifier.size(28.dp),
                 ) {
                     Icon(

@@ -163,11 +163,12 @@ fun TopBanner(
 
 @Composable
 fun InlineBanner(
-    message:  String,
-    tone:     BannerTone   = BannerTone.Info,
-    modifier: Modifier     = Modifier,
-    action:   String?      = null,     // optional action button label
-    onAction: (() -> Unit)? = null,    // action callback
+    message:   String,
+    tone:      BannerTone   = BannerTone.Info,
+    modifier:  Modifier     = Modifier,
+    onDismiss: (() -> Unit)? = null,   // optional X dismiss button
+    action:    String?      = null,     // optional action button label
+    onAction:  (() -> Unit)? = null,    // action callback
 ) {
     val isDark = isSystemInDarkTheme()
     val colors = toneColors(tone, isDark)
@@ -175,7 +176,7 @@ fun InlineBanner(
     BannerContent(
         message   = message,
         colors    = colors,
-        onDismiss = null,
+        onDismiss = onDismiss,
         action    = action,
         onAction  = onAction,
         modifier  = modifier,

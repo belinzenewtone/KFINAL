@@ -251,7 +251,8 @@ private fun TransactionCard(
                     )
                 }
                 Text(
-                    "${if (isIncome) "+" else "-"}${formatCurrency(tx.amount)}",
+                    // Transfers are neutral — no sign prefix
+                    "${if (isIncome) "+" else if (isTransfer) "" else "-"}${formatCurrency(tx.amount)}",
                     style      = MaterialTheme.typography.bodyLarge,
                     color      = amountColor,
                     fontWeight = FontWeight.Bold,

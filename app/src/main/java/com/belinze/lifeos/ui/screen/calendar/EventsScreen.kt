@@ -55,6 +55,7 @@ fun EventsScreen(
     val today    = remember { LocalDate.now().toString() }
     val upcoming = remember(state.events, query) {
         state.events
+            .filter { it.type == "event" }   // BUG-CAL9: only show calendar events (not tasks/birthdays/etc.)
             .filter { it.date.take(10) >= today }
             .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
             .sortedBy { it.date }

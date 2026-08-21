@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,24 @@ fun BillsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var banner by remember { mutableStateOf<String?>(null) }
+    var billToDelete by remember { mutableStateOf<String?>(null) }
+
+    if (billToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { billToDelete = null },
+            title = { Text("Delete bill?") },
+            text  = { Text("This bill will be permanently removed.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteBill(billToDelete!!)
+                    billToDelete = null
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { billToDelete = null }) { Text("Cancel") }
+            },
+        )
+    }
 
     val activeBills = remember(state.bills) { state.bills.filter { it.isActive != 0 } }
 
@@ -112,7 +131,7 @@ fun BillsScreen(
                             viewModel.toggleBillPaid(bill.id)
                             banner = "${bill.title} marked as ${if (bill.paidStatus == 0) "paid" else "unpaid"}"
                         },
-                        onDelete = { viewModel.deleteBill(bill.id) },
+                        onDelete = { billToDelete = bill.id },
                     )
                 }
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
@@ -130,7 +149,7 @@ private fun BillCard(
 ) {
     val paid = bill.paidStatus != 0
     val isOverdue = !paid && bill.nextDueDate != null &&
-        bill.nextDueDate!! < java.time.LocalDateTime.now().toString()
+        bill.nextDueDate!!.take(10) < java.time.LocalDate.now().toString()
     val dueColor = if (isOverdue) DANGER else MaterialTheme.colorScheme.onSurfaceVariant
 
     GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {

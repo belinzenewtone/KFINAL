@@ -84,7 +84,7 @@ import com.belinze.lifeos.viewmodel.SettingsViewModel
 // ─────────────────────────────────────────────────────────────────────────────
 
 private const val APP_NAME = "LifeOS"
-private const val APP_VERSION = "1.0.0"
+private val APP_VERSION get() = com.belinze.lifeos.BuildConfig.VERSION_NAME
 private val WARNING = Color(0xFFF5CB5C)
 
 @Composable
@@ -227,7 +227,7 @@ fun SettingsScreen(
             GlassCard {
                 val notificationsSubtitle = buildString {
                     if (settings.budgetThresholdAlerts) append("Budget alerts")
-                    if (settings.notifDailyDigest) {
+                    if (settings.dailyDigestMorningSummary) {
                         if (isNotEmpty()) append(" · ")
                         append("Daily digest")
                     }
@@ -305,6 +305,7 @@ fun SettingsScreen(
                                 if (pm != null && !pm.isIgnoringBatteryOptimizations(context.packageName)) {
                                     val intent = Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                                         data = Uri.parse("package:${context.packageName}")
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     }
                                     context.startActivity(intent)
                                 }

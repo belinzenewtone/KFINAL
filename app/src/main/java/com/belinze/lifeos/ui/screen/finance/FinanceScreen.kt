@@ -46,6 +46,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -156,6 +158,17 @@ fun FinanceScreen(
             ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_SMS)
                 == PackageManager.PERMISSION_GRANTED
         )
+    }
+    // BUG-F10: re-check SMS permission on every lifecycle resume (e.g. user grants from OS Settings)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                smsGranted = ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) ==
+                    PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val smsPermLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -609,23 +622,17 @@ fun FinanceScreen(
             }
         }
 
-        // Error banner — overlaid so it doesn't shift content
+        // BUG-F9: merge into one TopBanner — error takes priority over import result,
+        // so both can never overlap at the same TopCenter position.
+        val bannerVisible = state.error != null || smsState.banner != null
+        val bannerTone    = if (state.error != null) BannerTone.Error else BannerTone.Success
+        val bannerMessage = state.error ?: smsState.banner ?: ""
         TopBanner(
-            visible  = state.error != null,
-            message  = state.error ?: "",
-            tone     = BannerTone.Error,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .windowInsetsPadding(WindowInsets.statusBars),
-        )
-
-        // FI-3: Post-import result banner ("Imported N transactions")
-        TopBanner(
-            visible       = smsState.banner != null,
-            message       = smsState.banner ?: "",
-            tone          = BannerTone.Success,
-            onDismiss     = { smsImportViewModel.clearBanner() },
-            autoDismissMs = 3000,
+            visible       = bannerVisible,
+            message       = bannerMessage,
+            tone          = bannerTone,
+            onDismiss     = if (state.error == null) ({ smsImportViewModel.clearBanner() }) else null,
+            autoDismissMs = if (state.error == null) 3000 else 0,
             modifier      = Modifier
                 .align(Alignment.TopCenter)
                 .windowInsetsPadding(WindowInsets.statusBars),

@@ -65,6 +65,17 @@ fun SmsImportHealthScreen(
         while (true) { delay(30_000); viewModel.load() }
     }
 
+    // BUG-S7: re-load on every lifecycle resume so battery-exemption status
+    // updates immediately after the user returns from the system dialog.
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) viewModel.load()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Action result dialog
     var showResultDialog    by remember { mutableStateOf(false) }
     var resultDialogTitle   by remember { mutableStateOf("") }

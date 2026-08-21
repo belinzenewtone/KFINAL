@@ -166,7 +166,7 @@ fun AssistantScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             contentPadding      = PaddingValues(bottom = Spacing.bottomNavSafeArea),
         ) {
-            if (state.messages.size <= 1) {
+            if (state.messages.isEmpty()) {
                 item {
                     // Empty state
                     Column(

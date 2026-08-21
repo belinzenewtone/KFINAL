@@ -91,11 +91,14 @@ fun ScreenLockScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context  = LocalContext.current
 
-    var activeTab   by remember { mutableStateOf("biometric") }
-    var newPin      by remember { mutableStateOf("") }
-    var confirmPin  by remember { mutableStateOf("") }
-    var message     by remember { mutableStateOf<String?>(null) }
-    var error       by remember { mutableStateOf<String?>(null) }
+    var activeTab        by remember { mutableStateOf("biometric") }
+    var newPin           by remember { mutableStateOf("") }
+    var confirmPin       by remember { mutableStateOf("") }
+    var message          by remember { mutableStateOf<String?>(null) }
+    var error            by remember { mutableStateOf<String?>(null) }
+    // Tracks that the user flipped PIN lock ON but hasn't saved a PIN yet —
+    // prevents enabling the lock before any PIN is stored.
+    var pinSetupPending  by remember { mutableStateOf(false) }
 
     fun triggerBiometric() {
         val activity = context as? FragmentActivity ?: return
@@ -292,11 +295,15 @@ fun ScreenLockScreen(
                         subtitle = "Use a ${PIN_LENGTH}-digit PIN to unlock",
                     ) {
                         Switch(
-                            checked       = settings.screenLockEnabled,
+                            checked       = settings.screenLockEnabled || pinSetupPending,
                             onCheckedChange = { v ->
                                 if (v) {
-                                    viewModel.setScreenLockEnabled(true)
+                                    // Don't call setScreenLockEnabled here — we only enable the lock
+                                    // after the user has actually saved a PIN. Show the PIN setup card.
+                                    pinSetupPending = true
                                 } else {
+                                    pinSetupPending = false
+                                    newPin = ""; confirmPin = ""; error = null
                                     viewModel.disableScreenLock()
                                 }
                             },
@@ -311,8 +318,9 @@ fun ScreenLockScreen(
                     }
                 }
 
-                // PIN setup card — shown when lock is enabled
-                if (settings.screenLockEnabled) {
+                // PIN setup card — shown when lock is enabled OR when the user flipped the toggle
+                // but hasn't set a PIN yet (pinSetupPending).
+                if (settings.screenLockEnabled || pinSetupPending) {
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             if (settings.pinCode.isNotEmpty()) {
@@ -355,14 +363,13 @@ fun ScreenLockScreen(
                                 newPin != confirmPin ->
                                     error = "PINs don't match"
                                 else -> {
+                                    // Capture old state before the async save so the message is correct
+                                    val isFirstPin = settings.pinCode.isEmpty()
                                     viewModel.setPinCode(newPin)
                                     viewModel.setScreenLockEnabled(true)
+                                    pinSetupPending = false
                                     newPin = ""; confirmPin = ""
-                                    message = if (settings.pinCode.isEmpty()) {
-                                        "PIN set successfully"
-                                    } else {
-                                        "PIN updated successfully"
-                                    }
+                                    message = if (isFirstPin) "PIN set successfully" else "PIN updated successfully"
                                 }
                             }
                         },

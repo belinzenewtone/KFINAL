@@ -17,9 +17,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AssistChip
@@ -34,8 +36,11 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -166,11 +171,49 @@ fun LearningScreen(
                     }
                 } else {
                     // LE-3: key by stable id; onTap delegates to ViewModel
+                    // BUG-12: wrapped with SwipeToDismissBox — swipe left to delete
                     items(filtered, key = { it.id }) { session ->
-                        LearningCard(
-                            session = session,
-                            onTap   = { viewModel.toggleCompleted(session.id, session.isCompleted == 1) },
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { newValue ->
+                                if (newValue == SwipeToDismissBoxValue.EndToStart) {
+                                    viewModel.deleteSession(session.id)
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
                         )
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            enableDismissFromEndToStart = true,
+                            backgroundContent = {
+                                val bgColor by animateColorAsState(
+                                    if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
+                                        MaterialTheme.colorScheme.error
+                                    else androidx.compose.ui.graphics.Color.Transparent,
+                                    label = "swipe_bg",
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(bgColor, MaterialTheme.shapes.large)
+                                        .padding(end = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
+                                    if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                                        Icon(Icons.Outlined.Delete, contentDescription = "Delete",
+                                            tint = androidx.compose.ui.graphics.Color.White,
+                                            modifier = Modifier.size(22.dp))
+                                    }
+                                }
+                            },
+                        ) {
+                            LearningCard(
+                                session = session,
+                                onTap   = { viewModel.toggleCompleted(session.id, session.isCompleted == 1) },
+                            )
+                        }
                     }
                 }
 

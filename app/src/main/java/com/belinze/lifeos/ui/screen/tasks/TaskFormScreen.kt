@@ -96,16 +96,18 @@ fun TaskFormScreen(
 
     var showDeadlinePicker by remember { mutableStateOf(false) }
     var showDeadlineTimePicker by remember { mutableStateOf(false) }
-    val deadlinePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = formState.deadline?.take(10)?.let {
-            runCatching {
-                java.time.LocalDate.parse(it)
-                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
-            }.getOrNull()
-        } ?: System.currentTimeMillis(),
-    )
 
+    // BUG-CAL7: state is inside the conditional so it re-initialises to the
+    // stored deadline each time the dialog opens, not once at screen creation.
     if (showDeadlinePicker) {
+        val deadlinePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = formState.deadline?.take(10)?.let {
+                runCatching {
+                    java.time.LocalDate.parse(it)
+                        .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                }.getOrNull()
+            } ?: System.currentTimeMillis(),
+        )
         DatePickerDialog(
             onDismissRequest = { showDeadlinePicker = false },
             confirmButton = {
@@ -250,24 +252,28 @@ fun TaskFormScreen(
                             } ?: "",
                             onValueChange = {},
                             readOnly = true,
+                            enabled = formState.deadline != null, // BUG-CAL6: only tappable after a date is set
                             label = { Text("Time") },
                             placeholder = { Text("08:00") },
                             trailingIcon = {
                                 Icon(Icons.Outlined.CalendarToday, contentDescription = "Pick time",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = if (formState.deadline != null) MaterialTheme.colorScheme.onSurfaceVariant
+                                           else MaterialTheme.colorScheme.outline,
                                     modifier = Modifier.size(18.dp))
                             },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) { showDeadlineTimePicker = true },
-                        )
+                        if (formState.deadline != null) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { showDeadlineTimePicker = true },
+                            )
+                        }
                     }
                 }
 
