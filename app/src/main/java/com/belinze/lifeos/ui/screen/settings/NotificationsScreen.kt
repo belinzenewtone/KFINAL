@@ -83,6 +83,55 @@ fun NotificationsScreen(
                 )
             }
 
+            SectionLabel("Reminders")
+            GlassCard {
+                SettingsRow(
+                    icon = Icons.Outlined.Notifications,
+                    label = "Task reminders",
+                    subtitle = "Notify before task deadlines",
+                    toggle = true,
+                    toggleValue = settings.notifTaskReminders,
+                    onToggleChange = { v ->
+                        viewModel.setNotifTaskReminders(v)
+                        infoMessage = if (v) "Task reminders enabled" else "Task reminders disabled"
+                    },
+                )
+                SettingsRow(
+                    icon = Icons.Outlined.Notifications,
+                    label = "Bill reminders",
+                    subtitle = "Notify before bills are due",
+                    toggle = true,
+                    toggleValue = settings.notifBillReminders,
+                    onToggleChange = { v ->
+                        viewModel.setNotifBillReminders(v)
+                        infoMessage = if (v) "Bill reminders enabled" else "Bill reminders disabled"
+                    },
+                )
+                SettingsRow(
+                    icon = Icons.Outlined.Notifications,
+                    label = "Recurring rules",
+                    subtitle = "Notify when recurring transactions are due",
+                    toggle = true,
+                    toggleValue = settings.notifRecurringRules,
+                    onToggleChange = { v ->
+                        viewModel.setNotifRecurring(v)
+                        infoMessage = if (v) "Recurring reminders enabled" else "Recurring reminders disabled"
+                    },
+                )
+                SettingsRow(
+                    icon = Icons.Outlined.Notifications,
+                    label = "Transaction alerts",
+                    subtitle = "Notify when M-Pesa transactions are auto-imported",
+                    toggle = true,
+                    toggleValue = settings.notifTxAlerts,
+                    onToggleChange = { v ->
+                        viewModel.setNotifTxAlerts(v)
+                        infoMessage = if (v) "Transaction alerts enabled" else "Transaction alerts disabled"
+                    },
+                    isLast = true,
+                )
+            }
+
             SectionLabel("Budget Alerts")
             GlassCard {
                 SettingsRow(

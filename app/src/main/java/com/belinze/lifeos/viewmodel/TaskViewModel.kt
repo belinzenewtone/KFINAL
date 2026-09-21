@@ -43,6 +43,7 @@ data class TaskUiState(
     val filter:     TaskFilter        = TaskFilter.Active,
     val sort:       TaskSort          = TaskSort.Deadline,
     val pendingCount: Int             = 0,
+    val dueTodayCount: Int            = 0,
     val error:      String?           = null,
     // ── Countdown timer ──────────────────────────────────────────────────────
     val activeTimerTaskId: String?    = null,
@@ -138,7 +139,11 @@ class TaskViewModel
     private fun loadPendingCount() {
         viewModelScope.launch {
             val count = dao.countPending()
-            _uiState.update { it.copy(pendingCount = count) }
+            val today = java.time.LocalDate.now()
+            val startOfDay = "${today}T00:00:00"
+            val endOfDay   = "${today}T23:59:59"
+            val dueToday = dao.countDueToday(startOfDay, endOfDay)
+            _uiState.update { it.copy(pendingCount = count, dueTodayCount = dueToday) }
         }
     }
 
@@ -201,6 +206,7 @@ class TaskViewModel
                 )
                 dao.insert(entity)
                 loadPendingCount()
+                Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (e: Exception) {

@@ -2,6 +2,8 @@ package com.belinze.lifeos.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import androidx.compose.runtime.Immutable
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -25,8 +27,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
+import java.security.SecureRandom
 import java.time.LocalDate
 import java.util.UUID
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 
 enum class ExportFormat { JSON, CSV, PDF }
@@ -109,7 +117,74 @@ class ExportViewModel
         }
     }
 
+    // ─── PDF writer ───────────────────────────────────────────────────────────
+
+    private fun writePdf(text: String, outFile: File) {
+        val doc        = PdfDocument()
+        val pageW      = 595
+        val pageH      = 842
+        val margin     = 40
+        val lineH      = 14
+        val bodyPaint  = Paint().apply { textSize = 11f; isAntiAlias = true }
+        val titlePaint = Paint().apply { textSize = 13f; isFakeBoldText = true; isAntiAlias = true }
+
+        var pageNum     = 1
+        var currentPage: PdfDocument.Page? = null
+        var canvas: android.graphics.Canvas? = null
+        var y           = margin + lineH
+
+        fun startNewPage() {
+            currentPage?.let { doc.finishPage(it) }
+            val info  = PdfDocument.PageInfo.Builder(pageW, pageH, pageNum++).create()
+            currentPage = doc.startPage(info)
+            canvas    = currentPage!!.canvas
+            y         = margin + lineH
+        }
+
+        startNewPage()
+
+        for (line in text.lines()) {
+            if (y + lineH > pageH - margin) startNewPage()
+            val paint = if (line.startsWith("=") || line.startsWith("  LifeOS")) titlePaint else bodyPaint
+            canvas!!.drawText(line, margin.toFloat(), y.toFloat(), paint)
+            y += lineH
+        }
+        currentPage?.let { doc.finishPage(it) }
+
+        outFile.outputStream().use { doc.writeTo(it) }
+        doc.close()
+    }
+
     // ─── Share intent ─────────────────────────────────────────────────────────
+
+    /**
+     * Encrypts [file] in-place using AES-256-GCM with a key derived from [passphrase]
+     * via PBKDF2. Output format: [4 bytes salt len][salt][12 bytes IV][ciphertext].
+     * The file is replaced with the encrypted version and gets an `.enc` extension.
+     * Returns the encrypted file.
+     */
+    private fun encryptFile(file: File, passphrase: String): File {
+        val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
+        val iv   = ByteArray(12).also { SecureRandom().nextBytes(it) }
+        val spec = PBEKeySpec(passphrase.toCharArray(), salt, 65536, 256)
+        val raw  = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        val key  = SecretKeySpec(raw, "AES")
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
+        val cipherBytes = cipher.doFinal(file.readBytes())
+        val encFile = File(file.parent, "${file.name}.enc")
+        encFile.outputStream().use { out ->
+            out.write(byteArrayOf(
+                (salt.size shr 24).toByte(), (salt.size shr 16).toByte(),
+                (salt.size shr 8).toByte(),  salt.size.toByte(),
+            ))
+            out.write(salt)
+            out.write(iv)
+            out.write(cipherBytes)
+        }
+        file.delete()
+        return encFile
+    }
 
     /** Fires the system share sheet for [file] using FileProvider so the URI
      *  is valid on all Android versions, including 7+. */
@@ -147,6 +222,7 @@ class ExportViewModel
         dateWindow:          String  = "all",
         customStart:         String  = "",
         customEnd:           String  = "",
+        passphrase:          String  = "",
     ) {
         if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -251,8 +327,9 @@ class ExportViewModel
                 root.put("data", exported)
 
                 val dir  = File(context.getExternalFilesDir(null), "exports").apply { mkdirs() }
-                val file = File(dir, "lifeos-export-${System.currentTimeMillis()}.json")
+                var file = File(dir, "lifeos-export-${System.currentTimeMillis()}.json")
                 file.writeText(root.toString(2))
+                if (passphrase.isNotBlank()) file = encryptFile(file, passphrase)
 
                 val recordCount = listOf(
                     if (includeTransactions && exported.has("transactions")) exported.getJSONArray("transactions").length() else 0,
@@ -297,6 +374,7 @@ class ExportViewModel
         dateWindow:          String  = "all",
         customStart:         String  = "",
         customEnd:           String  = "",
+        passphrase:          String  = "",
     ) {
         if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -370,8 +448,9 @@ class ExportViewModel
                 sb.appendLine("=".repeat(50))
 
                 val dir  = File(context.getExternalFilesDir(null), "exports").apply { mkdirs() }
-                val file = File(dir, "LifeOS_Export_$nowStr.txt")
-                file.writeText(sb.toString())
+                var file = File(dir, "LifeOS_Export_$nowStr.pdf")
+                writePdf(sb.toString(), file)
+                if (passphrase.isNotBlank()) file = encryptFile(file, passphrase)
 
                 plannerDao.insertExport(ExportEntity(
                     id          = UUID.randomUUID().toString(),
@@ -387,8 +466,7 @@ class ExportViewModel
                 )
                 loadHistory()
 
-                // BUG #28: share the file immediately
-                shareFile(file, "text/plain")
+                shareFile(file, "application/pdf")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
@@ -409,6 +487,7 @@ class ExportViewModel
         dateWindow:          String  = "all",
         customStart:         String  = "",
         customEnd:           String  = "",
+        passphrase:          String  = "",
     ) {
         if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -517,8 +596,9 @@ class ExportViewModel
                 }
 
                 val dir  = File(context.getExternalFilesDir(null), "exports").apply { mkdirs() }
-                val file = File(dir, "lifeos-export-${System.currentTimeMillis()}.csv")
+                var file = File(dir, "lifeos-export-${System.currentTimeMillis()}.csv")
                 file.writeText(sb.toString())
+                if (passphrase.isNotBlank()) file = encryptFile(file, passphrase)
 
                 plannerDao.insertExport(ExportEntity(
                     id          = UUID.randomUUID().toString(),

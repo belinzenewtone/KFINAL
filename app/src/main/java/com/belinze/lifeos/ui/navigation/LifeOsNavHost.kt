@@ -43,8 +43,10 @@ import com.belinze.lifeos.viewmodel.AppViewModel
 
 @Composable
 fun LifeOsNavHost(
-    modifier:     Modifier      = Modifier,
-    appViewModel: AppViewModel  = hiltViewModel(),
+    modifier:             Modifier      = Modifier,
+    appViewModel:         AppViewModel  = hiltViewModel(),
+    pendingNotifRoute:    String?       = null,
+    onNotifRouteConsumed: () -> Unit    = {},
 ) {
     val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -151,8 +153,10 @@ fun LifeOsNavHost(
         else -> {
             // Authenticated: hand off to the full navigation graph
             MainNavHost(
-                appViewModel = appViewModel,
-                modifier     = modifier,
+                appViewModel         = appViewModel,
+                modifier             = modifier,
+                pendingNotifRoute    = pendingNotifRoute,
+                onNotifRouteConsumed = onNotifRouteConsumed,
             )
         }
     }

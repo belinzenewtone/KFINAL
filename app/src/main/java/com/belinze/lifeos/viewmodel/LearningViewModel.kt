@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.LearningSessionDao
 import com.belinze.lifeos.data.db.entity.LearningSessionEntity
+import com.belinze.lifeos.util.Haptics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -64,6 +65,7 @@ class LearningViewModel
     fun toggleCompleted(id: String, currentlyCompleted: Boolean) {
         viewModelScope.launch {
             dao.setCompleted(id = id, done = if (currentlyCompleted) 0 else 1)
+            Haptics.success()
         }
     }
 
@@ -88,6 +90,7 @@ class LearningViewModel
                     updatedAt       = now,
                 )
             )
+            Haptics.success()
         }
     }
 
@@ -95,6 +98,7 @@ class LearningViewModel
         viewModelScope.launch {
             val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
             dao.softDelete(id = id, now = now)
+            Haptics.warning()
         }
     }
 }

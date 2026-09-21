@@ -93,18 +93,21 @@ fun ScreenLockScreen(
     var activeTab        by remember { mutableStateOf("biometric") }
     var newPin           by remember { mutableStateOf("") }
     var confirmPin       by remember { mutableStateOf("") }
+    var currentPin       by remember { mutableStateOf("") }
     var message          by remember { mutableStateOf<String?>(null) }
     var error            by remember { mutableStateOf<String?>(null) }
     // Tracks that the user flipped PIN lock ON but hasn't saved a PIN yet —
     // prevents enabling the lock before any PIN is stored.
     var pinSetupPending  by remember { mutableStateOf(false) }
 
-    fun triggerBiometric() {
+    // SL-2: trigger biometric auth before enabling; onSuccess fires only on success
+    fun triggerBiometric(onSuccess: () -> Unit = {}) {
         val activity = context as? FragmentActivity ?: return
         val executor = ContextCompat.getMainExecutor(context)
         val callback = object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 message = "Biometric verified successfully"
+                onSuccess()
             }
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -199,8 +202,16 @@ fun ScreenLockScreen(
                         Switch(
                             checked       = settings.fingerprintEnabled,
                             onCheckedChange = { v ->
-                                viewModel.setFingerprintEnabled(v)
-                                message = if (v) "Biometric unlock enabled" else null
+                                if (v) {
+                                    // SL-2: require successful biometric proof before enabling
+                                    triggerBiometric {
+                                        viewModel.setFingerprintEnabled(true)
+                                        message = "Biometric unlock enabled"
+                                    }
+                                } else {
+                                    viewModel.setFingerprintEnabled(false)
+                                    message = null
+                                }
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor   = Color.White,
@@ -339,6 +350,10 @@ fun ScreenLockScreen(
                         )
                         Spacer(Modifier.height(Spacing.lg))
 
+                        // SL-1: require current PIN verification before allowing change
+                        if (settings.pinCode.isNotEmpty()) {
+                            PinInput("Current PIN", currentPin) { currentPin = it }
+                        }
                         PinInput("New PIN", newPin) { newPin = it }
                         PinInput("Confirm new PIN", confirmPin) { confirmPin = it }
 
@@ -359,20 +374,23 @@ fun ScreenLockScreen(
                             when {
                                 newPin.length != PIN_LENGTH || confirmPin.length != PIN_LENGTH ->
                                     error = "PIN must be exactly $PIN_LENGTH digits"
+                                // SL-1: verify existing PIN before allowing change
+                                settings.pinCode.isNotEmpty() && currentPin != settings.pinCode ->
+                                    error = "Current PIN is incorrect"
                                 newPin != confirmPin ->
                                     error = "PINs don't match"
                                 else -> {
-                                    // Capture old state before the async save so the message is correct
                                     val isFirstPin = settings.pinCode.isEmpty()
                                     viewModel.setPinCode(newPin)
                                     viewModel.setScreenLockEnabled(true)
                                     pinSetupPending = false
-                                    newPin = ""; confirmPin = ""
+                                    newPin = ""; confirmPin = ""; currentPin = ""
                                     message = if (isFirstPin) "PIN set successfully" else "PIN updated successfully"
                                 }
                             }
                         },
-                        enabled  = newPin.length == PIN_LENGTH && confirmPin.length == PIN_LENGTH,
+                        enabled  = newPin.length == PIN_LENGTH && confirmPin.length == PIN_LENGTH &&
+                                   (settings.pinCode.isEmpty() || currentPin.length == PIN_LENGTH),
                         shape    = RoundedCornerShape(50),
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         colors   = ButtonDefaults.buttonColors(

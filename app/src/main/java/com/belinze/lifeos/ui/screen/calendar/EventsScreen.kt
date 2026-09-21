@@ -18,7 +18,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Cake
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +61,7 @@ fun EventsScreen(
     val today    = remember { LocalDate.now().toString() }
     val upcoming = remember(state.events, query) {
         state.events
-            .filter { it.type == "event" }   // BUG-CAL9: only show calendar events (not tasks/birthdays/etc.)
+            .filter { it.type != "task" }   // show events, birthdays, anniversaries, countdowns — not tasks
             .filter { it.date.take(10) >= today }
             .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
             .sortedBy { it.date }
@@ -106,13 +113,24 @@ fun EventsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(width = 3.dp, height = 40.dp)
-                                    .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall),
+                                    .background(eventTypeColor(event.type), MaterialTheme.shapes.extraSmall),
+                            )
+                            Icon(
+                                imageVector = eventTypeIcon(event.type),
+                                contentDescription = null,
+                                tint = eventTypeColor(event.type),
+                                modifier = Modifier.size(18.dp),
                             )
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(event.title, style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                                 Text(
-                                    "${formatDate(event.date)} · ${event.type}",
+                                    event.title,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    formatEventSubtitle(event.date, event.type),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -128,8 +146,43 @@ fun EventsScreen(
     }
 }
 
-private fun formatDate(iso: String): String = try {
-    LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
-} catch (_: Exception) {
-    iso.take(10)
+private fun formatEventSubtitle(iso: String, type: String): String {
+    val typeLabel = when (type) {
+        "birthday"    -> "Birthday"
+        "anniversary" -> "Anniversary"
+        "countdown"   -> "Countdown"
+        else          -> "Event"
+    }
+    val datePart = try {
+        val date = LocalDate.parse(iso.take(10))
+        date.format(DateTimeFormatter.ofPattern("EEE, MMM dd, yyyy"))
+    } catch (_: Exception) {
+        iso.take(10)
+    }
+    val timePart = if (iso.length > 10) {
+        try {
+            val time = iso.take(16).substring(11)
+            val h = time.take(2).toInt()
+            val m = time.takeLast(2).toInt()
+            val ampm = if (h < 12) "AM" else "PM"
+            val dh = if (h == 0) 12 else if (h > 12) h - 12 else h
+            " · %d:%02d %s".format(dh, m, ampm)
+        } catch (_: Exception) { "" }
+    } else ""
+    return "$datePart$timePart · $typeLabel"
+}
+
+@Composable
+private fun eventTypeColor(type: String) = when (type) {
+    "birthday"    -> androidx.compose.ui.graphics.Color(0xFFEC4899)
+    "anniversary" -> androidx.compose.ui.graphics.Color(0xFF22C55E)
+    "countdown"   -> androidx.compose.ui.graphics.Color(0xFFF5CB5C)
+    else          -> MaterialTheme.colorScheme.primary
+}
+
+private fun eventTypeIcon(type: String): ImageVector = when (type) {
+    "birthday"    -> Icons.Outlined.Cake
+    "anniversary" -> Icons.Outlined.Favorite
+    "countdown"   -> Icons.Outlined.Timer
+    else          -> Icons.Outlined.DateRange
 }

@@ -19,6 +19,9 @@
     <!-- Exact alarms for task/event/bill reminders (Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
+    <!-- Re-arm alarms after device reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- Biometrics -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
@@ -86,6 +89,16 @@
         <receiver
             android:name=".services.NotificationReceiver"
             android:exported="false" />
+
+        <!-- Re-arms all AlarmManager alarms after device reboot -->
+        <receiver
+            android:name=".services.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
 
         <!-- ─── SMS parser receivers / workers (declared in :sms module manifest) ─ -->
 

@@ -44,6 +44,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -188,10 +190,12 @@ fun FinanceScreen(
 
     // Hero sub-metrics — pulled from ViewModel metrics (accurate for ALL data,
     // not just the current paging window) so these are never off after filter changes.
-    val monthIncome  = monthTotals?.income  ?: 0.0
-    val monthExpense = monthTotals?.expense ?: 0.0
-    val todayExpense = state.todayExpense
-    val weekExpense  = state.weekExpense
+    val monthIncome   = monthTotals?.income  ?: 0.0
+    val monthExpense  = monthTotals?.expense ?: 0.0
+    val todayExpense  = state.todayExpense
+    val weekExpense   = state.weekExpense
+    val netCashFlow   = state.netCashFlow
+    val avgDailySpend = state.avgDailySpend
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -263,6 +267,20 @@ fun FinanceScreen(
             val periodSelectorScrollState = rememberScrollState()
             val listState                 = rememberLazyListState()
 
+            var pullRefreshing by remember { mutableStateOf(false) }
+            val pullToRefreshState = rememberPullToRefreshState()
+
+            PullToRefreshBox(
+                isRefreshing = pullRefreshing,
+                state        = pullToRefreshState,
+                onRefresh    = {
+                    pullRefreshing = true
+                    pagingItems.refresh()
+                    viewModel.refreshMetrics()
+                    pullRefreshing = false
+                },
+                modifier     = Modifier.fillMaxSize(),
+            ) {
             LazyColumn(
                 state               = listState,
                 modifier            = Modifier.fillMaxSize(),
@@ -364,6 +382,18 @@ fun FinanceScreen(
                             HeroSubMetric(label = "This week", amount = weekExpense)
                             HeroSubMetric(label = "Income",    amount = monthIncome, isCredit = true)
                         }
+                        Spacer(Modifier.height(Spacing.sm))
+                        Row(
+                            modifier              = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        ) {
+                            HeroSubMetric(
+                                label    = "Net",
+                                amount   = netCashFlow,
+                                isCredit = netCashFlow >= 0,
+                            )
+                            HeroSubMetric(label = "Daily avg", amount = avgDailySpend)
+                        }
                     }
                 }
 
@@ -453,11 +483,11 @@ fun FinanceScreen(
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
-                        val budgetRemaining = activeBudgetsDs.sumOf { it.remaining }
+                        val totalMonthBudget = activeBudgetsDs.sumOf { it.budget.limitAmount }
                         InsightCard(
                             label   = "Budget",
                             action  = "View",
-                            amount  = budgetRemaining,
+                            amount  = totalMonthBudget,
                             sub     = "${activeBudgetsDs.size} guardrails",
                             onClick = { navController.navigate(Route.BUDGETS) },
                         )
@@ -623,6 +653,7 @@ fun FinanceScreen(
                 // Bottom nav clearance
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
+            } // PullToRefreshBox
         }
 
         // BUG-F9: merge into one TopBanner — error takes priority over import result,

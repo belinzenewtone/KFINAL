@@ -313,9 +313,7 @@ fun ExportScreen(
 
             Button(
                 onClick = {
-                    // BUG #25: pass date window + encryption controls to every export method.
-                    // BUG #26: CSV exports transactions only — the description card says so
-                    //          and the domain chips are locked (non-transactions are greyed out).
+                    val pass = if (encryptEnabled) passphrase else ""
                     when (format) {
                         ExportFormat.JSON -> viewModel.exportJson(
                             includeTransactions = "transactions" in selectedDomains,
@@ -328,19 +326,20 @@ fun ExportScreen(
                             dateWindow          = dateWindow,
                             customStart         = customStart,
                             customEnd           = customEnd,
+                            passphrase          = pass,
                         )
                         ExportFormat.CSV -> viewModel.exportCsv(
-                            // Transactions only — all other locked chips remain false
-                            includeTransactions = true,
-                            includeTasks        = false,
-                            includeEvents       = false,
-                            includeBudgets      = false,
-                            includeIncomes      = false,
-                            includeRecurring    = false,
-                            includeGoals        = false,
+                            includeTransactions = "transactions" in selectedDomains,
+                            includeTasks        = "tasks"        in selectedDomains,
+                            includeEvents       = "events"       in selectedDomains,
+                            includeBudgets      = "budgets"      in selectedDomains,
+                            includeIncomes      = "incomes"      in selectedDomains,
+                            includeRecurring    = "recurring"    in selectedDomains,
+                            includeGoals        = "goals"        in selectedDomains,
                             dateWindow          = dateWindow,
                             customStart         = customStart,
                             customEnd           = customEnd,
+                            passphrase          = pass,
                         )
                         ExportFormat.PDF -> viewModel.exportPdf(
                             includeTransactions = "transactions" in selectedDomains,
@@ -350,6 +349,7 @@ fun ExportScreen(
                             dateWindow          = dateWindow,
                             customStart         = customStart,
                             customEnd           = customEnd,
+                            passphrase          = pass,
                         )
                     }
                 },

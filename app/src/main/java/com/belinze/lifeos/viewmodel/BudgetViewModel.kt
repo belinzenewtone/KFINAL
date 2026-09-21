@@ -192,7 +192,7 @@ class BudgetViewModel
                 )
                 budgetDao.insert(entity)
                 load()
-                Haptics.light()
+                Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (e: Exception) {
@@ -205,6 +205,7 @@ class BudgetViewModel
         viewModelScope.launch {
             budgetDao.softDelete(id, nowIso())
             load()
+            Haptics.warning()
         }
     }
 

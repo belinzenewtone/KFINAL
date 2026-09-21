@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -43,6 +44,8 @@ data class EventUiState(
     val selectedDay:  LocalDate         = LocalDate.now(),
     val calendarView: CalendarView      = CalendarView.Month,
     val nextEvent:    EventEntity?      = null,
+    /** Per-day event-type flags for the visible calendar month; keyed by LocalDate. */
+    val eventsByDate: Map<LocalDate, Set<String>> = emptyMap(),
     val error:        String?           = null,
 )
 
@@ -110,9 +113,14 @@ class EventViewModel
     private val timeFmt   = DateTimeFormatter.ofPattern("HH:mm")
     private val isoOffFmt = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
+    private var currentYearMonth: YearMonth = YearMonth.now()
+
     init {
         dao.observeAll()
-            .onEach { all -> _uiState.update { it.copy(isLoading = false, events = all.toImmutableList()) } }
+            .onEach { all ->
+                _uiState.update { it.copy(isLoading = false, events = all.toImmutableList()) }
+                computeEventsByDate()
+            }
             .launchIn(viewModelScope)
 
         loadNextEvent()
@@ -125,8 +133,73 @@ class EventViewModel
     fun setCalendarView(view: CalendarView) = _uiState.update { it.copy(calendarView = view) }
 
     fun eventsForDay(day: LocalDate): List<EventEntity> {
-        val prefix = day.format(dateFmt)
-        return _uiState.value.events.filter { it.date.startsWith(prefix) }
+        val nextDay = day.plusDays(1)
+        return _uiState.value.events.filter { expandOccurrences(it, day, nextDay).isNotEmpty() }
+    }
+
+    /** Called from CalendarScreen when the visible month changes. */
+    fun loadCalendarMonth(yearMonth: YearMonth) {
+        currentYearMonth = yearMonth
+        computeEventsByDate()
+    }
+
+    private fun computeEventsByDate() {
+        val ym          = currentYearMonth
+        val windowStart = ym.atDay(1)
+        val windowEnd   = ym.atEndOfMonth().plusDays(1)
+        val allEvents   = _uiState.value.events
+        val byDate      = HashMap<LocalDate, MutableSet<String>>()
+        for (event in allEvents) {
+            for (day in expandOccurrences(event, windowStart, windowEnd)) {
+                byDate.getOrPut(day) { mutableSetOf() }.add(event.type)
+            }
+        }
+        _uiState.update { it.copy(eventsByDate = byDate.mapValues { (_, v) -> v.toSet() }) }
+    }
+
+    private fun expandOccurrences(
+        event: EventEntity,
+        windowStart: LocalDate,
+        windowEnd: LocalDate,
+    ): List<LocalDate> {
+        val out      = mutableListOf<LocalDate>()
+        val baseDate = runCatching { LocalDate.parse(event.date.take(10)) }.getOrNull() ?: return out
+        val endDate  = event.endDate
+            ?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() } ?: baseDate
+        val spanDays = minOf(366, maxOf(1, (endDate.toEpochDay() - baseDate.toEpochDay()).toInt() + 1))
+        val repeatEnd = event.repeatEndDate
+            ?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
+
+        fun emitRange(start: LocalDate) {
+            for (i in 0 until spanDays) {
+                val day = start.plusDays(i.toLong())
+                if (day >= windowStart && day < windowEnd) out.add(day)
+            }
+        }
+
+        val rule = event.repeatRule
+        if (rule == "none" || rule.isBlank()) {
+            emitRange(baseDate)
+            return out
+        }
+
+        var cursor = baseDate
+        var idx    = 0
+        while (idx < 400) {
+            if (repeatEnd != null && cursor > repeatEnd) break
+            if (cursor >= windowEnd) break
+            val occEnd = cursor.plusDays(spanDays.toLong())
+            if (occEnd > windowStart) emitRange(cursor)
+            cursor = when (rule) {
+                "daily"   -> cursor.plusDays(1)
+                "weekly"  -> cursor.plusWeeks(1)
+                "monthly" -> cursor.plusMonths(1)
+                "yearly"  -> cursor.plusYears(1)
+                else      -> cursor.plusDays(1)
+            }
+            idx++
+        }
+        return out
     }
 
     private fun loadNextEvent() {
@@ -227,6 +300,7 @@ class EventViewModel
                 val entity   = formStateToEntity(form, existing)
                 dao.insert(entity)
                 loadNextEvent()
+                Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
                 onSuccess()
             } catch (e: Exception) {

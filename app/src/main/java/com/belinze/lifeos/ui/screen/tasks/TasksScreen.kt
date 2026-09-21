@@ -130,19 +130,19 @@ fun TasksScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = Spacing.bottomNavSafeArea),
             ) {
                 if (urgent.isNotEmpty()) {
-                    item { PrioritySectionHeader("Urgent", MaterialTheme.colorScheme.error, urgent.size) }
+                    item { PrioritySectionHeader("High", MaterialTheme.colorScheme.error, urgent.size) }
                     items(urgent, key = { it.id }) { task ->
                         TaskCard(task, MaterialTheme.colorScheme.error, viewModel, navController)
                     }
                 }
                 if (important.isNotEmpty()) {
-                    item { PrioritySectionHeader("Important", WARNING, important.size) }
+                    item { PrioritySectionHeader("Medium", WARNING, important.size) }
                     items(important, key = { it.id }) { task ->
                         TaskCard(task, WARNING, viewModel, navController)
                     }
                 }
                 if (other.isNotEmpty()) {
-                    item { PrioritySectionHeader("Other", MaterialTheme.colorScheme.primary, other.size) }
+                    item { PrioritySectionHeader("Low", MaterialTheme.colorScheme.primary, other.size) }
                     items(other, key = { it.id }) { task ->
                         TaskCard(task, MaterialTheme.colorScheme.primary, viewModel, navController)
                     }
@@ -289,7 +289,7 @@ private fun TaskCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         task.title,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = if (task.status == "completed") {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         } else {

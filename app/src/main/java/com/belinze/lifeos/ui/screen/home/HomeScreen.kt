@@ -57,6 +57,7 @@ import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
+import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
@@ -64,6 +65,7 @@ import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.collections.immutable.ImmutableList
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HomeScreen
@@ -207,6 +209,7 @@ fun HomeScreen(
                 // ── HomeMenuCard ──────────────────────────────────────────────
                 HomeMenuCard(
                     pendingTaskCount = taskState.pendingCount,
+                    dueTodayCount    = taskState.dueTodayCount,
                     nextEventTitle   = eventState.nextEvent?.title,
                     onTasks          = { navController.navigate(Route.TASKS) },
                     onEvents         = { navController.navigate(Route.EVENTS) },
@@ -214,6 +217,15 @@ fun HomeScreen(
                     onSearch         = { navController.navigate(Route.SEARCH) },
                     modifier         = Modifier.padding(bottom = Spacing.xl),
                 )
+
+                // ── Upcoming tasks widget ─────────────────────────────────────
+                if (taskState.upcoming.isNotEmpty()) {
+                    UpcomingTasksWidget(
+                        tasks    = taskState.upcoming,
+                        onPress  = { navController.navigate(Route.TASKS) },
+                        modifier = Modifier.padding(bottom = Spacing.xl),
+                    )
+                }
 
                 // ── WeeklyResetCard ───────────────────────────────────────────
                 WeeklyResetCard(
@@ -290,6 +302,7 @@ private fun HomeMetricCard(
 @Composable
 private fun HomeMenuCard(
     pendingTaskCount: Int,
+    dueTodayCount:    Int,
     nextEventTitle:   String?,
     onTasks:          () -> Unit,
     onEvents:         () -> Unit,
@@ -297,13 +310,21 @@ private fun HomeMenuCard(
     onSearch:         () -> Unit,
     modifier:         Modifier = Modifier,
 ) {
+    val tasksValue = buildString {
+        if (dueTodayCount > 0) append("$dueTodayCount due today")
+        if (pendingTaskCount > dueTodayCount) {
+            if (isNotEmpty()) append(" · ")
+            append("${pendingTaskCount - dueTodayCount} more")
+        }
+        if (isEmpty()) append("No pending tasks")
+    }
     FrostCard(
         glow = FrostCardGlow.None,
         modifier = modifier,
         content = {
             MenuRow(
                 label = "Tasks",
-                value = "$pendingTaskCount pending",
+                value = tasksValue,
                 icon = Icons.Outlined.TaskAlt,
                 onClick = onTasks,
             )
@@ -421,6 +442,88 @@ private fun WeeklyResetCard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+// ─── UpcomingTasksWidget ─────────────────────────────────────────────────────
+
+@Composable
+private fun UpcomingTasksWidget(
+    tasks:    ImmutableList<TaskEntity>,
+    onPress:  () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FrostCard(
+        modifier = modifier,
+        onClick  = onPress,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = Spacing.sm),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically,
+        ) {
+            Text(
+                text  = "Upcoming Tasks",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Icon(
+                imageVector        = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint               = MaterialTheme.colorScheme.outline,
+                modifier           = Modifier.size(18.dp),
+            )
+        }
+        tasks.take(5).forEach { task ->
+            val priorityColor = when (task.priority) {
+                "high"   -> MaterialTheme.colorScheme.error
+                "medium" -> MaterialTheme.colorScheme.primary
+                else     -> MaterialTheme.colorScheme.outline
+            }
+            val deadlineLabel = task.deadline?.let { dl ->
+                runCatching {
+                    val date = LocalDate.parse(dl.substringBefore("T"))
+                    val today = LocalDate.now()
+                    when {
+                        date.isEqual(today)          -> "Today"
+                        date.isEqual(today.plusDays(1)) -> "Tomorrow"
+                        else -> date.format(DateTimeFormatter.ofPattern("MMM d", Locale.getDefault()))
+                    }
+                }.getOrNull()
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier          = Modifier.weight(1f),
+                ) {
+                    Canvas(modifier = Modifier.size(8.dp)) {
+                        drawCircle(color = priorityColor)
+                    }
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(
+                        text     = task.title,
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                }
+                if (deadlineLabel != null) {
+                    Text(
+                        text  = deadlineLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 

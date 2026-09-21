@@ -62,9 +62,9 @@ import java.util.Calendar
 import java.util.TimeZone
 
 private val PRIORITIES = listOf(
-    "low"    to "Neutral",
-    "medium" to "Important",
-    "high"   to "Urgent",
+    "low"    to "Low",
+    "medium" to "Medium",
+    "high"   to "High",
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

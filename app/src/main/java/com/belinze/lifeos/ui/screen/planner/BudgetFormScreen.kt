@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
     "entertainment", "health", "education", "shopping", "savings", "investment",
+    "housing", "personal_care", "subscriptions", "miscellaneous",
 )
 private val PERIODS = listOf("daily", "weekly", "monthly", "yearly")
 

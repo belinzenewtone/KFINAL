@@ -41,6 +41,8 @@ object PreferenceKeys {
     // Notifications
     val NOTIFICATIONS_ENABLED    = booleanPreferencesKey("notifications_enabled")
     val NOTIF_REMINDERS          = booleanPreferencesKey("notif_reminders")
+    val NOTIF_TASK_REMINDERS     = booleanPreferencesKey("notif_task_reminders")
+    val NOTIF_BILL_REMINDERS     = booleanPreferencesKey("notif_bill_reminders")
     val NOTIF_BUDGET_ALERTS      = booleanPreferencesKey("notif_budget_alerts")
     val NOTIF_DAILY_DIGEST       = booleanPreferencesKey("notif_daily_digest")
     val DAILY_DIGEST_MORNING     = booleanPreferencesKey("daily_digest_morning_summary")
@@ -99,6 +101,8 @@ data class AppPreferenceState(
     val fulizaLimit: Double             = 0.0,
     val notificationsEnabled: Boolean   = false,
     val notifReminders: Boolean         = true,
+    val notifTaskReminders: Boolean     = true,
+    val notifBillReminders: Boolean     = true,
     val notifBudgetAlerts: Boolean      = true,
     val notifDailyDigest: Boolean       = false,
     val notifRecurringRules: Boolean    = true,
@@ -175,6 +179,8 @@ class AppPreferences
         fulizaLimit            = this[PreferenceKeys.FULIZA_LIMIT]             ?: 0.0,
         notificationsEnabled   = this[PreferenceKeys.NOTIFICATIONS_ENABLED]    ?: false,
         notifReminders         = this[PreferenceKeys.NOTIF_REMINDERS]          ?: true,
+        notifTaskReminders     = this[PreferenceKeys.NOTIF_TASK_REMINDERS]     ?: true,
+        notifBillReminders     = this[PreferenceKeys.NOTIF_BILL_REMINDERS]     ?: true,
         notifBudgetAlerts      = this[PreferenceKeys.NOTIF_BUDGET_ALERTS]      ?: true,
         notifDailyDigest       = this[PreferenceKeys.NOTIF_DAILY_DIGEST]       ?: false,
         notifRecurringRules    = this[PreferenceKeys.NOTIF_RECURRING_RULES]    ?: true,

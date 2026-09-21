@@ -206,37 +206,38 @@ fun AssistantScreen(
                         )
                     }
                 }
-
-                if (quickSuggestionsEnabled) {
-                    item {
-                        val prompts = listOf(
-                            "How much did I spend this week?",
-                            "What is my balance?",
-                            "Show my budgets",
-                            "What tasks are due today?",
-                            "Recent transactions",
-                            "Summarize my spending",
-                        )
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            items(prompts, key = { it }) { prompt ->
-                                AssistChip(
-                                    onClick = {
-                                        viewModel.updateInput(prompt)
-                                        viewModel.sendMessage()
-                                    },
-                                    label = { Text(prompt, maxLines = 1) },
-                                    modifier = Modifier.wrapContentWidth(),
-                                )
-                            }
-                        }
-                    }
-                }
             } else {
                 items(state.messages, key = { it.id }) { message ->
                     ChatBubble(message)
+                }
+            }
+
+            // AS-3: show quick suggestions until the conversation has more than 1 message
+            if (quickSuggestionsEnabled && state.messages.size <= 1) {
+                item {
+                    val prompts = listOf(
+                        "How much did I spend this week?",
+                        "What is my balance?",
+                        "Show my budgets",
+                        "What tasks are due today?",
+                        "Recent transactions",
+                        "Summarize my spending",
+                    )
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        items(prompts, key = { it }) { prompt ->
+                            AssistChip(
+                                onClick = {
+                                    viewModel.updateInput(prompt)
+                                    viewModel.sendMessage()
+                                },
+                                label = { Text(prompt, maxLines = 1) },
+                                modifier = Modifier.wrapContentWidth(),
+                            )
+                        }
+                    }
                 }
             }
 

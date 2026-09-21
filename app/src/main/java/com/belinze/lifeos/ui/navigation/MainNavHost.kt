@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -52,10 +53,23 @@ private val popExit    = slideOutHorizontally(tween(100)) { it } + fadeOut(tween
 
 @Composable
 fun MainNavHost(
-    appViewModel: AppViewModel,
-    modifier:     Modifier            = Modifier,
-    navController: NavHostController  = rememberNavController(),
+    appViewModel:         AppViewModel,
+    modifier:             Modifier           = Modifier,
+    navController:        NavHostController  = rememberNavController(),
+    pendingNotifRoute:    String?            = null,
+    onNotifRouteConsumed: () -> Unit         = {},
 ) {
+    // Navigate to the notification deep-link once the graph is ready.
+    LaunchedEffect(pendingNotifRoute) {
+        if (!pendingNotifRoute.isNullOrBlank()) {
+            navController.navigate(pendingNotifRoute) {
+                launchSingleTop = true
+                restoreState    = false
+            }
+            onNotifRouteConsumed()
+        }
+    }
+
     NavHost(
         navController        = navController,
         startDestination     = Route.MAIN,

@@ -247,7 +247,7 @@ private fun DetailRow(label: String, value: String) {
 }
 
 private fun formatDetailDate(iso: String): String = try {
-    LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"))
+    LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("d MMM yyyy, h:mm a"))
 } catch (_: Exception) {
     iso.take(16)
 }

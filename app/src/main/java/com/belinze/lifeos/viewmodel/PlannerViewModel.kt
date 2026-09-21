@@ -316,13 +316,14 @@ class PlannerViewModel
         }
     }
 
-    fun deleteRule(id: String) = viewModelScope.launch { plannerDao.softDeleteRule(id, nowIso()); loadAll() }
+    fun deleteRule(id: String) = viewModelScope.launch { plannerDao.softDeleteRule(id, nowIso()); loadAll(); Haptics.warning() }
 
     fun toggleRecurringEnabled(id: String, enabled: Boolean) {
         viewModelScope.launch {
             val e = plannerDao.getRuleById(id) ?: return@launch
             plannerDao.updateRule(e.copy(enabled = if (enabled) 1 else 0, updatedAt = nowIso()))
             loadAll()
+            Haptics.light()
         }
     }
 
@@ -379,7 +380,7 @@ class PlannerViewModel
         }
     }
 
-    fun deleteBill(id: String) = viewModelScope.launch { plannerDao.softDeleteBill(id, nowIso()); loadAll() }
+    fun deleteBill(id: String) = viewModelScope.launch { plannerDao.softDeleteBill(id, nowIso()); loadAll(); Haptics.warning() }
 
     /** Toggle a bill's paid status; advancing the due date for recurring cycles (mirrors BillsScreen.tsx). */
     fun toggleBillPaid(id: String) {
@@ -478,12 +479,13 @@ class PlannerViewModel
         }
     }
 
-    fun deleteGoal(id: String) = viewModelScope.launch { plannerDao.softDeleteGoal(id, nowIso()); loadAll() }
+    fun deleteGoal(id: String) = viewModelScope.launch { plannerDao.softDeleteGoal(id, nowIso()); loadAll(); Haptics.warning() }
 
     fun addToGoal(goalId: String, amount: Double) {
         viewModelScope.launch {
             val e = plannerDao.getGoalById(goalId) ?: return@launch
             plannerDao.updateGoal(e.copy(currentValue = e.currentValue + amount, updatedAt = nowIso()))
+            Haptics.success()
             loadAll()
         }
     }
@@ -501,6 +503,7 @@ class PlannerViewModel
                     updatedAt = nowIso(),
                 )
             )
+            if (reached) Haptics.success() else Haptics.light()
             loadAll()
         }
     }
@@ -509,6 +512,7 @@ class PlannerViewModel
         viewModelScope.launch {
             val e = plannerDao.getGoalById(goalId) ?: return@launch
             plannerDao.updateGoal(e.copy(status = "completed", updatedAt = nowIso()))
+            Haptics.success()
             loadAll()
         }
     }
@@ -534,7 +538,7 @@ class PlannerViewModel
         }
     }
 
-    fun deleteLoan(id: String) = viewModelScope.launch { plannerDao.hardDeleteLoan(id); loadAll() }
+    fun deleteLoan(id: String) = viewModelScope.launch { plannerDao.hardDeleteLoan(id); loadAll(); Haptics.warning() }
 
     fun logRepayment(loanId: String, amount: Double, onDone: (Boolean) -> Unit) {
         viewModelScope.launch {
@@ -571,6 +575,7 @@ class PlannerViewModel
                     updatedAt = nowIso(),
                 )
             )
+            Haptics.success()
             loadAll()
         }
     }
@@ -662,5 +667,5 @@ class PlannerViewModel
         }
     }
 
-    fun deleteIncome(id: String) = viewModelScope.launch { incomeDao.softDelete(id, nowIso()); loadAll() }
+    fun deleteIncome(id: String) = viewModelScope.launch { incomeDao.softDelete(id, nowIso()); loadAll(); Haptics.warning() }
 }

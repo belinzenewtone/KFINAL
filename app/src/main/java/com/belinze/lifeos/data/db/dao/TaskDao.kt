@@ -21,6 +21,15 @@ interface TaskDao {
     @Query("SELECT COUNT(*) FROM tasks WHERE deleted_at IS NULL AND status = 'active'")
     suspend fun countPending(): Int
 
+    /** Count active tasks with deadline within [startOfDay]..[endOfDay] (ISO date-time strings). */
+    @Query("""
+        SELECT COUNT(*) FROM tasks
+        WHERE deleted_at IS NULL AND status = 'active'
+          AND deadline IS NOT NULL
+          AND deadline >= :startOfDay AND deadline <= :endOfDay
+    """)
+    suspend fun countDueToday(startOfDay: String, endOfDay: String): Int
+
     @Query("SELECT * FROM tasks WHERE id = :id AND deleted_at IS NULL")
     suspend fun getById(id: String): TaskEntity?
 

@@ -95,7 +95,8 @@ fun EventDetailScreen(
                     Spacer(Modifier.height(Spacing.base))
                     Text(event.title, style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
-                    Text("${event.type} · ${event.kind}", style = MaterialTheme.typography.bodyMedium,
+                    val kindSuffix = if (event.kind != event.type && event.kind != "other") " · ${event.kind}" else ""
+                    Text("${event.type}$kindSuffix", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                     event.description?.let {
                         Text(it, style = MaterialTheme.typography.bodyMedium,

@@ -52,6 +52,10 @@ class SettingsViewModel
 
     fun setNotifReminders(v: Boolean) = update { it[PreferenceKeys.NOTIF_REMINDERS] = v }
 
+    fun setNotifTaskReminders(v: Boolean) = update { it[PreferenceKeys.NOTIF_TASK_REMINDERS] = v }
+
+    fun setNotifBillReminders(v: Boolean) = update { it[PreferenceKeys.NOTIF_BILL_REMINDERS] = v }
+
     fun setNotifBudgetAlerts(v: Boolean) = update { it[PreferenceKeys.NOTIF_BUDGET_ALERTS] = v }
 
     fun setNotifDailyDigest(v: Boolean) = update { it[PreferenceKeys.NOTIF_DAILY_DIGEST] = v }

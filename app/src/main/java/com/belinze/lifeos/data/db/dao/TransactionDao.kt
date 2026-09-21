@@ -266,7 +266,7 @@ interface TransactionDao {
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
         WHERE date >= :startDate AND date <= :endDate
-          AND transaction_type = 'income'
+          AND transaction_type = 'receive'
           AND status = 'completed' AND deleted_at IS NULL
     """)
     suspend fun getIncomeTotalInRange(startDate: String, endDate: String): Double

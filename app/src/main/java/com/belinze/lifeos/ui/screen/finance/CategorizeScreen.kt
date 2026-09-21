@@ -22,15 +22,18 @@ import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -56,6 +59,7 @@ import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.CategorizeViewModel
+import com.belinze.lifeos.viewmodel.MerchantGroup
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -82,7 +86,6 @@ fun CategorizeScreen(
         scrollable = false,
         topBanner = {
             if (state.message != null) {
-                // CZ-1: auto-dismiss after 1500 ms to match RN behaviour
                 TopBanner(
                     tone          = if (state.isError) BannerTone.Error else BannerTone.Success,
                     message       = state.message.orEmpty(),
@@ -93,7 +96,6 @@ fun CategorizeScreen(
             }
         },
     ) {
-        // Loading state — modest top padding so it doesn't look pushed down.
         if (state.isLoading) {
             Box(
                 modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xl),
@@ -129,11 +131,9 @@ fun CategorizeScreen(
             return@PageScaffold
         }
 
-        // Compact summary header
+        // Summary + view toggle
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = Spacing.sm),
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -145,30 +145,150 @@ fun CategorizeScreen(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    "Tap a card to assign a category",
+                    if (state.groupByMerchant) "${state.merchantGroups.size} merchants" else "Tap a card to assign a category",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text(
-                formatCurrency(state.transactions.sumOf { it.amount }),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                FilterChip(
+                    selected  = state.groupByMerchant,
+                    onClick   = { viewModel.setGroupByMerchant(true) },
+                    label     = { Text("By Merchant", style = MaterialTheme.typography.labelMedium) },
+                )
+                FilterChip(
+                    selected  = !state.groupByMerchant,
+                    onClick   = { viewModel.setGroupByMerchant(false) },
+                    label     = { Text("All", style = MaterialTheme.typography.labelMedium) },
+                )
+            }
         }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
         ) {
-            items(state.transactions, key = { it.id }) { tx ->
-                TransactionCard(tx = tx, onCategorySelected = { cat ->
-                    viewModel.assignCategory(tx.id, cat)
-                })
+            if (state.groupByMerchant) {
+                items(state.merchantGroups, key = { it.merchant }) { group ->
+                    MerchantGroupCard(
+                        group           = group,
+                        onAssignAll     = { cat -> viewModel.assignCategoryForMerchant(group.merchant, cat) },
+                        onAssignOne     = { id, cat -> viewModel.assignCategory(id, cat) },
+                    )
+                }
+            } else {
+                items(state.transactions, key = { it.id }) { tx ->
+                    TransactionCard(tx = tx, onCategorySelected = { cat ->
+                        viewModel.assignCategory(tx.id, cat)
+                    })
+                }
             }
-            // contentPadding above already handles the bottom nav safe area
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MerchantGroupCard(
+    group:       MerchantGroup,
+    onAssignAll: (String) -> Unit,
+    onAssignOne: (String, String) -> Unit,
+) {
+    var expanded      by remember { mutableStateOf(false) }
+    var pickerOpen    by remember { mutableStateOf(false) }
+    var pickerTarget  by remember { mutableStateOf<String?>(null) } // null = all, else tx id
+
+    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        group.merchant,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        "${group.count} transaction${if (group.count != 1) "s" else ""} · ${formatCurrency(group.transactions.sumOf { it.amount })}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.sm))
+            OutlinedButton(
+                onClick  = { pickerTarget = null; pickerOpen = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape    = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+            ) {
+                Text(
+                    "Assign all ${group.count} as…",
+                    modifier   = Modifier.weight(1f),
+                    fontWeight = FontWeight.Medium,
+                )
+                Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+
+            if (expanded) {
+                Spacer(Modifier.height(Spacing.sm))
+                group.transactions.forEach { tx ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Spacing.xs),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                tx.description?.takeIf { it.isNotBlank() && it != tx.merchant } ?: tx.merchant ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                            )
+                            Text(
+                                formatDateTime(tx.date),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            formatCurrency(tx.amount),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        TextButton(onClick = { pickerTarget = tx.id; pickerOpen = true }) {
+                            Text("Tag", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (pickerOpen) {
+        val target = pickerTarget
+        CategoryPickerSheet(
+            title   = if (target == null) "Assign all ${group.count} as…" else "Assign transaction",
+            onPick  = { cat ->
+                pickerOpen = false
+                if (target == null) onAssignAll(cat) else onAssignOne(target, cat)
+            },
+            onDismiss = { pickerOpen = false },
+        )
     }
 }
 
@@ -179,6 +299,7 @@ private fun TransactionCard(
     onCategorySelected: (String) -> Unit,
 ) {
     var pickerOpen by remember { mutableStateOf(false) }
+    var assignedCat by remember { mutableStateOf<String?>(null) }
 
     val primaryLabel = if (!tx.description.isNullOrBlank() && tx.description != tx.merchant) {
         tx.description
@@ -203,7 +324,6 @@ private fun TransactionCard(
         isTransfer -> MaterialTheme.colorScheme.tertiary
         else       -> MaterialTheme.colorScheme.error
     }
-    val amountColor  = typeColor
 
     GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {
         Column {
@@ -212,19 +332,13 @@ private fun TransactionCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Transaction-type icon badge
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .background(typeColor.copy(alpha = 0.13f), MaterialTheme.shapes.large),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        typeIcon,
-                        contentDescription = null,
-                        tint     = typeColor,
-                        modifier = Modifier.size(20.dp),
-                    )
+                    Icon(typeIcon, contentDescription = null, tint = typeColor, modifier = Modifier.size(20.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -235,25 +349,16 @@ private fun TransactionCard(
                         fontWeight = FontWeight.Medium,
                     )
                     sourceLabel?.let {
-                        Text(
-                            "via $it",
-                            style    = MaterialTheme.typography.bodySmall,
-                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
+                        Text("via $it", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                     }
-                    Text(
-                        formatDateTime(tx.date),
-                        style    = MaterialTheme.typography.bodySmall,
-                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    Text(formatDateTime(tx.date), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 }
                 Text(
-                    // Transfers are neutral — no sign prefix
                     "${if (isIncome) "+" else if (isTransfer) "" else "-"}${formatCurrency(tx.amount)}",
-                    style      = MaterialTheme.typography.bodyLarge,
-                    color      = amountColor,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = typeColor,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -263,83 +368,67 @@ private fun TransactionCard(
                 onClick  = { pickerOpen = true },
                 modifier = Modifier.fillMaxWidth(),
                 shape    = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                colors   = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary,
-                ),
+                colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
             ) {
-                Text(
-                    "Assign category",
-                    modifier   = Modifier.weight(1f),
-                    fontWeight = FontWeight.Medium,
-                )
-                Icon(
-                    Icons.Outlined.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
+                Text(assignedCat?.let { capitalize(it) } ?: "Assign category",
+                    modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
             }
         }
     }
 
     if (pickerOpen) {
-        ModalBottomSheet(
-            onDismissRequest = { pickerOpen = false },
-            sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+        CategoryPickerSheet(
+            title     = "Pick a category",
+            onPick    = { cat -> assignedCat = cat; pickerOpen = false; onCategorySelected(cat) },
+            onDismiss = { pickerOpen = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryPickerSheet(
+    title:     String,
+    onPick:    (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.7f)
+                .padding(Spacing.lg),
         ) {
-            // CZ-3: cap at ~70% of screen height to match RN Modal
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.7f)
-                    .padding(Spacing.lg),
-            ) {
-                Text("Pick a category", style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = Spacing.sm))
-                Text("Group this transaction under a category",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = Spacing.base))
-                CATEGORIZE_CATEGORIES.forEach { cat ->
-                    Row(
+            Text(title, style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = Spacing.base))
+            CATEGORIZE_CATEGORIES.forEach { cat ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        ) { onPick(cat) }
+                        .padding(vertical = Spacing.sm, horizontal = Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = androidx.compose.material3.ripple(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                ),
-                            ) {
-                                pickerOpen = false
-                                onCategorySelected(cat)
-                            }
-                            .padding(vertical = Spacing.sm, horizontal = Spacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            .size(28.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.medium),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f),
-                                    MaterialTheme.shapes.medium,
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                capitalize(cat).take(1),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                        Text(
-                            capitalize(cat),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        Text(capitalize(cat).take(1), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
+                    Text(capitalize(cat), style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }

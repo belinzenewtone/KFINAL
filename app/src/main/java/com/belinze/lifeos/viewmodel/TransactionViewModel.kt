@@ -69,6 +69,8 @@ data class TransactionUiState(
     val feeTotal:      Double             = 0.0,
     val todayExpense:  Double             = 0.0,
     val weekExpense:   Double             = 0.0,
+    val netCashFlow:   Double             = 0.0,   // income - expense for current month
+    val avgDailySpend: Double             = 0.0,   // month expense / active days
     val error:         String?            = null,
 )
 
@@ -249,13 +251,21 @@ class TransactionViewModel
             val todayExpense  = dao.getSpendTotalInRange(todayStartIso, todayEndIso)
             val weekExpense   = dao.getSpendTotalInRange(weekStartIso, todayEndIso)
 
+            val monthIncome  = totals?.income ?: 0.0
+            val monthExpense = totals?.expense ?: 0.0
+            val netCashFlow  = monthIncome - monthExpense
+            val activeDays   = dao.countActiveDays(startIso, endIso).coerceAtLeast(1)
+            val avgDailySpend = monthExpense / activeDays
+
             _uiState.update {
                 it.copy(
-                    monthTotals  = totals,
-                    feeTotal     = feeTotal,
+                    monthTotals   = totals,
+                    feeTotal      = feeTotal,
                     uncategorized = uncat,
                     todayExpense  = todayExpense,
                     weekExpense   = weekExpense,
+                    netCashFlow   = netCashFlow,
+                    avgDailySpend = avgDailySpend,
                 )
             }
         }

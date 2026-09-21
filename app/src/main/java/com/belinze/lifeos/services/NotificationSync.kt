@@ -6,6 +6,8 @@ import com.belinze.lifeos.data.db.dao.BudgetDao
 import com.belinze.lifeos.data.db.dao.EventDao
 import com.belinze.lifeos.data.db.dao.PlannerDao
 import com.belinze.lifeos.data.db.dao.TaskDao
+import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
+import com.belinze.lifeos.util.advanceCadencePastNow
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -56,7 +58,7 @@ class NotificationSync
         }
 
         // ── Tasks ────────────────────────────────────────────────────────
-        if (enabled && prefState.notifReminders) {
+        if (enabled && prefState.notifTaskReminders) {
             val tasks = taskDao.getAll()
             tasks.filter { it.status == "active" && it.deadline != null }
                 .forEach { t ->
@@ -90,14 +92,15 @@ class NotificationSync
         if (enabled && prefState.notifRecurringRules) {
             val rules = plannerDao.getAllRules()
             rules.filter { it.enabled != 0 }.forEach { r ->
-                r.nextRunAt?.let {
+                val nextRunAt = rollForwardRecurring(r)
+                nextRunAt?.let {
                     scheduler.scheduleRecurringReminder(r.id, r.title, it, r.amount)
                 }
             }
         }
 
         // ── Bills ────────────────────────────────────────────────────────
-        if (enabled && prefState.notifReminders) {
+        if (enabled && prefState.notifBillReminders) {
             val bills = plannerDao.getAllBills()
             bills.filter { it.isActive != 0 && it.paidStatus != 1 }.forEach { b ->
                 b.nextDueDate?.let {
@@ -105,6 +108,20 @@ class NotificationSync
                 }
             }
         }
+    }
+
+    /**
+     * Roll a recurring rule's next_run_at forward by its cadence when it is in
+     * the past (it fired — or should have — while the app was closed), and
+     * persist the advanced value so the next occurrence is always scheduled.
+     */
+    private suspend fun rollForwardRecurring(rule: RecurringRuleEntity): String? {
+        val advanced = advanceCadencePastNow(rule.nextRunAt, rule.cadence)
+        if (advanced != null && advanced != rule.nextRunAt) {
+            plannerDao.updateRule(rule.copy(nextRunAt = advanced))
+            return advanced
+        }
+        return rule.nextRunAt
     }
 
     /** Called after a transaction mutation to re-evaluate budget thresholds. */

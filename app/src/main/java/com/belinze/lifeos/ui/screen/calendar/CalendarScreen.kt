@@ -50,6 +50,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -133,6 +134,10 @@ fun CalendarScreen(
     val isCurrentMonth = yearMonth == todayYearMonth
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(yearMonth) {
+        eventViewModel.loadCalendarMonth(yearMonth)
+    }
+
     val headerSubtitle = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
     val selectedDateLabel = remember(selectedDate) {
         runCatching {
@@ -140,8 +145,14 @@ fun CalendarScreen(
         }.getOrNull() ?: selectedDate
     }
 
+    val selectedLocalDate = remember(selectedDate) {
+        runCatching { LocalDate.parse(selectedDate) }.getOrNull() ?: LocalDate.now()
+    }
     val dayItems = remember(eventState.events, selectedDate) {
-        eventState.events.filter { it.date.take(10) == selectedDate }
+        eventViewModel.eventsForDay(selectedLocalDate)
+    }
+    val tasksForDay = remember(taskState.tasks, selectedDate) {
+        taskState.tasks.filter { it.deadline?.take(10) == selectedDate && it.status == "active" }
     }
 
     val filteredDayItems = if (calendarQuery.isBlank()) {
@@ -300,12 +311,12 @@ fun CalendarScreen(
             ) { page ->
                 val pageMonth = YearMonth.now().plusMonths(page.toLong() - PAGER_CENTER)
                 MonthGrid(
-                    yearMonth = pageMonth,
-                    today = today,
+                    yearMonth    = pageMonth,
+                    today        = today,
                     selectedDate = selectedDate,
-                    events = eventState.events,
-                    onDayClick = { selectedDate = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    eventsByDate = eventState.eventsByDate,
+                    onDayClick   = { selectedDate = it },
+                    modifier     = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -333,7 +344,7 @@ fun CalendarScreen(
                         )
                         Spacer(Modifier.height(Spacing.sm))
 
-                        if (dayItemGroups.isEmpty()) {
+                        if (dayItemGroups.isEmpty() && tasksForDay.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -352,14 +363,36 @@ fun CalendarScreen(
                                 }
                             }
                         } else {
+                            // Tasks from the tasks table due on this day
+                            if (tasksForDay.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                ) {
+                                    Box(modifier = Modifier.size(width = 4.dp, height = 16.dp).background(SUCCESS, MaterialTheme.shapes.extraSmall))
+                                    Text("Due Today", style = MaterialTheme.typography.labelLarge, color = SUCCESS, modifier = Modifier.weight(1f))
+                                    Text("${tasksForDay.size}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Spacer(Modifier.height(Spacing.sm))
+                                tasksForDay.forEach { task ->
+                                    CalendarTaskItem(
+                                        task    = task,
+                                        onToggle = {
+                                            if (task.status == "completed") taskViewModel.reopen(task.id)
+                                            else taskViewModel.complete(task.id)
+                                        },
+                                        onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
+                                    )
+                                }
+                                Spacer(Modifier.height(Spacing.base))
+                            }
                             dayItemGroups.forEach { group ->
                                 DayItemGroup(
                                     label = group.first,
                                     color = group.second,
                                     items = group.third,
                                     onItemClick = { item ->
-                                        // Day-view items are all EventEntity rows (tasks with
-                                        // type="task" live in the events table, not tasks table).
                                         navController.navigate(NavTo.eventDetail(item.id))
                                     },
                                 )
@@ -689,12 +722,12 @@ private fun EventListItem(
 
 @Composable
 private fun MonthGrid(
-    yearMonth:   YearMonth,
-    today:       LocalDate,
+    yearMonth:    YearMonth,
+    today:        LocalDate,
     selectedDate: String,
-    events:      List<EventEntity>,
-    onDayClick:  (String) -> Unit,
-    modifier:    Modifier = Modifier,
+    eventsByDate: Map<LocalDate, Set<String>>,
+    onDayClick:   (String) -> Unit,
+    modifier:     Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         val firstDay = yearMonth.atDay(1)
@@ -713,15 +746,15 @@ private fun MonthGrid(
                         val dateStr = date.toString()
                         val isToday = date == today
                         val isSelected = dateStr == selectedDate
-                        // CA-2: collect one dot per event type present on this day
-                        val dotColors = remember(events, dateStr) {
+                        // CA-2: one dot per event type (including recurring occurrences)
+                        val dotColors = remember(eventsByDate, date) {
+                            val types = eventsByDate[date] ?: emptySet()
                             buildList {
-                                val dayEvents = events.filter { it.date.take(10) == dateStr }
-                                if (dayEvents.any { it.type == "task" })        add(SUCCESS)
-                                if (dayEvents.any { it.type == "event" })       add(Color(0xFF60A5FA))
-                                if (dayEvents.any { it.type == "birthday" })    add(BIRTHDAY)
-                                if (dayEvents.any { it.type == "anniversary" }) add(ANNIVERSARY)
-                                if (dayEvents.any { it.type == "countdown" })   add(WARNING)
+                                if (types.contains("task"))        add(SUCCESS)
+                                if (types.contains("event"))       add(Color(0xFF60A5FA))
+                                if (types.contains("birthday"))    add(BIRTHDAY)
+                                if (types.contains("anniversary")) add(ANNIVERSARY)
+                                if (types.contains("countdown"))   add(WARNING)
                             }
                         }
                         DayCell(

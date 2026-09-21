@@ -87,9 +87,9 @@ private val REMINDER_PRESETS = listOf(
 )
 
 private val PRIORITY_OPTIONS = listOf(
-    "low"    to "Neutral",
-    "medium" to "Important",
-    "high"   to "Urgent",
+    "low"    to "Low",
+    "medium" to "Medium",
+    "high"   to "High",
 )
 
 private val PRIORITY_COLORS = mapOf(

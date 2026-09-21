@@ -13,6 +13,9 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.belinze.lifeos.MainActivity
+import com.belinze.lifeos.ui.navigation.NavTo
+import com.belinze.lifeos.ui.navigation.Route
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import java.time.LocalDate
@@ -52,6 +55,17 @@ class NotificationScheduler
     private val notifManager: NotificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+    // Tracks scheduled alarm request codes by prefix so cancelByPrefix works correctly.
+    private val alarmPrefs by lazy {
+        context.getSharedPreferences("lifeos_alarm_codes", Context.MODE_PRIVATE)
+    }
+
+    private fun storeCode(prefix: String, code: Int) {
+        val current = alarmPrefs.getStringSet(prefix, emptySet())?.toMutableSet() ?: mutableSetOf()
+        current.add(code.toString())
+        alarmPrefs.edit().putStringSet(prefix, current).apply()
+    }
+
     // ─── Channel setup (mirrors createNotificationChannel) ────────────────────
 
     fun ensureChannels() {
@@ -65,7 +79,7 @@ class NotificationScheduler
         )
         notifManager.createNotificationChannel(
             NotificationChannel(
-                CHANNEL_ALARMS, "LifeOS Alarms", NotificationManager.IMPORTANCE_HIGH,
+                CHANNEL_ALARMS, "LifeOS Alarms", NotificationManager.IMPORTANCE_MAX,
             ).apply {
                 description = "Alarm-style reminders for tasks and events"
                 setSound(
@@ -168,14 +182,22 @@ class NotificationScheduler
         offsetsMin.forEach { offsetMin ->
             val fireMs = baseMs - offsetMin * 60_000L
             if (fireMs <= now) return@forEach
+            val text = when {
+                type == "birthday"    && offsetMin == 0 -> "Today is their birthday! 🎂"
+                type == "birthday"                      -> "Birthday in ${describeDuration(offsetMin)}"
+                type == "anniversary" && offsetMin == 0 -> "Happy anniversary! 🎉"
+                type == "anniversary"                   -> "Anniversary in ${describeDuration(offsetMin)}"
+                offsetMin == 0                          -> "Event now"
+                else                                    -> "Event in ${describeDuration(offsetMin)}"
+            }
             scheduleOneShot(
                 requestCode = idFor("event", eventId, offsetMin),
                 atMs        = fireMs,
                 title       = title,
-                text        = if (offsetMin == 0) "Event now" else "Event in ${describeDuration(offsetMin)}",
+                text        = text,
                 channel     = if (alarm) CHANNEL_ALARMS else CHANNEL_REMINDERS,
                 prefix      = "event-$eventId-",
-                kind        = "event",
+                kind        = type,
                 entityId    = eventId,
             )
         }
@@ -288,6 +310,7 @@ class NotificationScheduler
         kind: String,
         entityId: String,
     ) {
+        storeCode(prefix, requestCode)
         val pending = PendingIntent.getBroadcast(
             context,
             requestCode,
@@ -304,7 +327,6 @@ class NotificationScheduler
         if (canScheduleExactAlarms()) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pending)
         } else {
-            // Fall back to inexact when the user hasn't granted SCHEDULE_EXACT_ALARM.
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pending)
         }
     }
@@ -316,13 +338,20 @@ class NotificationScheduler
     }
 
     private fun cancelByPrefix(prefix: String) {
-        // We track request codes by prefix in a map; simplest robust approach is
-        // to cancel the individual alarms we know about. Since each entity's
-        // codes are deterministic, rescheduling overwrites them.
-        // For full cancellation on reconciliation we iterate known IDs — but the
-        // RN app's cancelByPrefix cancels by notification identifier. We emulate
-        // it by cancelling nothing here (alarms are idempotently overwritten on
-        // reschedule) and relying on schedule() to replace stale alarms.
+        // Cancel all alarms stored under this prefix.
+        val codes = alarmPrefs.getStringSet(prefix, emptySet()) ?: emptySet()
+        codes.forEach { codeStr ->
+            val code = codeStr.toIntOrNull() ?: return@forEach
+            val pending = PendingIntent.getBroadcast(
+                context, code,
+                Intent(context, NotificationReceiver::class.java),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+            )
+            if (pending != null) alarmManager.cancel(pending)
+        }
+        alarmPrefs.edit().remove(prefix).apply()
+
+        // Digest has a fixed request code outside the tracked map.
         if (prefix == DIGEST_PREFIX) {
             val pending = PendingIntent.getBroadcast(
                 context,
@@ -395,8 +424,30 @@ class NotificationReceiver : BroadcastReceiver() {
         val kind = intent.getStringExtra(NotificationScheduler.EXTRA_KIND)
         val entityId = intent.getStringExtra(NotificationScheduler.EXTRA_ENTITY_ID)
 
+        // Deep-link route for notification tap
+        val navRoute = when (kind) {
+            "task"        -> entityId?.let { NavTo.taskDetail(it) } ?: Route.TASKS
+            "event",
+            "birthday",
+            "anniversary",
+            "countdown"   -> entityId?.let { NavTo.eventDetail(it) } ?: Route.EVENTS
+            "bill"        -> Route.BILLS
+            "recurring"   -> Route.RECURRING
+            else          -> Route.MAIN
+        }
+        val launchIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("nav_route", navRoute)
+        }
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            (title.hashCode() and 0x7FFF_FFFF),
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
         // Post the notification
-        if (androidx.core.content.ContextCompat.checkSelfPermission(
+        if (ContextCompat.checkSelfPermission(
                 context, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT < 33
         ) {
@@ -406,6 +457,7 @@ class NotificationReceiver : BroadcastReceiver() {
                 .setContentText(text)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(contentIntent)
                 .build()
             NotificationManagerCompat.from(context).notify(title.hashCode(), notification)
         }
