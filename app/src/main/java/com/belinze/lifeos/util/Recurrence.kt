@@ -23,9 +23,6 @@ import java.time.format.DateTimeParseException
 
 private val ISO_OFFSET: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
-private fun daysInMonth(year: Int, month0: Int): Int =
-    LocalDate.of(year, month0 + 1, 1).lengthOfMonth()
-
 /** Add [months] preserving the anchored day-of-month, clamped to the target month's length. */
 private fun addMonthsClamped(d: ZonedDateTime, months: Long, anchorDay: Int): ZonedDateTime {
     val next = d.plusMonths(months)

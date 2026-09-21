@@ -19,13 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Cake
-import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -167,8 +166,12 @@ private fun formatEventSubtitle(iso: String, type: String): String {
             val ampm = if (h < 12) "AM" else "PM"
             val dh = if (h == 0) 12 else if (h > 12) h - 12 else h
             " · %d:%02d %s".format(dh, m, ampm)
-        } catch (_: Exception) { "" }
-    } else ""
+        } catch (_: Exception) {
+            ""
+        }
+    } else {
+        ""
+    }
     return "$datePart$timePart · $typeLabel"
 }
 

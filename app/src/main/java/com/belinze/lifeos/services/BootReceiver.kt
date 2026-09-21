@@ -19,13 +19,15 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
-
     @Inject lateinit var notificationSync: NotificationSync
+
     @Inject lateinit var prefs: AppPreferences
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
-            intent.action != "android.intent.action.QUICKBOOT_POWERON") return
+            intent.action != "android.intent.action.QUICKBOOT_POWERON") {
+                return
+            }
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {

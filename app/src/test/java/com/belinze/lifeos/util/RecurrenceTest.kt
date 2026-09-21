@@ -11,7 +11,6 @@ import kotlin.test.assertNull
  * cases, using a fixed "now" for determinism: 2026-07-03T12:00:00Z (Friday).
  */
 class RecurrenceTest {
-
     private val NOW: Long = Instant.parse("2026-07-03T12:00:00Z").toEpochMilli()
 
     private fun assertIso(expected: String, actual: String?) {

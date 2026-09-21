@@ -379,8 +379,11 @@ fun CalendarScreen(
                                     CalendarTaskItem(
                                         task    = task,
                                         onToggle = {
-                                            if (task.status == "completed") taskViewModel.reopen(task.id)
-                                            else taskViewModel.complete(task.id)
+                                            if (task.status == "completed") {
+                                                taskViewModel.reopen(task.id)
+                                            } else {
+                                                taskViewModel.complete(task.id)
+                                            }
                                         },
                                         onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
                                     )

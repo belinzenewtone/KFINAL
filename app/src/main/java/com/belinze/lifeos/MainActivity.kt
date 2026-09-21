@@ -24,7 +24,6 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     /** Pending navigation route from a notification tap; consumed once by the nav graph. */
     var pendingNotifRoute: String? by mutableStateOf(null)
         private set
