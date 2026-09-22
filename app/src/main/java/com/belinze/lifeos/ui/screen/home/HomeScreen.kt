@@ -134,7 +134,7 @@ fun HomeScreen(
             ) {
                 // ── Header row ────────────────────────────────────────────────
                 Row(
-                    modifier              = Modifier.fillMaxWidth().padding(bottom = Spacing.xl),
+                    modifier              = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment     = Alignment.CenterVertically,
                 ) {
@@ -168,8 +168,8 @@ fun HomeScreen(
 
                 // ── Focus section ─────────────────────────────────────────────
                 Column(
-                    modifier            = Modifier.padding(bottom = Spacing.xl),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    modifier            = Modifier.padding(bottom = Spacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                 ) {
                     Text(
                         text       = "Daily focus",
@@ -180,58 +180,47 @@ fun HomeScreen(
                     )
                     Text(
                         text      = greeting,
-                        style     = MaterialTheme.typography.headlineLarge,   // 30sp/700
+                        style     = MaterialTheme.typography.headlineMedium,
                         color     = MaterialTheme.colorScheme.onSurface,
                         maxLines  = 2,
                     )
                     Text(
                         text  = "Review priorities, schedule, and your spend trend.",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
-                // ── Metrics row (horizontal scroll) ───────────────────────────
+                // ── Content (shimmer while loading) ───────────────────────────
                 if (txState.monthTotals == null) {
-                    ShimmerLoadingState(rowCount = 1)
+                    ShimmerLoadingState(rowCount = 3, rowHeight = 88.dp)
                 } else {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = Spacing.xl),
+                            .padding(bottom = Spacing.lg),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.base),
                     ) {
-                        HomeMetricCard(label = "Today's Spend",  amount = todayCash,  glow = FrostCardGlow.Blue,  modifier = Modifier.weight(1f))
-                        HomeMetricCard(label = "Week's Spend",   amount = weekCash,   glow = FrostCardGlow.Teal,  modifier = Modifier.weight(1f))
+                        HomeMetricCard(label = "Today",     amount = todayCash, glow = FrostCardGlow.Blue, modifier = Modifier.weight(1f))
+                        HomeMetricCard(label = "This Week", amount = weekCash,  glow = FrostCardGlow.Teal, modifier = Modifier.weight(1f))
                     }
-                }
 
-                // ── HomeMenuCard ──────────────────────────────────────────────
-                HomeMenuCard(
-                    pendingTaskCount = taskState.pendingCount,
-                    dueTodayCount    = taskState.dueTodayCount,
-                    nextEventTitle   = eventState.nextEvent?.title,
-                    onTasks          = { navController.navigate(Route.TASKS) },
-                    onEvents         = { navController.navigate(Route.EVENTS) },
-                    onInsights       = { navController.navigate(Route.INSIGHTS) },
-                    onSearch         = { navController.navigate(Route.SEARCH) },
-                    modifier         = Modifier.padding(bottom = Spacing.xl),
-                )
+                    HomeMenuCard(
+                        pendingTaskCount = taskState.pendingCount,
+                        dueTodayCount    = taskState.dueTodayCount,
+                        nextEventTitle   = eventState.nextEvent?.title,
+                        onTasks          = { navController.navigate(Route.TASKS) },
+                        onEvents         = { navController.navigate(Route.EVENTS) },
+                        onInsights       = { navController.navigate(Route.INSIGHTS) },
+                        onSearch         = { navController.navigate(Route.SEARCH) },
+                        modifier         = Modifier.padding(bottom = Spacing.lg),
+                    )
 
-                // ── Upcoming tasks widget ─────────────────────────────────────
-                if (taskState.upcoming.isNotEmpty()) {
-                    UpcomingTasksWidget(
-                        tasks    = taskState.upcoming,
-                        onPress  = { navController.navigate(Route.TASKS) },
-                        modifier = Modifier.padding(bottom = Spacing.xl),
+                    WeeklyResetCard(
+                        pendingTaskCount = taskState.pendingCount,
+                        onPress          = { navController.navigate(Route.WEEK_REVIEW) },
                     )
                 }
-
-                // ── WeeklyResetCard ───────────────────────────────────────────
-                WeeklyResetCard(
-                    pendingTaskCount = taskState.pendingCount,
-                    onPress          = { navController.navigate(Route.WEEK_REVIEW) },
-                )
             }
         }
 
@@ -287,10 +276,10 @@ private fun HomeMetricCard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(Spacing.sm))
+        Spacer(Modifier.height(Spacing.xs))
         Text(
             text       = formatCurrency(amount, decimals = 0),
-            style      = MaterialTheme.typography.headlineMedium,  // 24sp/700
+            style      = MaterialTheme.typography.titleLarge,
             color      = MaterialTheme.colorScheme.onSurface,
             maxLines   = 1,
         )
@@ -328,21 +317,21 @@ private fun HomeMenuCard(
                 icon = Icons.Outlined.TaskAlt,
                 onClick = onTasks,
             )
-            Spacer(Modifier.height(Spacing.base))
+            Spacer(Modifier.height(Spacing.sm))
             MenuRow(
                 label = "Next Event",
-                value = nextEventTitle ?: "No event",
+                value = nextEventTitle ?: "No upcoming",
                 icon = Icons.Outlined.CalendarMonth,
                 onClick = onEvents,
             )
-            Spacer(Modifier.height(Spacing.base))
+            Spacer(Modifier.height(Spacing.sm))
             MenuRow(
                 label = "Analytics",
                 value = "Trends",
                 icon = Icons.Outlined.Analytics,
                 onClick = onInsights,
             )
-            Spacer(Modifier.height(Spacing.base))
+            Spacer(Modifier.height(Spacing.sm))
             MenuRow(
                 label = "Search",
                 value = "Explore",
@@ -376,16 +365,16 @@ private fun MenuRow(
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(34.dp)
                 .background(primary.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = label, tint = primary, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = label, tint = primary, modifier = Modifier.size(18.dp))
         }
-        Spacer(Modifier.width(Spacing.base))
+        Spacer(Modifier.width(Spacing.sm))
         Text(
             text  = label,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
         )
