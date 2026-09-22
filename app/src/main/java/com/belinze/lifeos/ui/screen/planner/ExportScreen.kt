@@ -18,8 +18,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.TaskAlt
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -285,7 +292,17 @@ fun ExportScreen(
                                     ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(Icons.Outlined.Wallet, contentDescription = null,
+                                val domainIcon = when (domain.key) {
+                                    "transactions" -> Icons.Outlined.Receipt
+                                    "tasks"        -> Icons.Outlined.TaskAlt
+                                    "events"       -> Icons.Outlined.CalendarMonth
+                                    "budgets"      -> Icons.Outlined.AccountBalanceWallet
+                                    "incomes"      -> Icons.Outlined.TrendingUp
+                                    "recurring"    -> Icons.Outlined.Repeat
+                                    "goals"        -> Icons.Outlined.Flag
+                                    else           -> Icons.Outlined.Wallet
+                                }
+                                Icon(domainIcon, contentDescription = null,
                                     tint = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(16.dp))
                             }
@@ -385,12 +402,24 @@ fun ExportScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
-                            Box(
-                                modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f), CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(Icons.Outlined.Description, contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            val fmtColor = when (exp.format?.lowercase()) {
+                                "json" -> Color(0xFF22C55E)
+                                "pdf"  -> Color(0xFFF59E0B)
+                                else   -> MaterialTheme.colorScheme.primary
+                            }
+                            Box(contentAlignment = Alignment.TopEnd) {
+                                Box(
+                                    modifier = Modifier.size(40.dp).background(fmtColor.copy(alpha = 0x20 / 255f), CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.Outlined.Description, contentDescription = null,
+                                        tint = fmtColor, modifier = Modifier.size(18.dp))
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(Color(0xFF22C55E), CircleShape),
+                                )
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(exp.filePath ?: "", style = MaterialTheme.typography.bodyMedium,

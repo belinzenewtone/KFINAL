@@ -43,7 +43,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -150,8 +149,9 @@ fun FinanceScreen(
     val activeLoansDs   by remember { derivedStateOf { plannerState.loans.filter { it.status == "active" } } }
     val isImporting     by remember { derivedStateOf { smsState.isImporting } }
     val context      = LocalContext.current
-    var showImportSmsSheet by remember { mutableStateOf(false) }
-    var showImportCsvSheet by remember { mutableStateOf(false) }
+    var showImportSmsSheet     by remember { mutableStateOf(false) }
+    var showImportCsvSheet     by remember { mutableStateOf(false) }
+    var selectedTransactionId  by remember { mutableStateOf<String?>(null) }
 
     // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
     // from the Budgets/Categorize screens) so the budget alert, budget card, and
@@ -572,15 +572,10 @@ fun FinanceScreen(
 
                 // ── Paging 3 transaction list ─────────────────────────────────
                 //
-                // Date grouping is done inline per item:
-                //   • isFirstOfDay  → show date header above + open rounded top corners
-                //   • isLastOfDay   → close rounded bottom corners + vertical gap after
-                //   • peek(index+1) returns null at page boundaries (not yet loaded);
-                //     when the next page loads the item recomposes with the correct radius.
-                //   • peek(index+1) must be bounds-checked: accessing index == itemCount
-                //     throws IndexOutOfBoundsException when the filtered list is small
-                //     enough that the user scrolls to the very last item.
-                //   • dividers only between same-day items (hidden when isLastOfDay)
+                // Each transaction is its own bordered card (RFINAL parity).
+                // Date grouping: peek(index-1) to show a date header above the
+                // first item of each day. peek(index+1) is NOT used so there's
+                // no bounds-check hazard and no adaptive corner logic needed.
                 items(
                     count = pagingItems.itemCount,
                     key   = { index -> pagingItems.peek(index)?.id ?: index },
@@ -589,11 +584,8 @@ fun FinanceScreen(
 
                     val prevDate     = if (index > 0) pagingItems.peek(index - 1)?.date?.take(10) else null
                     val currDate     = tx.date?.take(10) ?: ""
-                    val nextDate     = if (index + 1 < pagingItems.itemCount) pagingItems.peek(index + 1)?.date?.take(10) else null
                     val isFirstOfDay = prevDate != currDate
-                    val isLastOfDay  = nextDate != currDate
 
-                    // Date section header above the first item of each day
                     if (isFirstOfDay) {
                         DayGroupHeader(
                             dateLabel = formatDateKey(currDate),
@@ -601,33 +593,22 @@ fun FinanceScreen(
                         )
                     }
 
-                    // Visual grouping: adaptive corner radius gives each date group
-                    // a card-like appearance without a wrapping GlassCard.
-                    val topR    = if (isFirstOfDay) 12.dp else 0.dp
-                    val bottomR = if (isLastOfDay)  12.dp else 0.dp
-                    val shape   = RoundedCornerShape(
-                        topStart    = topR, topEnd    = topR,
-                        bottomStart = bottomR, bottomEnd = bottomR,
-                    )
-
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.screenHorizontal)
-                            .clip(shape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, shape),
+                            .padding(
+                                start  = Spacing.screenHorizontal,
+                                end    = Spacing.screenHorizontal,
+                                bottom = Spacing.xs,
+                            )
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
                     ) {
                         TransactionListItem(
                             tx      = tx,
-                            onClick = { navController.navigate(NavTo.transactionDetail(tx.id)) },
+                            onClick = { selectedTransactionId = tx.id },
                         )
-                        if (!isLastOfDay) {
-                            HorizontalDivider(
-                                modifier  = Modifier.padding(horizontal = 12.dp),
-                                color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                                thickness = 1.dp,
-                            )
-                        }
                     }
                 }
 
@@ -688,6 +669,13 @@ fun FinanceScreen(
             ImportCsvSheet(
                 onDismiss     = { showImportCsvSheet = false },
                 navController = navController,
+            )
+        }
+        if (selectedTransactionId != null) {
+            TransactionDetailDialog(
+                transactionId = selectedTransactionId!!,
+                onDismiss     = { selectedTransactionId = null },
+                viewModel     = viewModel,
             )
         }
     }

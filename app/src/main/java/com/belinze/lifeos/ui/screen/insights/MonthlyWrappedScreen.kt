@@ -294,31 +294,41 @@ fun MonthlyWrappedScreen(
                         }
                     }
 
-                    // ─ Active Days + Fees (half-cards) ─
+                    // ─ Active Days + Fees ─
+                    // Full-width when there are no fees; two equal half-cards otherwise.
                     item {
-                        Row(
-                            modifier              = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            GlassCard(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "ACTIVE DAYS",
-                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
-                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = Spacing.sm),
-                                )
-                                Text(
-                                    text       = "${state.activeDays}",
-                                    style      = MaterialTheme.typography.headlineSmall,
-                                    color      = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text  = "of ${state.totalDaysInMonth} days",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (state.feesTotal > 0.0) {
+                        val activeDaysContent: @Composable ColumnScope.() -> Unit = {
+                            Text(
+                                "ACTIVE DAYS",
+                                style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = Spacing.xs),
+                            )
+                            Text(
+                                text  = "${state.activeDays}",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(Modifier.height(Spacing.xs))
+                            LinearProgressIndicator(
+                                progress  = { (state.activeDays.toFloat() / state.totalDaysInMonth.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                                modifier  = Modifier.fillMaxWidth().height(4.dp),
+                                color     = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                            )
+                            Spacer(Modifier.height(Spacing.xs))
+                            Text(
+                                text  = "of ${state.totalDaysInMonth} days",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (state.feesTotal > 0.0) {
+                            Row(
+                                modifier              = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            ) {
+                                GlassCard(modifier = Modifier.weight(1f), content = activeDaysContent)
                                 GlassCard(modifier = Modifier.weight(1f)) {
                                     Text(
                                         "FEES PAID",
@@ -337,9 +347,9 @@ fun MonthlyWrappedScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                            } else {
-                                Spacer(Modifier.weight(1f))
                             }
+                        } else {
+                            GlassCard(modifier = Modifier.fillMaxWidth(), content = activeDaysContent)
                         }
                     }
 
@@ -377,7 +387,7 @@ fun MonthlyWrappedScreen(
                                 Text(
                                     text  = if (isSaving) "SAVED THIS MONTH" else "SPENT OVER INCOME",
                                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSaving) COLOR_SUCCESS else COLOR_DANGER,
                                     modifier = Modifier.padding(bottom = Spacing.sm),
                                 )
                                 Text(

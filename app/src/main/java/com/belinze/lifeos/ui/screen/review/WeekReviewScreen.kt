@@ -269,19 +269,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
         )
         Spacer(Modifier.height(Spacing.base))
 
-        // Tooltip
-        selectedBar?.let { bar ->
-            Text(
-                text  = formatCurrency(bar.amount),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(Spacing.xs))
-        }
-
-        // Bars row
+        // Bars row — tooltip appears immediately above the tapped bar (RFINAL parity)
         Row(
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -307,6 +295,19 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                         ) { selectedBar = if (isSelected) null else bar },
                     horizontalAlignment   = Alignment.CenterHorizontally,
                 ) {
+                    if (isSelected && bar.amount > 0.0) {
+                        Text(
+                            text       = formatCurrency(bar.amount),
+                            style      = MaterialTheme.typography.labelSmall,
+                            color      = barColor,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier   = Modifier.fillMaxWidth(),
+                            textAlign  = TextAlign.Center,
+                            maxLines   = 1,
+                            fontSize   = 8.sp,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                    }
                     Box(
                         modifier        = Modifier
                             .height(80.dp)

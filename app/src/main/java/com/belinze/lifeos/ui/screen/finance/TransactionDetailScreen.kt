@@ -2,11 +2,14 @@ package com.belinze.lifeos.ui.screen.finance
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,6 +52,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -244,6 +250,197 @@ fun TransactionDetailScreen(
                     viewModel.softDelete(tx.id)
                     showDeleteDialog = false
                     navController.popBackStack()
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TransactionDetailDialog
+//
+// Full-screen dark-scrim overlay with a centred card — 1:1 with RFINAL's
+// modal overlay (Stack navigation with semi-transparent background).
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun TransactionDetailDialog(
+    transactionId: String,
+    onDismiss:     () -> Unit,
+    viewModel:     TransactionViewModel,
+) {
+    val selectedTx by viewModel.selectedTransaction.collectAsStateWithLifecycle()
+    val tx = selectedTx?.takeIf { it.id == transactionId }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(transactionId) { viewModel.loadTransaction(transactionId) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            modifier         = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.45f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication        = null,
+                    onClick           = onDismiss,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                modifier  = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication        = null,
+                        onClick           = {},
+                    ),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                when {
+                    tx == null -> {
+                        Box(
+                            modifier         = Modifier.fillMaxWidth().height(120.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { CircularProgressIndicator() }
+                    }
+                    else -> {
+                        val categoryColor = categoryColor(tx.category ?: "")
+                        val amountColor = when (tx.transactionType) {
+                            "income" -> Color(0xFF34D399)
+                            "expense" -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 20.dp, vertical = 20.dp),
+                        ) {
+                            // Hero
+                            Column(
+                                modifier            = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Box(
+                                    modifier         = Modifier
+                                        .size(64.dp)
+                                        .background(categoryColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(28.dp)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        when (tx.transactionType) {
+                                            "income"   -> Icons.Outlined.ArrowDownward
+                                            "transfer" -> Icons.Outlined.SwapHoriz
+                                            else       -> Icons.Outlined.ArrowUpward
+                                        },
+                                        contentDescription = null,
+                                        tint     = categoryColor,
+                                        modifier = Modifier.size(28.dp),
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    tx.merchant ?: "",
+                                    style     = MaterialTheme.typography.titleLarge,
+                                    color     = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                )
+                                Text(
+                                    "${tx.category ?: "uncategorized"} · ${tx.transactionType}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    formatCurrency(tx.amount),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = amountColor,
+                                )
+                            }
+
+                            // Details
+                            GlassCard(modifier = Modifier.padding(bottom = 12.dp)) {
+                                DetailRow("Date", tx.date?.let { formatDetailDate(it) } ?: "")
+                                DetailRow("Status", tx.status)
+                                tx.mpesaCode?.let { DetailRow("M-Pesa Code", it) }
+                                if (tx.mpesaCode == null) tx.externalRef?.let { DetailRow("Reference", it) }
+                                tx.description?.let { DetailRow("Description", it) }
+                                tx.notes?.let { DetailRow("Notes", it) }
+                                tx.balanceAfter?.let { DetailRow("Balance After", formatCurrency(it)) }
+                                tx.fee?.let { DetailRow("Fee", formatCurrency(it)) }
+                            }
+
+                            if (isEditing) {
+                                InlineEditPanel(
+                                    viewModel     = viewModel,
+                                    transactionId = transactionId,
+                                    onCancel      = { isEditing = false },
+                                    onSaved       = { isEditing = false },
+                                )
+                            } else {
+                                Row(
+                                    modifier              = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    TextButton(
+                                        onClick  = {
+                                            val prefix = when (tx.transactionType) {
+                                                "income"  -> "+"
+                                                "expense" -> "-"
+                                                else      -> ""
+                                            }
+                                            val msg = "${prefix}${formatCurrency(tx.amount)} ${tx.transactionType} " +
+                                                "to ${tx.merchant ?: ""} on ${tx.date?.let { formatDetailDate(it) } ?: ""}"
+                                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_TEXT, msg)
+                                            }
+                                            context.startActivity(Intent.createChooser(intent, "Share"))
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                    ) { Text("Share") }
+                                    TextButton(
+                                        onClick  = { showDeleteDialog = true },
+                                        modifier = Modifier.weight(1f),
+                                        colors   = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                    ) { Text("Delete") }
+                                    Button(
+                                        onClick = {
+                                            viewModel.openForm(tx.id)
+                                            isEditing = true
+                                        },
+                                        shape = RoundedCornerShape(20.dp),
+                                    ) { Text("Edit") }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showDeleteDialog && tx != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title   = { Text("Delete transaction") },
+            text    = { Text("Are you sure?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.softDelete(tx.id)
+                    showDeleteDialog = false
+                    onDismiss()
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
