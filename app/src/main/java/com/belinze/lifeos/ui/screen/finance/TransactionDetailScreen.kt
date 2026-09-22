@@ -266,6 +266,7 @@ fun TransactionDetailScreen(
 // modal overlay (Stack navigation with semi-transparent background).
 // ─────────────────────────────────────────────────────────────────────────────
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 fun TransactionDetailDialog(
     transactionId: String,
