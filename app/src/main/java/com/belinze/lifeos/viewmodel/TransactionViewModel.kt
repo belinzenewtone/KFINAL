@@ -122,6 +122,7 @@ class TransactionViewModel
         val totalAmount: Double,
         val avgAmount:   Double,
     )
+
     private val _counterpartyStats = MutableStateFlow<CounterpartyStats?>(null)
     val counterpartyStats: StateFlow<CounterpartyStats?> = _counterpartyStats.asStateFlow()
 

@@ -4,7 +4,6 @@ import com.belinze.lifeos.data.db.entity.TransactionEntity
 import kotlin.math.ln
 
 internal object FeatureExtractor {
-
     fun extract(tx: TransactionEntity): Map<String, Double> = buildMap {
         // Amount features
         put("amount",        tx.amount)

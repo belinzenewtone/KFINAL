@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FrostCard
 import com.belinze.lifeos.ui.components.FrostCardGlow
@@ -62,7 +61,6 @@ import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
-import kotlinx.collections.immutable.ImmutableList
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -307,7 +305,9 @@ private fun HomeMenuCard(
             try {
                 java.time.LocalDate.parse(it.take(10))
                     .format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                null
+            }
         }
     }
     FrostCard(

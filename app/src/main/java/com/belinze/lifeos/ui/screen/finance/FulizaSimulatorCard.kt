@@ -59,7 +59,9 @@ fun FulizaSimulatorCard(
                         dailyRepaymentKes = repayment,
                     )
                 )
-            } else null
+            } else {
+                null
+            }
         }
     }
 

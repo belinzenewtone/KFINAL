@@ -542,7 +542,9 @@ private fun SearchBar(
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
         trailingIcon = if (value.isNotEmpty()) {
             { IconButton(onClick = { onChange("") }) { Icon(Icons.Outlined.Close, contentDescription = "Clear", modifier = Modifier.size(18.dp)) } }
-        } else null,
+        } else {
+            null
+        },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )

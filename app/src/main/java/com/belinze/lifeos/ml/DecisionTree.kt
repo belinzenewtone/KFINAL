@@ -18,7 +18,6 @@ internal sealed class TreeNode {
 }
 
 internal object DecisionTree {
-
     private const val MAX_DEPTH         = 6
     private const val MIN_SAMPLES_SPLIT = 4
 
@@ -36,8 +35,8 @@ internal object DecisionTree {
             is TreeNode.Leaf  -> node.label to node.confidence
             is TreeNode.Split -> {
                 val v = features[node.feature] ?: 0.0
-                if (v <= node.threshold) predictTree(node.left,  features)
-                else                     predictTree(node.right, features)
+                if (v <= node.threshold) { predictTree(node.left, features) }
+                else { predictTree(node.right, features) }
             }
         }
 

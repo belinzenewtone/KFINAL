@@ -25,7 +25,8 @@ class TransactionClassifier @Inject constructor(
     private val MIN_SAMPLES          = 50
     private val CONFIDENCE_THRESHOLD = 0.65
 
-    @Volatile private var tree: TreeNode? = null
+    @Volatile
+    private var tree: TreeNode? = null
 
     init {
         scope.launch { loadOrRetrain() }
