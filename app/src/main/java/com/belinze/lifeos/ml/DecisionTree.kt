@@ -35,8 +35,11 @@ internal object DecisionTree {
             is TreeNode.Leaf  -> node.label to node.confidence
             is TreeNode.Split -> {
                 val v = features[node.feature] ?: 0.0
-                if (v <= node.threshold) { predictTree(node.left, features) }
-                else { predictTree(node.right, features) }
+                if (v <= node.threshold) {
+                    predictTree(node.left, features)
+                } else {
+                    predictTree(node.right, features)
+                }
             }
         }
 

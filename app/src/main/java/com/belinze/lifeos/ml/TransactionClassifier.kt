@@ -16,7 +16,9 @@ import javax.inject.Singleton
 data class ClassificationResult(val label: String, val confidence: Double)
 
 @Singleton
-class TransactionClassifier @Inject constructor(
+class TransactionClassifier
+@Inject
+constructor(
     private val smsDao:      SmsDao,
     private val preferences: AppPreferences,
 ) {
