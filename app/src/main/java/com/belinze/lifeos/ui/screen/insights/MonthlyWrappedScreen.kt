@@ -206,10 +206,11 @@ fun MonthlyWrappedScreen(
                                 )
                                 Text(
                                     text       = formatCurrency(state.totalSpend),
-                                    fontSize   = 44.sp,
+                                    fontSize   = 32.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    lineHeight = 50.sp,
+                                    lineHeight = 38.sp,
                                     color      = MaterialTheme.colorScheme.primary,
+                                    maxLines   = 1,
                                 )
                                 Text(
                                     text  = "this month · ${state.txCount} transaction${if (state.txCount != 1) "s" else ""}",
@@ -396,11 +397,36 @@ fun MonthlyWrappedScreen(
                                     fontWeight = FontWeight.Bold,
                                     color      = if (isSaving) COLOR_SUCCESS else COLOR_DANGER,
                                 )
-                                Text(
-                                    text  = "Income ${formatCurrency(state.totalIncome)} · Spend ${formatCurrency(state.totalSpend)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Row(
+                                    modifier              = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text  = "Income",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text  = formatCurrency(state.totalIncome),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Row(
+                                    modifier              = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text  = "Spend",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text  = formatCurrency(state.totalSpend),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }

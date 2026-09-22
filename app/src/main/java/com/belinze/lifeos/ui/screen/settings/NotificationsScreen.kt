@@ -1,6 +1,5 @@
 package com.belinze.lifeos.ui.screen.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -66,7 +65,6 @@ fun NotificationsScreen(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.base),
         ) {
             SectionLabel("Notifications")
             GlassCard {
@@ -283,9 +281,9 @@ private fun AlertLevelStepper(
 private fun SectionLabel(label: String) {
     Text(
         label,
-        style    = MaterialTheme.typography.titleMedium,
+        style    = MaterialTheme.typography.labelLarge,
         color    = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.base),
+        modifier = Modifier.padding(top = Spacing.sm, bottom = Spacing.sm),
     )
 }
 

@@ -152,7 +152,7 @@ fun SettingsScreen(
                 }
                 Text(
                     text  = "Settings",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
@@ -433,7 +433,7 @@ private fun SectionLabel(label: String) {
         text = label,
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.base),
+        modifier = Modifier.padding(top = Spacing.base, bottom = Spacing.sm),
     )
 }
 

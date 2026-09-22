@@ -1,6 +1,8 @@
 package com.belinze.lifeos.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -140,13 +143,18 @@ fun TopBanner(
 
     AnimatedVisibility(
         visible = visible,
+        // Twitter-style: spring slide in (slight overshoot) + fade
         enter   = slideInVertically(
-            animationSpec   = tween(durationMillis = Motion.bannerEnter),
-            initialOffsetY  = { -it },
+            animationSpec  = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness    = Spring.StiffnessMedium,
+            ),
+            initialOffsetY = { -it },
         ) + fadeIn(tween(Motion.bannerEnter)),
+        // Quick slide out upward + fade
         exit    = slideOutVertically(
-            animationSpec  = tween(durationMillis = Motion.bannerExit),
-            targetOffsetY  = { -it },
+            animationSpec = tween(durationMillis = Motion.bannerExit),
+            targetOffsetY = { -it },
         ) + fadeOut(tween(Motion.bannerExit)),
         modifier = modifier,
     ) {
@@ -199,6 +207,7 @@ private fun BannerContent(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(elevation = 8.dp, shape = ShapeLg, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
             .border(1.dp, colors.border, ShapeLg)
             .background(colors.bg, ShapeLg)
             .then(
