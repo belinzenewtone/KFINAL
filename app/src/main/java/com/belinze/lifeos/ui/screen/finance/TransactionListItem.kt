@@ -158,7 +158,7 @@ fun DayGroupHeader(
     Row(
         modifier              = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.screenHorizontal, top = Spacing.base, bottom = Spacing.xs),
+            .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.base, bottom = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment     = Alignment.CenterVertically,
     ) {

@@ -356,9 +356,10 @@ fun FinanceScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                horizontal = Spacing.screenHorizontal,
-                                top        = Spacing.sm,
-                                bottom     = Spacing.base,
+                                start  = Spacing.screenHorizontal,
+                                end    = Spacing.screenHorizontal,
+                                top    = Spacing.sm,
+                                bottom = Spacing.base,
                             ),
                     ) {
                         Text(
@@ -465,9 +466,10 @@ fun FinanceScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                horizontal = Spacing.screenHorizontal,
-                                top        = Spacing.sm,
-                                bottom     = Spacing.base,
+                                start  = Spacing.screenHorizontal,
+                                end    = Spacing.screenHorizontal,
+                                top    = Spacing.sm,
+                                bottom = Spacing.base,
                             ),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
