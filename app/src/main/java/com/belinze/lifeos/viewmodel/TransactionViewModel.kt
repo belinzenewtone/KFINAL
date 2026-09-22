@@ -116,6 +116,15 @@ class TransactionViewModel
     private val _selectedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val selectedTransaction: StateFlow<TransactionEntity?> = _selectedTransaction.asStateFlow()
 
+    data class CounterpartyStats(
+        val merchant:    String,
+        val count:       Int,
+        val totalAmount: Double,
+        val avgAmount:   Double,
+    )
+    private val _counterpartyStats = MutableStateFlow<CounterpartyStats?>(null)
+    val counterpartyStats: StateFlow<CounterpartyStats?> = _counterpartyStats.asStateFlow()
+
     // Current month analytics key
     private val monthKey = currentMonthKey()
 
@@ -282,6 +291,19 @@ class TransactionViewModel
     fun loadTransaction(id: String) {
         viewModelScope.launch {
             _selectedTransaction.value = dao.getById(id)
+        }
+    }
+
+    fun loadCounterpartyStats(merchant: String) {
+        viewModelScope.launch {
+            val txs = dao.getByMerchant(merchant)
+            val total = txs.sumOf { it.amount }
+            _counterpartyStats.value = CounterpartyStats(
+                merchant    = merchant,
+                count       = txs.size,
+                totalAmount = total,
+                avgAmount   = if (txs.isNotEmpty()) total / txs.size else 0.0,
+            )
         }
     }
 

@@ -21,8 +21,27 @@ interface SmsDao {
 
     // ─── Paybill registry ─────────────────────────────────────────────────────
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertPaybill(entry: PaybillRegistryEntity)
+    @Query("SELECT display_name FROM paybill_registry WHERE paybill_number = :paybillNumber")
+    suspend fun getPaybillName(paybillNumber: String): String?
+
+    @Query("SELECT * FROM paybill_registry ORDER BY usage_count DESC LIMIT :limit")
+    suspend fun getTopPaybills(limit: Int): List<PaybillRegistryEntity>
+
+    @Query("""
+        INSERT INTO paybill_registry (paybill_number, display_name, last_seen_at, usage_count, last_amount_kes)
+        VALUES (:paybillNumber, :displayName, :lastSeenAt, 1, :lastAmountKes)
+        ON CONFLICT(paybill_number) DO UPDATE SET
+            display_name = excluded.display_name,
+            last_seen_at = excluded.last_seen_at,
+            usage_count = paybill_registry.usage_count + 1,
+            last_amount_kes = excluded.last_amount_kes
+    """)
+    suspend fun upsertPaybillUsage(
+        paybillNumber: String,
+        displayName: String,
+        lastSeenAt: String,
+        lastAmountKes: Double?,
+    )
 
     // ─── ML training samples ──────────────────────────────────────────────────
 

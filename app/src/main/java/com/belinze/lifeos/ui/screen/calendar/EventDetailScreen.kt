@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventViewModel
@@ -78,7 +79,7 @@ fun EventDetailScreen(
 
         val priorityColor = PRIORITY_COLORS[event.importance] ?: MaterialTheme.colorScheme.onSurfaceVariant
 
-        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).then(rememberFormFadeIn())) {
             GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xl)) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(Spacing.xl),

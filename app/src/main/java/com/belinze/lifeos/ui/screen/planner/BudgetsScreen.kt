@@ -195,12 +195,14 @@ fun BudgetsScreen(
             }
 
             items(state.budgets, key = { it.budget.id }) { bws ->
-                BudgetCard(
-                    bws = bws,
-                    onToggle = { viewModel.toggleActive(bws.budget.id, it) },
-                    onEdit = { navController.navigate(NavTo.budgetForm(bws.budget.id)) },
-                    onDelete = { budgetToDelete = bws.budget.id },
-                )
+                Box(modifier = Modifier.animateItem()) {
+                    BudgetCard(
+                        bws = bws,
+                        onToggle = { viewModel.toggleActive(bws.budget.id, it) },
+                        onEdit = { navController.navigate(NavTo.budgetForm(bws.budget.id)) },
+                        onDelete = { budgetToDelete = bws.budget.id },
+                    )
+                }
             }
         }
         } // end PullToRefreshBox

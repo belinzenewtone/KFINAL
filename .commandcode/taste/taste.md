@@ -38,3 +38,8 @@
 - Prefers consistent padding/spacing for date and time input fields across forms so the fields don't look mismatched. Confidence: 0.6
 - Before committing and pushing code to a remote repo, prefers a pre-flight verification pass — confirming the parity plan/checklist is fully completed against the reference project (and that the code compiles) — rather than committing and pushing blindly. Confidence: 0.6
 - Requires version numbers (versionCode and versionName) to be bumped and a version tag pushed whenever code is pushed, so the GitHub Actions release workflow fires and produces a downloadable APK. Confidence: 0.9
+- Refers to the project's work by its numbered phase plan (e.g., "the polish which was number 21"), expecting the agent to map requests and remaining work to those phase numbers rather than describing items generically. Confidence: 0.5
+- When a batch/phase of work is finished, wants a clear summary of what remains in the backlog (asked "what remains?") so they can prioritize the next phase, rather than only being asked whether to commit or continue. Confidence: 0.5
+- Prefers the Android app to make network calls with plain `HttpURLConnection` (java.net) and to avoid adding HTTP client libraries (OkHttp/Retrofit/Ktor), matching the project's existing networking pattern. Confidence: 0.6
+- Prefers API credentials/secrets to never be hard-coded in the codebase: they are passed per call and the network layer is silently skipped when they are absent. Confidence: 0.6
+- Prefers non-critical startup network work (e.g., OTA parser-rule sync) to run in a separate coroutine so a slow or failing CDN can't delay critical startup work (notification + budget reconciliation). Confidence: 0.6

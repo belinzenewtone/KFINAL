@@ -7,6 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
@@ -66,6 +67,10 @@ object PreferenceKeys {
     // SMS
     val SMS_BG_RECEIVER          = booleanPreferencesKey("sms_bg_receiver")
 
+    // OTA parser rules
+    val PARSER_RULES_JSON        = stringPreferencesKey("parser_rules_json")
+    val PARSER_RULES_VERSION     = intPreferencesKey("parser_rules_version")
+
     // Calendar
     val CALENDAR_SWIPE           = booleanPreferencesKey("calendar_swipe")
 
@@ -79,6 +84,9 @@ object PreferenceKeys {
 
     // Fired budget alerts — JSON map of "category|level|yearMonth" → ISO timestamp
     val FIRED_BUDGET_ALERTS      = stringPreferencesKey("fired_budget_alerts")
+
+    // On-device ML decision tree (JSON serialized)
+    val ML_TREE_JSON             = stringPreferencesKey("ml_decision_tree")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -150,6 +158,20 @@ class AppPreferences
         store.edit { it.clear() }
     }
 
+    /** Cached OTA parser-rule bundle: raw JSON paired with its version (0 = none). */
+    suspend fun parserRulesCached(): Pair<String?, Int> {
+        val p = store.data.first()
+        return p[PreferenceKeys.PARSER_RULES_JSON] to (p[PreferenceKeys.PARSER_RULES_VERSION] ?: 0)
+    }
+
+    /** Persist a freshly synced OTA parser-rule bundle. */
+    suspend fun setParserRules(json: String, version: Int) {
+        store.edit {
+            it[PreferenceKeys.PARSER_RULES_JSON] = json
+            it[PreferenceKeys.PARSER_RULES_VERSION] = version
+        }
+    }
+
     /** Persist a fired budget-alert key (category|level|yearMonth) → ISO timestamp. */
     suspend fun markBudgetAlertFired(key: String, timestamp: String) {
         store.edit { prefs ->
@@ -163,6 +185,14 @@ class AppPreferences
             prefs[PreferenceKeys.FIRED_BUDGET_ALERTS] = obj.toString()
         }
     }
+
+    /** Read the persisted ML decision tree JSON, or null if none. */
+    suspend fun getMLTree(): String? =
+        store.data.first()[PreferenceKeys.ML_TREE_JSON]
+
+    /** Persist a newly trained ML decision tree. */
+    suspend fun setMLTree(json: String) =
+        store.edit { it[PreferenceKeys.ML_TREE_JSON] = json }
 
     private fun Preferences.toState() = AppPreferenceState(
         hasCompletedOnboarding = this[PreferenceKeys.HAS_COMPLETED_ONBOARDING] ?: false,

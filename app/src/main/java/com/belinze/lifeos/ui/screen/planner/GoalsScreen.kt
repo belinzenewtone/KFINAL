@@ -134,16 +134,18 @@ fun GoalsScreen(
                 contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
             ) {
                 items(state.goals, key = { it.id }) { goal ->
-                    GoalCard(
-                        goal = goal,
-                        onEdit = { navController.navigate(NavTo.goalForm(goal.id)) },
-                        onLogProgress = { logGoalId = goal.id; logAmount = "" },
-                        onComplete = {
-                            viewModel.markGoalComplete(goal.id)
-                            banner = "${goal.title} marked as complete"
-                        },
-                        onDelete = { goalToDelete = goal.id },
-                    )
+                    Box(modifier = Modifier.animateItem()) {
+                        GoalCard(
+                            goal = goal,
+                            onEdit = { navController.navigate(NavTo.goalForm(goal.id)) },
+                            onLogProgress = { logGoalId = goal.id; logAmount = "" },
+                            onComplete = {
+                                viewModel.markGoalComplete(goal.id)
+                                banner = "${goal.title} marked as complete"
+                            },
+                            onDelete = { goalToDelete = goal.id },
+                        )
+                    }
                 }
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }

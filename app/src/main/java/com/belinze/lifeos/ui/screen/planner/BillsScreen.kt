@@ -2,6 +2,7 @@ package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -123,15 +124,17 @@ fun BillsScreen(
                 contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
             ) {
                 items(state.bills, key = { it.id }) { bill ->
-                    BillCard(
-                        bill = bill,
-                        onEdit = { navController.navigate(NavTo.billForm(bill.id)) },
-                        onTogglePaid = {
-                            viewModel.toggleBillPaid(bill.id)
-                            banner = "${bill.title} marked as ${if (bill.paidStatus == 0) "paid" else "unpaid"}"
-                        },
-                        onDelete = { billToDelete = bill.id },
-                    )
+                    Box(modifier = Modifier.animateItem()) {
+                        BillCard(
+                            bill = bill,
+                            onEdit = { navController.navigate(NavTo.billForm(bill.id)) },
+                            onTogglePaid = {
+                                viewModel.toggleBillPaid(bill.id)
+                                banner = "${bill.title} marked as ${if (bill.paidStatus == 0) "paid" else "unpaid"}"
+                            },
+                            onDelete = { billToDelete = bill.id },
+                        )
+                    }
                 }
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }

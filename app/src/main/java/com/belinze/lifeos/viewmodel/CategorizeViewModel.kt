@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.TransactionEntity
+import com.belinze.lifeos.ml.TransactionClassifier
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -33,7 +34,8 @@ data class MerchantGroup(
 class CategorizeViewModel
     @Inject
     constructor(
-    private val dao: TransactionDao,
+    private val dao:        TransactionDao,
+    private val classifier: TransactionClassifier,
 ) : ViewModel() {
     @Immutable
     data class CategorizeUiState(
@@ -73,6 +75,7 @@ class CategorizeViewModel
 
     /** Assign category to a single transaction. */
     fun assignCategory(id: String, category: String) {
+        val tx = _uiState.value.transactions.find { it.id == id }
         _uiState.value = _uiState.value.copy(
             transactions   = _uiState.value.transactions.filterNot { it.id == id }.toImmutableList(),
             merchantGroups = _uiState.value.merchantGroups
@@ -84,6 +87,7 @@ class CategorizeViewModel
             try {
                 dao.updateCategoryById(id, category, nowIso())
                 _uiState.value = _uiState.value.copy(message = "Saved", isError = false)
+                tx?.let { classifier.recordCorrection(it, category) }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(message = "Failed to save category", isError = true)
                 refresh()
@@ -93,9 +97,10 @@ class CategorizeViewModel
 
     /** Assign category to ALL transactions for a given merchant at once. */
     fun assignCategoryForMerchant(merchant: String, category: String) {
-        val count = _uiState.value.merchantGroups.find { it.merchant == merchant }?.count ?: 0
-        val removedIds = _uiState.value.merchantGroups
-            .find { it.merchant == merchant }?.transactions?.map { it.id }?.toSet() ?: emptySet()
+        val group = _uiState.value.merchantGroups.find { it.merchant == merchant }
+        val count      = group?.count ?: 0
+        val txsForML   = group?.transactions?.toList() ?: emptyList()
+        val removedIds = txsForML.map { it.id }.toSet()
         _uiState.value = _uiState.value.copy(
             transactions   = _uiState.value.transactions.filterNot { it.id in removedIds }.toImmutableList(),
             merchantGroups = _uiState.value.merchantGroups.filterNot { it.merchant == merchant }.toImmutableList(),
@@ -105,6 +110,7 @@ class CategorizeViewModel
         viewModelScope.launch {
             try {
                 dao.updateCategoryForMerchant(merchant, category, nowIso())
+                txsForML.forEach { classifier.recordCorrection(it, category) }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(message = "Failed to save category", isError = true)
                 refresh()

@@ -509,6 +509,19 @@ fun FinanceScreen(
                     }
                 }
 
+                // ── Fuliza simulator — shown when there are active loans ──────
+                if (activeLoansDs.isNotEmpty()) {
+                    item {
+                        FulizaSimulatorCard(
+                            activeLoans = activeLoansDs,
+                            modifier    = Modifier.padding(
+                                horizontal = Spacing.screenHorizontal,
+                                vertical   = Spacing.xs,
+                            ),
+                        )
+                    }
+                }
+
                 // ── Period selector + search ──────────────────────────────────
                 item {
                     Row(

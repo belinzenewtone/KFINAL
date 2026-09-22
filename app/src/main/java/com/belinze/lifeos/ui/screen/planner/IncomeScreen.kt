@@ -145,7 +145,7 @@ fun IncomeScreen(
                 }
             } else {
                 items(incomes, key = { it.id }) { income ->
-                    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {
+                    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base).animateItem()) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,

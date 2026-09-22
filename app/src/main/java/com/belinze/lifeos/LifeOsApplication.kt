@@ -6,7 +6,9 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.services.BudgetAlertService
+import com.belinze.lifeos.services.DarajaEnrichmentService
 import com.belinze.lifeos.services.NotificationSync
+import com.belinze.lifeos.services.RuleBundleSync
 import com.belinze.lifeos.util.Haptics
 import com.lifeos.sms.SmsService
 import dagger.hilt.android.HiltAndroidApp
@@ -43,6 +45,12 @@ class LifeOsApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var budgetAlertService: BudgetAlertService
 
+    @Inject
+    lateinit var darajaEnrichmentService: DarajaEnrichmentService
+
+    @Inject
+    lateinit var ruleBundleSync: RuleBundleSync
+
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override val workManagerConfiguration: Configuration
@@ -67,9 +75,21 @@ class LifeOsApplication : Application(), Configuration.Provider {
                 // Re-evaluate budget thresholds on cold start in case spending
                 // crossed a threshold while the app was closed (mirrors RN).
                 budgetAlertService.checkAllBudgetThresholds(state)
+                // Pre-warm the paybill name cache from the local registry.
+                darajaEnrichmentService.warmCache()
             } catch (e: Exception) {
                 Log.e("LifeOS/App", "Startup sync failed", e)
                 Haptics.enabled = true
+            }
+        }
+
+        // OTA parser-rule sync (network) — independent of the critical startup
+        // block above so a slow CDN never delays notification/budget reconciliation.
+        appScope.launch {
+            try {
+                ruleBundleSync.initialize()
+            } catch (e: Exception) {
+                Log.e("LifeOS/App", "Rule bundle sync failed", e)
             }
         }
 

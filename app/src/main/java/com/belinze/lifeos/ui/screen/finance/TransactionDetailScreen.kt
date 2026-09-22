@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
@@ -67,9 +68,14 @@ fun TransactionDetailScreen(
     val tx = selectedTx?.takeIf { it.id == transactionId }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    val counterpartyStats by viewModel.counterpartyStats.collectAsStateWithLifecycle()
+
     LaunchedEffect(transactionId) {
         viewModel.loadTransaction(transactionId)
         isLoaded = true
+    }
+    LaunchedEffect(selectedTx?.merchant) {
+        selectedTx?.merchant?.let { viewModel.loadCounterpartyStats(it) }
     }
     val context = LocalContext.current
 
@@ -130,7 +136,8 @@ fun TransactionDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .then(rememberFormFadeIn()),
         ) {
             // Hero card
             GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
@@ -174,6 +181,16 @@ fun TransactionDetailScreen(
                         formatCurrency(tx.amount),
                         style = MaterialTheme.typography.headlineMedium,
                         color = amountColor,
+                    )
+                }
+            }
+
+            // Counterparty history card (hidden when this is the only transaction with merchant)
+            counterpartyStats?.let { stats ->
+                if (stats.merchant == tx.merchant) {
+                    CounterpartyCard(
+                        stats    = stats,
+                        modifier = Modifier.padding(bottom = Spacing.base),
                     )
                 }
             }

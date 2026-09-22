@@ -98,7 +98,7 @@ fun CategorizeScreen(
     ) {
         if (state.isLoading) {
             Box(
-                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xl),
+                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.x3l),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -170,17 +170,21 @@ fun CategorizeScreen(
         ) {
             if (state.groupByMerchant) {
                 items(state.merchantGroups, key = { it.merchant }) { group ->
-                    MerchantGroupCard(
-                        group           = group,
-                        onAssignAll     = { cat -> viewModel.assignCategoryForMerchant(group.merchant, cat) },
-                        onAssignOne     = { id, cat -> viewModel.assignCategory(id, cat) },
-                    )
+                    Box(modifier = Modifier.animateItem()) {
+                        MerchantGroupCard(
+                            group           = group,
+                            onAssignAll     = { cat -> viewModel.assignCategoryForMerchant(group.merchant, cat) },
+                            onAssignOne     = { id, cat -> viewModel.assignCategory(id, cat) },
+                        )
+                    }
                 }
             } else {
                 items(state.transactions, key = { it.id }) { tx ->
-                    TransactionCard(tx = tx, onCategorySelected = { cat ->
-                        viewModel.assignCategory(tx.id, cat)
-                    })
+                    Box(modifier = Modifier.animateItem()) {
+                        TransactionCard(tx = tx, onCategorySelected = { cat ->
+                            viewModel.assignCategory(tx.id, cat)
+                        })
+                    }
                 }
             }
         }
