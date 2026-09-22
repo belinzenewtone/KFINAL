@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -299,21 +300,22 @@ fun TransactionDetailDialog(
             Surface(
                 modifier  = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .heightIn(max = 520.dp)
+                    .padding(horizontal = 20.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication        = null,
                         onClick           = {},
                     ),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
             ) {
                 when {
                     tx == null -> {
                         Box(
-                            modifier         = Modifier.fillMaxWidth().height(120.dp),
+                            modifier         = Modifier.fillMaxWidth().height(80.dp),
                             contentAlignment = Alignment.Center,
-                        ) { CircularProgressIndicator() }
+                        ) { CircularProgressIndicator(modifier = Modifier.size(24.dp)) }
                     }
                     else -> {
                         val categoryColor = categoryColor(tx.category ?: "")
@@ -326,17 +328,18 @@ fun TransactionDetailDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 20.dp, vertical = 20.dp),
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
                         ) {
-                            // Hero
-                            Column(
-                                modifier            = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                            // Compact hero row — icon + merchant/category + amount side by side
+                            Row(
+                                modifier          = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 Box(
                                     modifier         = Modifier
-                                        .size(64.dp)
-                                        .background(categoryColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(28.dp)),
+                                        .size(44.dp)
+                                        .background(categoryColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(20.dp)),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
@@ -347,26 +350,27 @@ fun TransactionDetailDialog(
                                         },
                                         contentDescription = null,
                                         tint     = categoryColor,
-                                        modifier = Modifier.size(28.dp),
+                                        modifier = Modifier.size(22.dp),
                                     )
                                 }
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    tx.merchant ?: "",
-                                    style     = MaterialTheme.typography.titleLarge,
-                                    color     = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center,
-                                )
-                                Text(
-                                    "${tx.category ?: "uncategorized"} · ${tx.transactionType}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(Modifier.height(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        tx.merchant ?: "",
+                                        style    = MaterialTheme.typography.titleMedium,
+                                        color    = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                    )
+                                    Text(
+                                        "${tx.category ?: "uncategorized"} · ${tx.transactionType}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                                 Text(
                                     formatCurrency(tx.amount),
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = amountColor,
+                                    style     = MaterialTheme.typography.titleMedium,
+                                    color     = amountColor,
+                                    textAlign = TextAlign.End,
                                 )
                             }
 

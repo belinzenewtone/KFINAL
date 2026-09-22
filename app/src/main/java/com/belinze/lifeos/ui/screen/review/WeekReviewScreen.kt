@@ -269,7 +269,31 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
         )
         Spacer(Modifier.height(Spacing.base))
 
-        // Bars row — tooltip appears immediately above the tapped bar (RFINAL parity)
+        // Tooltip area — fixed 18dp height reserved above bars so bars never shift.
+        // Shows the selected bar's amount at full card width (no clipping).
+        Box(
+            modifier         = Modifier.fillMaxWidth().height(18.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            selectedBar?.takeIf { it.amount > 0.0 }?.let { bar ->
+                val tooltipColor = when {
+                    bar.isFuture || bar.amount == 0.0 ->
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                    bar.amount > bar.avg * 1.5         -> COLOR_PEAK
+                    bar.amount > bar.avg               -> COLOR_HIGH
+                    else                               -> COLOR_NORMAL
+                }
+                Text(
+                    text       = formatCurrency(bar.amount),
+                    style      = MaterialTheme.typography.labelSmall,
+                    color      = tooltipColor,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines   = 1,
+                )
+            }
+        }
+
+        // Bars row — height is fixed; tooltip area above never causes layout shift
         Row(
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -295,19 +319,6 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                         ) { selectedBar = if (isSelected) null else bar },
                     horizontalAlignment   = Alignment.CenterHorizontally,
                 ) {
-                    if (isSelected && bar.amount > 0.0) {
-                        Text(
-                            text       = formatCurrency(bar.amount),
-                            style      = MaterialTheme.typography.labelSmall,
-                            color      = barColor,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier   = Modifier.fillMaxWidth(),
-                            textAlign  = TextAlign.Center,
-                            maxLines   = 1,
-                            fontSize   = 8.sp,
-                        )
-                        Spacer(Modifier.height(2.dp))
-                    }
                     Box(
                         modifier        = Modifier
                             .height(80.dp)

@@ -348,17 +348,16 @@ interface TransactionDao {
     """)
     suspend fun getUncategorizedAmountInRange(startDate: String, endDate: String): Double
 
-    /** Fee summary for a date range: total fees, top category, avg fee, tx count. */
+    /** Fee summary for a date range: sums the per-transaction M-Pesa fee column. */
     @Query("""
         SELECT
-          COALESCE(SUM(amount), 0.0) AS total,
-          COALESCE(AVG(amount), 0.0) AS avgFee,
+          COALESCE(SUM(fee), 0.0) AS total,
+          COALESCE(AVG(fee), 0.0) AS avgFee,
           COUNT(*) AS txCount
         FROM transactions
         WHERE date >= :startDate AND date <= :endDate
-          AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
+          AND fee IS NOT NULL AND fee > 0
           AND deleted_at IS NULL
-          AND status = 'completed'
     """)
     suspend fun getFeeSummaryInRange(startDate: String, endDate: String): FeeSummary
 
