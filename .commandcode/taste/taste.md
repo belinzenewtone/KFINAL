@@ -36,5 +36,5 @@
 - When the user flags a UI defect in one spot (padding, toggle color, field layout), prefers the agent to find and fix all similar occurrences across the app/screen, not just the single flagged instance. Confidence: 0.7
 - Prefers status/label chips to sit in their own row/space so they stay put and are never pushed off-screen or hidden by a long adjacent value (stable layout over wrapping or squeezing). Confidence: 0.6
 - Prefers consistent padding/spacing for date and time input fields across forms so the fields don't look mismatched. Confidence: 0.6
-hed. Confidence: 0.6
-s across forms so the fields don't look mismatched. Confidence: 0.6
+- Before committing and pushing code to a remote repo, prefers a pre-flight verification pass — confirming the parity plan/checklist is fully completed against the reference project (and that the code compiles) — rather than committing and pushing blindly. Confidence: 0.6
+- Requires version numbers (versionCode and versionName) to be bumped and a version tag pushed whenever code is pushed, so the GitHub Actions release workflow fires and produces a downloadable APK. Confidence: 0.9
