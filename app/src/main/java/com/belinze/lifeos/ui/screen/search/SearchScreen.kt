@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.screen.search
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,11 +36,16 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -95,8 +99,12 @@ fun SearchScreen(
     viewModel:     SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    // Backed by ViewModel so they survive navigation (not wiped on back+return).
     val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        runCatching { focusRequester.requestFocus() }
+    }
 
     PageScaffold(
         title    = "Search",
@@ -111,7 +119,7 @@ fun SearchScreen(
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { viewModel.addToRecent(state.query) }),
-            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm).focusRequester(focusRequester),
         )
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -147,38 +155,33 @@ fun SearchScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Column(modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "Recent",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f),
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm, bottom = Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Recent",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { viewModel.clearRecent() }) { Text("Clear") }
+                }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    items(recentSearches) { recent ->
+                        SuggestionChip(
+                            onClick = {
+                                viewModel.updateQuery(recent)
+                                viewModel.addToRecent(recent)
+                            },
+                            label = { Text(recent, style = MaterialTheme.typography.bodySmall) },
+                            icon = {
+                                Icon(Icons.Outlined.History, null, modifier = Modifier.size(14.dp))
+                            },
                         )
-                        TextButton(onClick = { viewModel.clearRecent() }) {
-                            Text("Clear")
-                        }
-                    }
-                    recentSearches.forEach { recent ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.updateQuery(recent)
-                                    viewModel.addToRecent(recent)
-                                }
-                                .padding(vertical = Spacing.sm),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            Icon(Icons.Outlined.History, contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
-                            Text(recent, style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        }
                     }
                 }
             }

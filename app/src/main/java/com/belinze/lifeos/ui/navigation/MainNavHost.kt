@@ -211,11 +211,6 @@ fun MainNavHost(
             com.belinze.lifeos.ui.screen.planner.ExportScreen(navController = navController)
         }
 
-        // sms_import
-        composable(Route.IMPORT_SMS) {
-            com.belinze.lifeos.ui.screen.finance.ImportSmsScreen(navController = navController)
-        }
-
         composable(
             route     = Route.CSV_IMPORT,
             arguments = listOf(

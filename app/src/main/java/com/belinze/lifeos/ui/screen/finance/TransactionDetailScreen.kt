@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,10 +23,18 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,7 +55,6 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
-import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.util.formatCurrency
@@ -61,52 +69,24 @@ fun TransactionDetailScreen(
     viewModel:      TransactionViewModel = hiltViewModel(),
 ) {
     val selectedTx by viewModel.selectedTransaction.collectAsStateWithLifecycle()
+    val formState  by viewModel.formState.collectAsStateWithLifecycle()
     // With Paging 3 the Finance screen no longer holds a flat list, so we load
     // by ID on entry. Track whether the load has resolved so we don't flash
     // "not found" while the DB query is in-flight.
     var isLoaded by remember { mutableStateOf(false) }
     val tx = selectedTx?.takeIf { it.id == transactionId }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
-    val counterpartyStats by viewModel.counterpartyStats.collectAsStateWithLifecycle()
+    var isEditing by remember { mutableStateOf(false) }
 
     LaunchedEffect(transactionId) {
         viewModel.loadTransaction(transactionId)
         isLoaded = true
-    }
-    LaunchedEffect(selectedTx?.merchant) {
-        selectedTx?.merchant?.let { viewModel.loadCounterpartyStats(it) }
     }
     val context = LocalContext.current
 
     PageScaffold(
         title = "Transaction",
         onBack = { navController.popBackStack() },
-        actions = {
-            if (tx != null) {
-                IconButton(onClick = {
-                    val prefix = when (tx.transactionType) {
-                        "income" -> "+"
-                        "expense" -> "-"
-                        else -> ""
-                    }
-                    val message = "${prefix}${formatCurrency(tx.amount)} ${tx.transactionType} to " +
-                        "${tx.merchant ?: ""} on ${tx.date?.take(19) ?: ""}"
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, message)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share"))
-                }) {
-                    Icon(Icons.Outlined.Share, contentDescription = "Share",
-                        tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-                }
-                IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
-                }
-            }
-        },
         scrollable = false,
     ) {
         when {
@@ -185,16 +165,6 @@ fun TransactionDetailScreen(
                 }
             }
 
-            // Counterparty history card (hidden when this is the only transaction with merchant)
-            counterpartyStats?.let { stats ->
-                if (stats.merchant == tx.merchant) {
-                    CounterpartyCard(
-                        stats    = stats,
-                        modifier = Modifier.padding(bottom = Spacing.base),
-                    )
-                }
-            }
-
             // Details card
             GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
                 DetailRow("Date", tx.date?.let { formatDetailDate(it) } ?: "")
@@ -207,14 +177,140 @@ fun TransactionDetailScreen(
                 tx.fee?.let { DetailRow("Fee", formatCurrency(it)) }
             }
 
-            Button(
-                onClick = { navController.navigate(NavTo.transactionForm(tx.id)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.lg),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Text("Edit Transaction")
+            if (isEditing) {
+                // Inline edit panel — type, category, status only (matching RFINAL)
+                GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            TX_TYPES_DETAIL.forEachIndexed { idx, type ->
+                                SegmentedButton(
+                                    selected = formState.transactionType == type,
+                                    onClick  = { viewModel.updateFormType(type) },
+                                    shape    = SegmentedButtonDefaults.itemShape(idx, TX_TYPES_DETAIL.size),
+                                    label    = { Text(type.replaceFirstChar { it.uppercase() }) },
+                                )
+                            }
+                        }
+                        var catExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = catExpanded,
+                            onExpandedChange = { catExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value = formState.category.replaceFirstChar { it.uppercase() },
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Category") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(catExpanded) },
+                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            )
+                            ExposedDropdownMenu(
+                                expanded = catExpanded,
+                                onDismissRequest = { catExpanded = false },
+                            ) {
+                                CATEGORIES_DETAIL.forEach { cat ->
+                                    DropdownMenuItem(
+                                        text = { Text(cat.replaceFirstChar { it.uppercase() }) },
+                                        onClick = { viewModel.updateFormCategory(cat); catExpanded = false },
+                                    )
+                                }
+                            }
+                        }
+                        var statusExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = statusExpanded,
+                            onExpandedChange = { statusExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value = formState.status.replaceFirstChar { it.uppercase() },
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Status") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(statusExpanded) },
+                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            )
+                            ExposedDropdownMenu(
+                                expanded = statusExpanded,
+                                onDismissRequest = { statusExpanded = false },
+                            ) {
+                                STATUSES_DETAIL.forEach { status ->
+                                    DropdownMenuItem(
+                                        text = { Text(status.replaceFirstChar { it.uppercase() }) },
+                                        onClick = { viewModel.updateFormStatus(status); statusExpanded = false },
+                                    )
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            TextButton(
+                                onClick = { isEditing = false },
+                                modifier = Modifier.weight(1f),
+                            ) { Text("Cancel") }
+                            Button(
+                                onClick = {
+                                    viewModel.saveForm {
+                                        isEditing = false
+                                        viewModel.loadTransaction(transactionId)
+                                    }
+                                },
+                                shape    = RoundedCornerShape(20.dp),
+                                modifier = Modifier.weight(1f),
+                            ) { Text("Save") }
+                        }
+                    }
+                }
+            } else {
+                // Actions row — Share | Delete | Edit
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
+                    TextButton(
+                        onClick = {
+                            val prefix = when (tx.transactionType) {
+                                "income" -> "+"; "expense" -> "-"; else -> ""
+                            }
+                            val msg = "${prefix}${formatCurrency(tx.amount)} ${tx.transactionType} " +
+                                "to ${tx.merchant ?: ""} on ${tx.date?.let { formatDetailDate(it) } ?: ""}"
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, msg)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Share"))
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(Icons.Outlined.Share, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Share")
+                    }
+                    TextButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.weight(1f),
+                        colors   = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Icon(Icons.Outlined.Delete, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Delete")
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.openForm(tx.id)
+                            isEditing = true
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                    ) { Text("Edit") }
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))
@@ -262,6 +358,15 @@ private fun DetailRow(label: String, value: String) {
         )
     }
 }
+
+private val TX_TYPES_DETAIL   = listOf("expense", "income", "transfer")
+private val STATUSES_DETAIL   = listOf("completed", "pending", "failed", "reversed")
+private val CATEGORIES_DETAIL = listOf(
+    "food", "transport", "utilities", "groceries", "rent", "airtime",
+    "entertainment", "health", "education", "shopping", "savings", "investment",
+    "housing", "personal_care", "subscriptions", "miscellaneous",
+    "income", "uncategorized",
+)
 
 private fun formatDetailDate(iso: String): String = try {
     LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("d MMM yyyy, h:mm a"))

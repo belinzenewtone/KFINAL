@@ -27,14 +27,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -62,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -138,7 +142,7 @@ fun CalendarScreen(
         eventViewModel.loadCalendarMonth(yearMonth)
     }
 
-    val headerSubtitle = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
+    val headerSubtitle = today.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
     val selectedDateLabel = remember(selectedDate) {
         runCatching {
             LocalDate.parse(selectedDate).format(DateTimeFormatter.ofPattern("EEEE, MMM dd", Locale.ENGLISH))
@@ -515,11 +519,11 @@ fun CalendarScreen(
                         Icon(Icons.Outlined.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                AddMenuOption("Task", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "task")) })
-                AddMenuOption("Event", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "event")) })
-                AddMenuOption("Birthday", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "birthday")) })
-                AddMenuOption("Anniversary", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "anniversary")) })
-                AddMenuOption("Countdown", { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "countdown")) })
+                AddMenuOption("Task",        Icons.Outlined.CheckCircle,   { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "task")) })
+                AddMenuOption("Event",       Icons.Outlined.CalendarMonth,  { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "event")) })
+                AddMenuOption("Birthday",    Icons.Outlined.Cake,           { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "birthday")) })
+                AddMenuOption("Anniversary", Icons.Outlined.FavoriteBorder, { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "anniversary")) })
+                AddMenuOption("Countdown",   Icons.Outlined.Timer,          { addMenuOpen = false; navController.navigate(NavTo.eventForm(type = "countdown")) })
             }
         }
     }
@@ -536,6 +540,9 @@ private fun SearchBar(
         onValueChange = onChange,
         placeholder = { Text(placeholder) },
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+        trailingIcon = if (value.isNotEmpty()) {
+            { IconButton(onClick = { onChange("") }) { Icon(Icons.Outlined.Close, contentDescription = "Clear", modifier = Modifier.size(18.dp)) } }
+        } else null,
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -582,8 +589,8 @@ private fun DayItemGroup(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
-                            .background(color, androidx.compose.foundation.shape.CircleShape),
+                            .size(width = 3.dp, height = 40.dp)
+                            .background(color, MaterialTheme.shapes.extraSmall),
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(item.title, style = MaterialTheme.typography.bodyLarge,
@@ -610,7 +617,11 @@ private fun CalendarTaskItem(
     onClick: () -> Unit,
 ) {
     val isDone = task.status == "completed"
-    val interactionSource = remember { MutableInteractionSource() }
+    val priorityColor = when (task.priority) {
+        "high"   -> MaterialTheme.colorScheme.error
+        "medium" -> WARNING
+        else     -> MaterialTheme.colorScheme.primary
+    }
     GlassCard(
         modifier = Modifier.padding(bottom = Spacing.sm),
         onClick = onClick,
@@ -619,6 +630,14 @@ private fun CalendarTaskItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 3.dp, height = 40.dp)
+                    .background(
+                        if (isDone) MaterialTheme.colorScheme.outline else priorityColor,
+                        MaterialTheme.shapes.extraSmall,
+                    ),
+            )
             Icon(
                 imageVector = if (isDone) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                 contentDescription = null,
@@ -644,26 +663,18 @@ private fun CalendarTaskItem(
                     maxLines = 1,
                 )
                 task.deadline?.let {
+                    val deadlineLabel = runCatching {
+                        LocalDate.parse(it.take(10))
+                            .format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
+                    }.getOrElse { _ -> it.take(10) }
                     Text(
-                        it.take(10),
+                        deadlineLabel,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                     )
                 }
             }
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(
-                        when (task.priority) {
-                            "high" -> MaterialTheme.colorScheme.error
-                            "medium" -> WARNING
-                            else -> MaterialTheme.colorScheme.primary
-                        },
-                        androidx.compose.foundation.shape.CircleShape,
-                    ),
-            )
         }
     }
 }
@@ -679,8 +690,8 @@ private fun EventListItem(
     if (showDeleteDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title            = { Text("Delete event?") },
-            text             = { Text("\"${event.title}\" will be permanently removed.") },
+            title            = { Text("Remove event") },
+            text             = { Text("Remove \"${event.title}\"? This cannot be undone.") },
             confirmButton    = {
                 androidx.compose.material3.TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -692,7 +703,6 @@ private fun EventListItem(
         )
     }
 
-    val interactionSource = remember { MutableInteractionSource() }
     GlassCard(
         modifier = Modifier.padding(bottom = Spacing.sm),
         onClick = onClick,
@@ -710,7 +720,7 @@ private fun EventListItem(
                 Text(event.title, style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                 Text(
-                    "${event.date.take(10)} · ${event.type}",
+                    formatCalendarEventSubtitle(event.date, event.type, event.location),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -835,8 +845,25 @@ private fun DayCell(
     }
 }
 
+private fun formatCalendarEventSubtitle(iso: String, type: String, location: String?): String {
+    val datePart = runCatching {
+        LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
+    }.getOrElse { iso.take(10) }
+    val typeLabel = when (type) {
+        "birthday"    -> "Birthday"
+        "anniversary" -> "Anniversary"
+        "countdown"   -> "Countdown"
+        else          -> "Event"
+    }
+    return buildString {
+        append(datePart)
+        if (!location.isNullOrBlank()) append(" · $location")
+        append(" · $typeLabel")
+    }
+}
+
 @Composable
-private fun AddMenuOption(label: String, onClick: () -> Unit) {
+private fun AddMenuOption(label: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -849,7 +876,7 @@ private fun AddMenuOption(label: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.base),
     ) {
-        Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
     }
 }

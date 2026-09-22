@@ -18,11 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Cake
-import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -112,13 +107,7 @@ fun EventsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(width = 3.dp, height = 40.dp)
-                                    .background(eventTypeColor(event.type), MaterialTheme.shapes.extraSmall),
-                            )
-                            Icon(
-                                imageVector = eventTypeIcon(event.type),
-                                contentDescription = null,
-                                tint = eventTypeColor(event.type),
-                                modifier = Modifier.size(18.dp),
+                                    .background(eventImportanceColor(event.importance), MaterialTheme.shapes.extraSmall),
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -133,6 +122,14 @@ fun EventsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (!event.location.isNullOrBlank()) {
+                                    Text(
+                                        event.location!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                    )
+                                }
                             }
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
                                 tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
@@ -176,16 +173,8 @@ private fun formatEventSubtitle(iso: String, type: String): String {
 }
 
 @Composable
-private fun eventTypeColor(type: String) = when (type) {
-    "birthday"    -> androidx.compose.ui.graphics.Color(0xFFEC4899)
-    "anniversary" -> androidx.compose.ui.graphics.Color(0xFF22C55E)
-    "countdown"   -> androidx.compose.ui.graphics.Color(0xFFF5CB5C)
-    else          -> MaterialTheme.colorScheme.primary
-}
-
-private fun eventTypeIcon(type: String): ImageVector = when (type) {
-    "birthday"    -> Icons.Outlined.Cake
-    "anniversary" -> Icons.Outlined.Favorite
-    "countdown"   -> Icons.Outlined.Timer
-    else          -> Icons.Outlined.DateRange
+private fun eventImportanceColor(importance: String) = when (importance) {
+    "high"   -> androidx.compose.ui.graphics.Color(0xFFF2B8B5)
+    "medium" -> androidx.compose.ui.graphics.Color(0xFFFBBF24)
+    else     -> androidx.compose.ui.graphics.Color(0xFF7FC8F8)
 }

@@ -28,24 +28,35 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Message
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -142,6 +153,8 @@ fun FinanceScreen(
     val activeLoansDs   by remember { derivedStateOf { plannerState.loans.filter { it.status == "active" } } }
     val isImporting     by remember { derivedStateOf { smsState.isImporting } }
     val context      = LocalContext.current
+    var showImportSmsSheet by remember { mutableStateOf(false) }
+    var showImportCsvSheet by remember { mutableStateOf(false) }
 
     // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
     // from the Budgets/Categorize screens) so the budget alert, budget card, and
@@ -190,12 +203,10 @@ fun FinanceScreen(
 
     // Hero sub-metrics — pulled from ViewModel metrics (accurate for ALL data,
     // not just the current paging window) so these are never off after filter changes.
-    val monthIncome   = monthTotals?.income  ?: 0.0
-    val monthExpense  = monthTotals?.expense ?: 0.0
-    val todayExpense  = state.todayExpense
-    val weekExpense   = state.weekExpense
-    val netCashFlow   = state.netCashFlow
-    val avgDailySpend = state.avgDailySpend
+    val monthIncome  = monthTotals?.income  ?: 0.0
+    val monthExpense = monthTotals?.expense ?: 0.0
+    val todayExpense = state.todayExpense
+    val weekExpense  = state.weekExpense
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -240,30 +251,20 @@ fun FinanceScreen(
                     color    = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
-                Row {
-                    IconButton(onClick = { navController.navigate(NavTo.transactionForm()) }) {
-                        Icon(
-                            imageVector        = Icons.Outlined.Add,
-                            contentDescription = "Add transaction",
-                            tint               = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    IconButton(onClick = {
-                        pagingItems.refresh()
-                        viewModel.refreshMetrics()
-                    }) {
-                        Icon(
-                            imageVector        = Icons.Outlined.Refresh,
-                            contentDescription = "Refresh",
-                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                IconButton(onClick = {
+                    pagingItems.refresh()
+                    viewModel.refreshMetrics()
+                }) {
+                    Icon(
+                        imageVector        = Icons.Outlined.Refresh,
+                        contentDescription = "Refresh",
+                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
             // Hoist scroll states so they are never recreated inside LazyColumn item lambdas
             val actionChipsScrollState    = rememberScrollState()
-            val insightsRowScrollState    = rememberScrollState()
             val periodSelectorScrollState = rememberScrollState()
             val listState                 = rememberLazyListState()
 
@@ -337,12 +338,12 @@ fun FinanceScreen(
                         ActionChip(
                             label   = "Import SMS",
                             icon    = Icons.Outlined.Message,
-                            onClick = { navController.navigate(Route.IMPORT_SMS) },
+                            onClick = { showImportSmsSheet = true },
                         )
                         ActionChip(
                             label   = "Import CSV",
                             icon    = Icons.Outlined.FileDownload,
-                            onClick = { navController.navigate(Route.IMPORT_CSV) },
+                            onClick = { showImportCsvSheet = true },
                         )
                         ActionChip(
                             label   = "Export Data",
@@ -357,42 +358,33 @@ fun FinanceScreen(
                     FrostCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                            .padding(
+                                horizontal = Spacing.screenHorizontal,
+                                top        = Spacing.sm,
+                                bottom     = Spacing.base,
+                            ),
                     ) {
                         Text(
                             text  = "Spent this month",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.height(Spacing.xs))
                         Text(
-                            text       = formatCurrency(monthExpense),
-                            style      = MaterialTheme.typography.displaySmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize   = 34.sp,
+                            text  = formatCurrency(monthExpense),
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight    = FontWeight.Bold,
+                                letterSpacing = (-0.5).sp,
                             ),
-                            color      = MaterialTheme.colorScheme.onSurface,
+                            color    = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = Spacing.xs),
                         )
-                        Spacer(Modifier.height(Spacing.md))
                         Row(
-                            modifier              = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                            modifier              = Modifier.fillMaxWidth().padding(top = Spacing.sm),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.base),
                         ) {
                             HeroSubMetric(label = "Today",     amount = todayExpense)
                             HeroSubMetric(label = "This week", amount = weekExpense)
                             HeroSubMetric(label = "Income",    amount = monthIncome, isCredit = true)
-                        }
-                        Spacer(Modifier.height(Spacing.sm))
-                        Row(
-                            modifier              = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(24.dp),
-                        ) {
-                            HeroSubMetric(
-                                label    = "Net",
-                                amount   = netCashFlow,
-                                isCredit = netCashFlow >= 0,
-                            )
-                            HeroSubMetric(label = "Daily avg", amount = avgDailySpend)
                         }
                     }
                 }
@@ -438,11 +430,7 @@ fun FinanceScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = accentColor,
                                 )
-                                val pctText = if (ab.budget.limitAmount > 0) {
-                                    "${(ab.pct * 100).toInt()}% of ${formatCurrency(ab.budget.limitAmount, decimals = 0)} ${ab.budget.category} budget used"
-                                } else {
-                                    "${ab.budget.category.replaceFirstChar { it.uppercase() }} — no limit set"
-                                }
+                                val pctText = "${ab.budget.category.replaceFirstChar { it.uppercase() }} is ${(ab.pct * 100).toInt()}% used"
                                 Text(
                                     text  = pctText,
                                     style = MaterialTheme.typography.bodySmall,
@@ -479,46 +467,41 @@ fun FinanceScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(insightsRowScrollState)
-                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                            .padding(
+                                horizontal = Spacing.screenHorizontal,
+                                top        = Spacing.sm,
+                                bottom     = Spacing.base,
+                            ),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
                         val totalMonthBudget = activeBudgetsDs.sumOf { it.budget.limitAmount }
                         InsightCard(
-                            label   = "Budget",
-                            action  = "View",
-                            amount  = totalMonthBudget,
-                            sub     = "${activeBudgetsDs.size} guardrails",
-                            onClick = { navController.navigate(Route.BUDGETS) },
+                            modifier = Modifier.weight(1f),
+                            icon     = Icons.Outlined.AccountBalanceWallet,
+                            label    = "Budget",
+                            action   = "View all",
+                            amount   = totalMonthBudget,
+                            sub      = "${activeBudgetsDs.size} active budget${if (activeBudgetsDs.size != 1) "s" else ""}",
+                            onClick  = { navController.navigate(Route.BUDGETS) },
                         )
                         val fulizaOutstanding = activeLoansDs.sumOf { it.drawAmountKes - it.totalRepaidKes }
                         InsightCard(
-                            label  = "Fuliza Outstanding",
-                            amount = fulizaOutstanding,
-                            sub    = "${activeLoansDs.size} open",
+                            modifier = Modifier.weight(1f),
+                            icon     = Icons.Outlined.TrendingUp,
+                            label    = "Fuliza",
+                            amount   = fulizaOutstanding,
+                            sub      = if (activeLoansDs.isEmpty()) "No open loans" else "${activeLoansDs.size} loan${if (activeLoansDs.size != 1) "s" else ""} outstanding",
                         )
                         if (feeTotal > 0) {
                             InsightCard(
-                                label   = "Service Charges",
-                                action  = "View",
-                                amount  = feeTotal,
-                                sub     = "Airtime, Fuliza & subs",
-                                onClick = { navController.navigate(Route.FEE_ANALYTICS) },
+                                modifier = Modifier.weight(1f),
+                                icon     = Icons.Outlined.Receipt,
+                                label    = "Charges",
+                                amount   = feeTotal,
+                                sub      = "Airtime, Fuliza & subs",
+                                onClick  = { navController.navigate(Route.FEE_ANALYTICS) },
                             )
                         }
-                    }
-                }
-
-                // ── Fuliza simulator — shown when there are active loans ──────
-                if (activeLoansDs.isNotEmpty()) {
-                    item {
-                        FulizaSimulatorCard(
-                            activeLoans = activeLoansDs,
-                            modifier    = Modifier.padding(
-                                horizontal = Spacing.screenHorizontal,
-                                vertical   = Spacing.xs,
-                            ),
-                        )
                     }
                 }
 
@@ -669,6 +652,17 @@ fun FinanceScreen(
             } // PullToRefreshBox
         }
 
+        // FAB — Add transaction (mirrors RFINAL's bottom-right FAB on FinanceScreen)
+        FloatingActionButton(
+            onClick        = { navController.navigate(Route.TRANSACTION_FORM) },
+            modifier       = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = Spacing.lg, bottom = 72.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+        ) {
+            Icon(Icons.Outlined.Add, contentDescription = "Add transaction", tint = MaterialTheme.colorScheme.onPrimary)
+        }
+
         // BUG-F9: merge into one TopBanner — error takes priority over import result,
         // so both can never overlap at the same TopCenter position.
         val bannerVisible = state.error != null || smsState.banner != null
@@ -684,6 +678,19 @@ fun FinanceScreen(
                 .align(Alignment.TopCenter)
                 .windowInsetsPadding(WindowInsets.statusBars),
         )
+
+        if (showImportSmsSheet) {
+            ImportSmsSheet(
+                onDismiss = { showImportSmsSheet = false },
+                viewModel = smsImportViewModel,
+            )
+        }
+        if (showImportCsvSheet) {
+            ImportCsvSheet(
+                onDismiss     = { showImportCsvSheet = false },
+                navController = navController,
+            )
+        }
     }
 }
 
@@ -735,13 +742,9 @@ private fun androidx.compose.foundation.layout.RowScope.HeroSubMetric(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text       = formatCurrency(amount, decimals = 0),
-            style      = MaterialTheme.typography.titleMedium,
-            color      = if (isCredit) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
+            text  = formatCurrency(amount, decimals = 0),
+            style = MaterialTheme.typography.titleSmall,
+            color = if (isCredit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -765,67 +768,67 @@ private fun PeriodChip(
 
 @Composable
 private fun InsightCard(
-    label:   String,
-    amount:  Double,
-    sub:     String,
-    onClick: (() -> Unit)? = null,
-    action:  String? = null,
+    label:    String,
+    amount:   Double,
+    sub:      String,
+    modifier: Modifier = Modifier,
+    icon:     androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClick:  (() -> Unit)? = null,
+    action:   String? = null,
 ) {
     val primary           = MaterialTheme.colorScheme.primary
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
-        modifier = Modifier
-            .width(200.dp)
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                MaterialTheme.shapes.medium,
-            )
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
             .then(
-                if (onClick != null) {
-                    Modifier.clickable(
+                if (onClick != null) Modifier.clickable(
                     interactionSource = interactionSource,
                     indication        = ripple(color = primary.copy(0.12f)),
                     onClick           = onClick,
-                )
-                } else {
-                    Modifier
-                }
+                ) else Modifier
             )
             .padding(Spacing.sm),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) {
+                Icon(
+                    imageVector        = icon,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier           = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+            }
             Text(
                 text  = label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (action != null) {
-                Text(
-                    text = action,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = primary,
-                )
-            }
         }
         Text(
             text     = formatCurrency(amount, decimals = 0),
-            style    = MaterialTheme.typography.headlineSmall,
+            style    = MaterialTheme.typography.titleMedium,
             color    = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
-            modifier = Modifier.padding(top = Spacing.sm),
+            modifier = Modifier.padding(top = Spacing.xs),
         )
         Text(
             text     = sub,
             style    = MaterialTheme.typography.bodySmall,
             color    = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
+            maxLines = 2,
             modifier = Modifier.padding(top = 2.dp),
         )
+        if (action != null) {
+            Text(
+                text     = "$action →",
+                style    = MaterialTheme.typography.labelSmall,
+                color    = primary,
+                modifier = Modifier.padding(top = Spacing.xs),
+            )
+        }
     }
 }
 
@@ -841,4 +844,62 @@ private fun formatDateKey(dateKey: String): String = try {
     }
 } catch (_: Exception) {
     dateKey
+}
+
+// ─── Import CSV sheet ─────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImportCsvSheet(
+    onDismiss:     () -> Unit,
+    navController: NavHostController,
+) {
+    val fileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            onDismiss()
+            val name = uri.lastPathSegment ?: "import.csv"
+            navController.navigate(NavTo.csvImport(uri.toString(), name))
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg)
+                .padding(bottom = Spacing.x2l),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                "Import from CSV",
+                style      = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color      = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                "Columns: date, amount, type, category, description.\nFormats: yyyy-MM-dd · dd/MM/yyyy · MM/dd/yyyy",
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = Spacing.xs),
+            )
+            Button(
+                onClick  = { fileLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
+                modifier = Modifier.fillMaxWidth(),
+                shape    = RoundedCornerShape(12.dp),
+            ) {
+                Icon(Icons.Outlined.FileDownload, contentDescription = null)
+                Spacer(Modifier.width(Spacing.sm))
+                Text("Choose File")
+            }
+            TextButton(
+                onClick  = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
 }

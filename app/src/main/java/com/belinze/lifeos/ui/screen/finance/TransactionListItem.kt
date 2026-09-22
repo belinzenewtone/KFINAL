@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
@@ -68,73 +67,79 @@ fun TransactionListItem(
         // ── Icon ────────────────────────────────────────────────────────────
         val txType = tx.transactionType ?: "expense"
         Box(
-            modifier        = Modifier
-                .size(40.dp)
-                .background(txIconBg(txType), CircleShape),
+            modifier         = Modifier
+                .size(44.dp)
+                .background(txIconBg(txType), MaterialTheme.shapes.medium),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector        = txIcon(txType),
                 contentDescription = txType,
                 tint               = txIconTint(txType),
-                modifier           = Modifier.size(18.dp),
+                modifier           = Modifier.size(20.dp),
             )
         }
 
-        Spacer(Modifier.width(Spacing.sm))
+        Spacer(Modifier.width(Spacing.base))
 
-        // ── Main text (merchant + category + time) ───────────────────────
+        // ── Main text (merchant + category + description) ────────────────
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text       = tx.merchant?.ifBlank { null } ?: tx.description?.take(40) ?: "Unknown",
-                fontWeight = FontWeight.SemiBold,
-                fontSize   = 14.sp,
-                color      = MaterialTheme.colorScheme.onSurface,
-                maxLines   = 1,
-                overflow   = TextOverflow.Ellipsis,
+                text     = tx.merchant?.ifBlank { null } ?: tx.description?.take(40) ?: "Unknown",
+                style    = MaterialTheme.typography.bodyLarge,
+                color    = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (tx.category?.isNotBlank() == true) {
-                    CategoryChip(tx.category ?: "")
-                }
+            if (tx.category?.isNotBlank() == true) {
                 Text(
-                    text  = tx.date?.let { isoToTime(it) } ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text     = tx.category ?: "",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            if (!tx.description.isNullOrBlank() && tx.merchant?.isNotBlank() == true) {
+                Text(
+                    text     = tx.description ?: "",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
             }
         }
 
-        Spacer(Modifier.width(Spacing.sm))
+        Spacer(Modifier.width(Spacing.base))
 
-        // ── Amount + status ──────────────────────────────────────────────
+        // ── Amount + date + status ───────────────────────────────────────
         Column(horizontalAlignment = Alignment.End) {
-            val txType = tx.transactionType ?: "expense"
-            val isCredit   = txType == "income"
+            val isIncome   = txType == "income"
             val isTransfer = txType == "transfer"
-            val amountText = when {
-                isCredit   -> "+${formatCurrency(tx.amount)}"
-                isTransfer -> formatCurrency(tx.amount)
-                else       -> "-${formatCurrency(tx.amount)}"
+            val isFuliza   = txType == "fuliza"
+            val prefix = when {
+                isIncome             -> "+"
+                isTransfer || isFuliza -> ""
+                else                 -> "-"
             }
             val amountColor = when {
-                isCredit   -> Color(0xFF10B981)
-                isTransfer -> MaterialTheme.colorScheme.onSurface
-                else       -> MaterialTheme.colorScheme.error
+                isIncome             -> MaterialTheme.colorScheme.primary
+                isTransfer || isFuliza -> MaterialTheme.colorScheme.onSurface
+                else                 -> MaterialTheme.colorScheme.error
             }
             Text(
-                text       = amountText,
-                fontWeight = FontWeight.SemiBold,
-                fontSize   = 14.sp,
-                color      = amountColor,
+                text  = "$prefix${formatCurrency(tx.amount)}",
+                style = MaterialTheme.typography.titleMedium,
+                color = amountColor,
+            )
+            Text(
+                text  = isoToDate(tx.date),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (tx.status != "completed" && tx.status.isNotBlank()) {
                 Text(
                     text  = tx.status,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = statusColor(tx.status),
                 )
             }
@@ -153,7 +158,7 @@ fun DayGroupHeader(
     Row(
         modifier              = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+            .padding(horizontal = Spacing.screenHorizontal, top = Spacing.base, bottom = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment     = Alignment.CenterVertically,
     ) {
@@ -220,12 +225,12 @@ private fun txIconTint(type: String): Color {
     }
 }
 
-private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
+private val DATE_FMT = DateTimeFormatter.ofPattern("dd MMM")
 
-private fun isoToTime(iso: String?): String {
+private fun isoToDate(iso: String?): String {
     if (iso == null) return ""
     return try {
-        LocalDateTime.parse(iso.take(19)).format(TIME_FMT)
+        LocalDateTime.parse(iso.take(19)).toLocalDate().format(DATE_FMT)
     } catch (_: Exception) {
         ""
     }

@@ -207,8 +207,8 @@ fun HomeScreen(
 
                     HomeMenuCard(
                         pendingTaskCount = taskState.pendingCount,
-                        dueTodayCount    = taskState.dueTodayCount,
                         nextEventTitle   = eventState.nextEvent?.title,
+                        nextEventDate    = eventState.nextEvent?.date,
                         onTasks          = { navController.navigate(Route.TASKS) },
                         onEvents         = { navController.navigate(Route.EVENTS) },
                         onInsights       = { navController.navigate(Route.INSIGHTS) },
@@ -291,21 +291,24 @@ private fun HomeMetricCard(
 @Composable
 private fun HomeMenuCard(
     pendingTaskCount: Int,
-    dueTodayCount:    Int,
     nextEventTitle:   String?,
+    nextEventDate:    String?,
     onTasks:          () -> Unit,
     onEvents:         () -> Unit,
     onInsights:       () -> Unit,
     onSearch:         () -> Unit,
     modifier:         Modifier = Modifier,
 ) {
-    val tasksValue = buildString {
-        if (dueTodayCount > 0) append("$dueTodayCount due today")
-        if (pendingTaskCount > dueTodayCount) {
-            if (isNotEmpty()) append(" · ")
-            append("${pendingTaskCount - dueTodayCount} more")
+    val eventDateLabel = nextEventDate?.let {
+        try {
+            java.time.LocalDateTime.parse(it.take(19))
+                .format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+        } catch (_: Exception) {
+            try {
+                java.time.LocalDate.parse(it.take(10))
+                    .format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+            } catch (_: Exception) { null }
         }
-        if (isEmpty()) append("No pending tasks")
     }
     FrostCard(
         glow = FrostCardGlow.None,
@@ -313,16 +316,17 @@ private fun HomeMenuCard(
         content = {
             MenuRow(
                 label = "Tasks",
-                value = tasksValue,
+                value = "$pendingTaskCount pending",
                 icon = Icons.Outlined.TaskAlt,
                 onClick = onTasks,
             )
             Spacer(Modifier.height(Spacing.sm))
             MenuRow(
-                label = "Next Event",
-                value = nextEventTitle ?: "No upcoming",
-                icon = Icons.Outlined.CalendarMonth,
-                onClick = onEvents,
+                label    = "Next Event",
+                value    = nextEventTitle ?: "No upcoming",
+                subValue = if (nextEventTitle != null) eventDateLabel else null,
+                icon     = Icons.Outlined.CalendarMonth,
+                onClick  = onEvents,
             )
             Spacer(Modifier.height(Spacing.sm))
             MenuRow(
@@ -344,10 +348,11 @@ private fun HomeMenuCard(
 
 @Composable
 private fun MenuRow(
-    label:   String,
-    value:   String,
-    icon:    androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
+    label:    String,
+    value:    String,
+    icon:     androidx.compose.ui.graphics.vector.ImageVector,
+    onClick:  () -> Unit,
+    subValue: String? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val interactionSource = remember { MutableInteractionSource() }
@@ -379,13 +384,23 @@ private fun MenuRow(
             maxLines = 1,
         )
         Spacer(Modifier.weight(1f))
-        Text(
-            text  = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-        )
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text  = value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            if (subValue != null) {
+                Text(
+                    text  = subValue,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                )
+            }
+        }
         Spacer(Modifier.width(Spacing.sm))
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
