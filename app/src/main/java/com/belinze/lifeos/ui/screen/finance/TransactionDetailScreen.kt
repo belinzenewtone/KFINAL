@@ -69,7 +69,6 @@ fun TransactionDetailScreen(
     viewModel:      TransactionViewModel = hiltViewModel(),
 ) {
     val selectedTx by viewModel.selectedTransaction.collectAsStateWithLifecycle()
-    val formState  by viewModel.formState.collectAsStateWithLifecycle()
     // With Paging 3 the Finance screen no longer holds a flat list, so we load
     // by ID on entry. Track whether the load has resolved so we don't flash
     // "not found" while the DB query is in-flight.
@@ -178,93 +177,12 @@ fun TransactionDetailScreen(
             }
 
             if (isEditing) {
-                // Inline edit panel — type, category, status only (matching RFINAL)
-                GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    ) {
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            TX_TYPES_DETAIL.forEachIndexed { idx, type ->
-                                SegmentedButton(
-                                    selected = formState.transactionType == type,
-                                    onClick  = { viewModel.updateFormType(type) },
-                                    shape    = SegmentedButtonDefaults.itemShape(idx, TX_TYPES_DETAIL.size),
-                                    label    = { Text(type.replaceFirstChar { it.uppercase() }) },
-                                )
-                            }
-                        }
-                        var catExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = catExpanded,
-                            onExpandedChange = { catExpanded = it },
-                        ) {
-                            OutlinedTextField(
-                                value = formState.category.replaceFirstChar { it.uppercase() },
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Category") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(catExpanded) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                            )
-                            ExposedDropdownMenu(
-                                expanded = catExpanded,
-                                onDismissRequest = { catExpanded = false },
-                            ) {
-                                CATEGORIES_DETAIL.forEach { cat ->
-                                    DropdownMenuItem(
-                                        text = { Text(cat.replaceFirstChar { it.uppercase() }) },
-                                        onClick = { viewModel.updateFormCategory(cat); catExpanded = false },
-                                    )
-                                }
-                            }
-                        }
-                        var statusExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = statusExpanded,
-                            onExpandedChange = { statusExpanded = it },
-                        ) {
-                            OutlinedTextField(
-                                value = formState.status.replaceFirstChar { it.uppercase() },
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Status") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(statusExpanded) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                            )
-                            ExposedDropdownMenu(
-                                expanded = statusExpanded,
-                                onDismissRequest = { statusExpanded = false },
-                            ) {
-                                STATUSES_DETAIL.forEach { status ->
-                                    DropdownMenuItem(
-                                        text = { Text(status.replaceFirstChar { it.uppercase() }) },
-                                        onClick = { viewModel.updateFormStatus(status); statusExpanded = false },
-                                    )
-                                }
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            TextButton(
-                                onClick = { isEditing = false },
-                                modifier = Modifier.weight(1f),
-                            ) { Text("Cancel") }
-                            Button(
-                                onClick = {
-                                    viewModel.saveForm {
-                                        isEditing = false
-                                        viewModel.loadTransaction(transactionId)
-                                    }
-                                },
-                                shape    = RoundedCornerShape(20.dp),
-                                modifier = Modifier.weight(1f),
-                            ) { Text("Save") }
-                        }
-                    }
-                }
+                InlineEditPanel(
+                    viewModel     = viewModel,
+                    transactionId = transactionId,
+                    onCancel      = { isEditing = false },
+                    onSaved       = { isEditing = false },
+                )
             } else {
                 // Actions row — Share | Delete | Edit
                 Row(
@@ -333,6 +251,82 @@ fun TransactionDetailScreen(
                 TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
             },
         )
+    }
+}
+
+@Composable
+private fun InlineEditPanel(
+    viewModel:     TransactionViewModel,
+    transactionId: String,
+    onCancel:      () -> Unit,
+    onSaved:       () -> Unit,
+) {
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
+    GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                TX_TYPES_DETAIL.forEachIndexed { idx, type ->
+                    SegmentedButton(
+                        selected = formState.transactionType == type,
+                        onClick  = { viewModel.updateFormType(type) },
+                        shape    = SegmentedButtonDefaults.itemShape(idx, TX_TYPES_DETAIL.size),
+                        label    = { Text(type.replaceFirstChar { it.uppercase() }) },
+                    )
+                }
+            }
+            var catExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(expanded = catExpanded, onExpandedChange = { catExpanded = it }) {
+                OutlinedTextField(
+                    value = formState.category.replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(catExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
+                    CATEGORIES_DETAIL.forEach { cat ->
+                        DropdownMenuItem(
+                            text = { Text(cat.replaceFirstChar { it.uppercase() }) },
+                            onClick = { viewModel.updateFormCategory(cat); catExpanded = false },
+                        )
+                    }
+                }
+            }
+            var statusExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(expanded = statusExpanded, onExpandedChange = { statusExpanded = it }) {
+                OutlinedTextField(
+                    value = formState.status.replaceFirstChar { it.uppercase() },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Status") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(statusExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(expanded = statusExpanded, onDismissRequest = { statusExpanded = false }) {
+                    STATUSES_DETAIL.forEach { status ->
+                        DropdownMenuItem(
+                            text = { Text(status.replaceFirstChar { it.uppercase() }) },
+                            onClick = { viewModel.updateFormStatus(status); statusExpanded = false },
+                        )
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                Button(
+                    onClick  = { viewModel.saveForm { onSaved(); viewModel.loadTransaction(transactionId) } },
+                    shape    = RoundedCornerShape(20.dp),
+                    modifier = Modifier.weight(1f),
+                ) { Text("Save") }
+            }
+        }
     }
 }
 
