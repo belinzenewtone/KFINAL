@@ -1,7 +1,6 @@
 package com.belinze.lifeos.ui.screen.review
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -107,6 +106,31 @@ fun WeekReviewScreen(
 
                     // ─ 7-day Spend Pattern ─
                     item { SpendPatternCard(state.dayBars) }
+
+                    // ─ Fees This Week ─
+                    if (state.feesTotal > 0) {
+                        item {
+                            GlassCard {
+                                Row(
+                                    modifier              = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment     = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text       = "Fees This Week",
+                                        style      = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        text       = formatCurrency(state.feesTotal),
+                                        style      = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color      = COLOR_PEAK,
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     // ─ What Changed? ─
                     if (state.changeItems.isNotEmpty()) {
@@ -269,31 +293,8 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
         )
         Spacer(Modifier.height(Spacing.base))
 
-        // Tooltip area — fixed 18dp height reserved above bars so bars never shift.
-        // Shows the selected bar's amount at full card width (no clipping).
-        Box(
-            modifier         = Modifier.fillMaxWidth().height(18.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            selectedBar?.takeIf { it.amount > 0.0 }?.let { bar ->
-                val tooltipColor = when {
-                    bar.isFuture || bar.amount == 0.0 ->
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
-                    bar.amount > bar.avg * 1.5         -> COLOR_PEAK
-                    bar.amount > bar.avg               -> COLOR_HIGH
-                    else                               -> COLOR_NORMAL
-                }
-                Text(
-                    text       = formatCurrency(bar.amount),
-                    style      = MaterialTheme.typography.labelSmall,
-                    color      = tooltipColor,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines   = 1,
-                )
-            }
-        }
-
-        // Bars row — height is fixed; tooltip area above never causes layout shift
+        // Bars — each column has a fixed pill-tooltip slot above the bar track.
+        // The slot height (28dp) is always reserved, so no bar shifts when selected.
         Row(
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -319,20 +320,45 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                         ) { selectedBar = if (isSelected) null else bar },
                     horizontalAlignment   = Alignment.CenterHorizontally,
                 ) {
+                    // Pill tooltip slot — fixed 28dp, bottom-aligned pill appears here
                     Box(
-                        modifier        = Modifier
-                            .height(80.dp)
-                            .width(18.dp),
+                        modifier         = Modifier.fillMaxWidth().height(28.dp),
                         contentAlignment = Alignment.BottomCenter,
                     ) {
-                        // Track
+                        if (isSelected && bar.amount > 0.0) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(barColor)
+                                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text       = formatCurrency(bar.amount),
+                                    fontSize   = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color      = Color.White,
+                                    maxLines   = 1,
+                                )
+                            }
+                        }
+                    }
+
+                    // Bar track — fixed 100dp, fills from bottom
+                    Box(
+                        modifier         = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(100.dp),
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
+                        // Track background
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(3.dp))
                                 .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))
                         )
-                        // Fill
+                        // Bar fill
                         if (fraction > 0f) {
                             Box(
                                 modifier = Modifier
@@ -340,27 +366,16 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                                     .fillMaxHeight(fraction)
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(barColor)
-                                    .then(
-                                        if (isSelected) {
-                                            Modifier.border(1.dp,
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                                            RoundedCornerShape(3.dp))
-                                        } else {
-                                            Modifier
-                                        }
-                                    )
                             )
                         }
                     }
+
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text  = dowLabel(bar.dayOfWeek),
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        color = if (isSelected) barColor
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 9.sp,
                     )
                 }
@@ -383,12 +398,6 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                     }
                 }
             Spacer(Modifier.weight(1f))
-            Text(
-                text  = "Tap bar for details",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                fontSize = 9.sp,
-            )
         }
     }
 }

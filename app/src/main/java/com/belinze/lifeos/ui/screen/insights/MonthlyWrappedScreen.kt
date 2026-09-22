@@ -206,11 +206,11 @@ fun MonthlyWrappedScreen(
                                 )
                                 Text(
                                     text       = formatCurrency(state.totalSpend),
-                                    fontSize   = 32.sp,
+                                    fontSize   = 36.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    lineHeight = 38.sp,
+                                    lineHeight = 44.sp,
                                     color      = MaterialTheme.colorScheme.primary,
-                                    maxLines   = 1,
+                                    textAlign  = TextAlign.Center,
                                 )
                                 Text(
                                     text  = "this month · ${state.txCount} transaction${if (state.txCount != 1) "s" else ""}",

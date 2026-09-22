@@ -62,6 +62,7 @@ data class WeekReviewUiState(
     val topCategory:     String         = "",
     val tasksCompleted:  Int            = 0,
     val tasksPending:    Int            = 0,
+    val feesTotal:       Double         = 0.0,
     val error:           String?        = null,
 )
 
@@ -111,6 +112,7 @@ class WeekReviewViewModel
                 val topCategory  = transactionDao.getTopCategoryInRange(startStr, endStr) ?: ""
                 val uncatCount   = transactionDao.countUncategorizedInRange(startStr, endStr)
                 val fulizaCount  = transactionDao.countFulizaInRange(startStr, endStr)
+                val feesTotal    = transactionDao.getFeeTotalInRange(startStr, endStr)
 
                 // ─ Tasks — scope both to the same week for a fair rate ─
                 val tasksDone    = taskDao.countCompletedSince(startStr)
@@ -203,6 +205,7 @@ class WeekReviewViewModel
                     topCategory    = topCategory,
                     tasksCompleted = tasksDone,
                     tasksPending   = tasksPending,
+                    feesTotal      = feesTotal,
                 )
             } catch (e: Exception) {
                 _uiState.value = WeekReviewUiState(isLoading = false, error = e.message)
