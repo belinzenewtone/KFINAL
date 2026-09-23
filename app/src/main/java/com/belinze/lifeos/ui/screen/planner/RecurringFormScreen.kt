@@ -4,10 +4,12 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -36,11 +38,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -67,9 +71,12 @@ private val CADENCE_LABELS = mapOf(
     "monthly"   to "Monthly",
     "yearly"    to "Yearly",
 )
+// Mirrors RecurringFormScreen.tsx: every CATEGORY_COLORS key except income/uncategorized.
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
     "entertainment", "health", "education", "shopping", "savings", "investment",
+    "housing", "personal_care", "subscriptions", "fuel", "loans", "insurance",
+    "miscellaneous", "expense", "transfer", "fuliza", "withdrawal",
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,8 +149,8 @@ fun RecurringFormScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete rule?") },
-            text  = { Text("This recurring rule will be permanently removed.") },
+            title = { Text("Delete rule") },
+            text  = { Text("Are you sure?") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
@@ -301,64 +308,83 @@ fun RecurringFormScreen(
                 }
             }
 
-            // RF-8: color-changing status button — green when active, surfaceVariant when paused
-            Button(
-                onClick = { viewModel.updateRecurringEnabled(!form.enabled) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = if (form.enabled) {
-                    ButtonDefaults.buttonColors(
-                        containerColor = androidx.compose.ui.graphics.Color(0xFF22C55E),
-                        contentColor   = androidx.compose.ui.graphics.Color.White,
-                    )
-                } else {
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor   = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-            ) {
-                Text(if (form.enabled) "Active" else "Paused")
-            }
-
             if (form.error != null) {
                 Text(form.error!!, color = MaterialTheme.colorScheme.error)
             }
 
-            Button(
-                onClick = {
-                    // RF-5: validation before save
-                    if (form.name.isBlank()) {
-                        validationError = "Please enter a title for this recurring rule."
-                        return@Button
-                    }
-                    if (form.nextRunAt.isBlank()) {
-                        validationError = "Please select a next run date."
-                        return@Button
-                    }
-                    // RF-4: haptic feedback on save
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    // RF-2: show success banner then pop
-                    viewModel.saveRecurring {
-                        successMsg = if (isEdit) "Rule updated" else "Rule added"
-                        scope.launch {
-                            delay(1200)
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                enabled = !form.isSaving,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
+            // Matches RecurringFormScreen.tsx actionRow: compact "STATUS" toggle
+            // next to the flex-width Save button, bottom-aligned.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.xl),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                // RF-11: show "Saving…" text instead of spinner inside button
-                Text(
-                    if (form.isSaving) {
-                        "Saving…"
-                    } else if (isEdit) {
-                        "Update Rule"
-                    } else {
-                        "Add Rule"
+                Column(
+                    modifier = Modifier.widthIn(min = 90.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "STATUS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = Spacing.xs),
+                    )
+                    // RF-8: color-changing status button — success-green when active, surfaceVariant when paused
+                    Button(
+                        onClick = { viewModel.updateRecurringEnabled(!form.enabled) },
+                        modifier = Modifier.widthIn(min = 90.dp),
+                        colors = if (form.enabled) {
+                            ButtonDefaults.buttonColors(
+                                containerColor = androidx.compose.ui.graphics.Color(0xFF4ADE80),
+                                contentColor   = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor   = MaterialTheme.colorScheme.onSurface,
+                            )
+                        },
+                    ) {
+                        Text(if (form.enabled) "Active" else "Paused")
                     }
-                )
+                }
+
+                Button(
+                    onClick = {
+                        // RF-5: validation before save
+                        if (form.name.isBlank()) {
+                            validationError = "Please enter a title for this recurring rule."
+                            return@Button
+                        }
+                        if (form.nextRunAt.isBlank()) {
+                            validationError = "Please select a next run date."
+                            return@Button
+                        }
+                        // RF-4: haptic feedback on save
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        // RF-2: show success banner then pop
+                        viewModel.saveRecurring {
+                            successMsg = if (isEdit) "Rule updated" else "Rule added"
+                            scope.launch {
+                                delay(1200)
+                                navController.popBackStack()
+                            }
+                        }
+                    },
+                    enabled = !form.isSaving,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    // RF-11: show "Saving…" text instead of spinner inside button
+                    Text(
+                        if (form.isSaving) {
+                            "Saving…"
+                        } else if (isEdit) {
+                            "Update Rule"
+                        } else {
+                            "Add Rule"
+                        },
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

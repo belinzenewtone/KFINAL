@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,6 +50,16 @@ import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
+private val CADENCE_LABELS = mapOf(
+    "hourly"   to "Hourly",
+    "daily"    to "Daily",
+    "weekly"   to "Weekly",
+    "biweekly" to "Biweekly",
+    "mon_fri"  to "Mon–Fri",
+    "monthly"  to "Monthly",
+    "yearly"   to "Yearly",
+)
 
 @Composable
 fun RecurringScreen(
@@ -70,23 +81,23 @@ fun RecurringScreen(
     }
 
     // RC-1: delete confirmation dialog
-    var pendingDeleteId by remember { mutableStateOf<String?>(null) }
+    var pendingDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
 
-    if (pendingDeleteId != null) {
+    if (pendingDelete != null) {
+        val (deleteId, deleteTitle) = pendingDelete!!
         AlertDialog(
-            onDismissRequest = { pendingDeleteId = null },
-            title = { Text("Delete rule?") },
-            text  = { Text("This recurring rule will be permanently removed.") },
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete rule") },
+            text  = { Text("Remove $deleteTitle?") },
             confirmButton = {
                 TextButton(onClick = {
-                    val id = pendingDeleteId!!
-                    pendingDeleteId = null
+                    pendingDelete = null
                     // RC-2: trigger exit animation then delete from DB after animation settles
-                    viewModel.deleteRule(id)
+                    viewModel.deleteRule(deleteId)
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDeleteId = null }) { Text("Cancel") }
+                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
             },
         )
     }
@@ -120,12 +131,11 @@ fun RecurringScreen(
                 Icon(Icons.Outlined.Repeat, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
-                Text("No recurring rules yet", style = MaterialTheme.typography.titleLarge,
+                Text("No recurring rules yet", style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(Spacing.xs))
-                // RC-6: subtitle uses bodySmall
                 Text("Add a rule to automate subscriptions, bills, or repeating tasks.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
@@ -134,62 +144,81 @@ fun RecurringScreen(
                 contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
             ) {
                 items(state.recurringRules, key = { it.id }) { rule ->
+                    val enabled = rule.enabled != 0
                     // RC-2: animateItem animates item removal with fade+shrink automatically
                     GlassCard(
                         onClick = { navController.navigate(NavTo.recurringForm(rule.id)) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = Spacing.base)
+                            .padding(bottom = Spacing.sm)
+                            .alpha(if (enabled) 1f else 0.45f)
                             .animateItem(fadeInSpec = null, fadeOutSpec = null),
                     ) {
+                        // Row 1: title | amount
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                rule.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f).padding(end = Spacing.sm),
+                            )
+                            rule.amount?.let {
+                                Text(formatCurrency(it), style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+
+                        // Row 2: cadence | next run
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                CADENCE_LABELS[rule.cadence] ?: rule.cadence ?: "Monthly",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                "Next: ${formatDate(rule.nextRunAt)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        // Row 3: delete | toggle
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
-                                Text(rule.title, style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                                Text(
-                                    "${rule.type ?: "expense"} · ${rule.cadence ?: "monthly"} · Next: ${formatDate(rule.nextRunAt)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                rule.amount?.let {
-                                    Text(formatCurrency(it), style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface)
-                                }
-                                // RC-8: match RN toggle visual — white thumb on primary track
-                                Switch(
-                                    checked = rule.enabled != 0,
-                                    onCheckedChange = { v ->
-                                        viewModel.toggleRecurringEnabled(rule.id, v)
-                                        banner = "${rule.title} ${if (v) "enabled" else "paused"}"
-                                    },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                                        checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                                        uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                                        uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                                    ),
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(Spacing.base))
-                        // RC-7: delete button left-aligned (matches RN)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             // RC-1: show confirmation before deleting
-                            TextButton(onClick = { pendingDeleteId = rule.id }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = null,
+                            IconButton(
+                                onClick = { pendingDelete = rule.id to rule.title },
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(Icons.Outlined.Delete, contentDescription = "Delete",
                                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.size(4.dp))
-                                Text("Delete", color = MaterialTheme.colorScheme.error)
                             }
+                            // RC-8: match RN toggle visual — white thumb on primary track
+                            Switch(
+                                checked = enabled,
+                                onCheckedChange = { v ->
+                                    viewModel.toggleRecurringEnabled(rule.id, v)
+                                    banner = "${rule.title} ${if (v) "enabled" else "paused"}"
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
+                                    checkedTrackColor    = MaterialTheme.colorScheme.primary,
+                                    uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
+                                    uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
+                                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                                ),
+                            )
                         }
                     }
                 }
