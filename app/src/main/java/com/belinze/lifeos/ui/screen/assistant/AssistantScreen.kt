@@ -7,7 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,12 +41,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,8 +59,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -66,6 +70,8 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.viewmodel.AssistantViewModel
 import com.belinze.lifeos.viewmodel.ChatMessage
+import java.time.format.DateTimeFormatter
+import java.time.OffsetDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AssistantScreen
@@ -89,7 +95,16 @@ fun AssistantScreen(
     val quickSuggestionsEnabled by viewModel.quickSuggestionsEnabled.collectAsStateWithLifecycle()
     val listState   = rememberLazyListState()
     var inputText   by remember { mutableStateOf("") }
+    var showClearConfirm by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+
+    fun send(text: String) {
+        if (text.isBlank() || state.isLoading) return
+        viewModel.updateInput(text.trim())
+        viewModel.sendMessage()
+        inputText = ""
+        focusManager.clearFocus()
+    }
 
     // Auto-scroll to bottom on new message count
     LaunchedEffect(state.messages.size) {
@@ -145,7 +160,7 @@ fun AssistantScreen(
                 )
             }
             if (state.messages.isNotEmpty()) {
-                IconButton(onClick = { viewModel.clearConversation() }) {
+                IconButton(onClick = { showClearConfirm = true }) {
                     Icon(
                         imageVector        = Icons.Outlined.DeleteOutline,
                         contentDescription = "Clear conversation",
@@ -153,6 +168,23 @@ fun AssistantScreen(
                     )
                 }
             }
+        }
+
+        if (showClearConfirm) {
+            AlertDialog(
+                onDismissRequest = { showClearConfirm = false },
+                title            = { Text("Clear chat history?") },
+                text             = { Text("This will remove your current conversation and start a fresh one.") },
+                confirmButton    = {
+                    TextButton(onClick = {
+                        showClearConfirm = false
+                        viewModel.clearConversation()
+                    }) { Text("Clear", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearConfirm = false }) { Text("Cancel") }
+                },
+            )
         }
 
         // ── Message list ─────────────────────────────────────────────────────
@@ -208,11 +240,12 @@ fun AssistantScreen(
                 }
             } else {
                 items(state.messages, key = { it.id }) { message ->
-                    ChatBubble(message)
+                    ChatBubble(message, onActionPress = ::send)
                 }
             }
 
-            // AS-3: show quick suggestions until the conversation has more than 1 message
+            // AS-3: show quick suggestions until the conversation has more than 1 message.
+            // Matches React SuggestedPrompts — only the first 3 of the default list are shown.
             if (quickSuggestionsEnabled && state.messages.size <= 1) {
                 item {
                     val prompts = listOf(
@@ -222,20 +255,25 @@ fun AssistantScreen(
                         "What tasks are due today?",
                         "Recent transactions",
                         "Summarize my spending",
-                    )
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    ) {
-                        items(prompts, key = { it }) { prompt ->
-                            AssistChip(
-                                onClick = {
-                                    viewModel.updateInput(prompt)
-                                    viewModel.sendMessage()
-                                },
-                                label = { Text(prompt, maxLines = 1) },
-                                modifier = Modifier.wrapContentWidth(),
-                            )
+                    ).take(3)
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            "Try asking:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = Spacing.xs),
+                        )
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            items(prompts, key = { it }) { prompt ->
+                                AssistChip(
+                                    onClick = { send(prompt) },
+                                    label = { Text(prompt, maxLines = 1) },
+                                    modifier = Modifier.wrapContentWidth(),
+                                )
+                            }
                         }
                     }
                 }
@@ -251,112 +289,149 @@ fun AssistantScreen(
             item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
         }
 
-        // ── Input bar (AS-5: pill-shaped ChatInput) ───────────────────────────
+        // ── Input bar — single pill control with a trailing send/spinner adornment ──
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            val canSend = inputText.isNotBlank() && !state.isLoading
             OutlinedTextField(
                 value             = inputText,
                 onValueChange     = { inputText = it },
-                modifier          = Modifier.weight(1f),
-                placeholder       = { Text("Ask something…", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                modifier          = Modifier.fillMaxWidth(),
+                placeholder       = { Text("Message LifeOS…", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine        = false,
                 maxLines          = 4,
                 keyboardOptions   = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions   = KeyboardActions(onSend = {
-                    if (inputText.isNotBlank() && !state.isLoading) {
-                        viewModel.updateInput(inputText.trim())
-                        viewModel.sendMessage()
-                        inputText = ""
-                        focusManager.clearFocus()
-                    }
-                }),
+                keyboardActions   = KeyboardActions(onSend = { send(inputText) }),
                 // AS-5: pill shape to match RN ChatInput component
                 shape = RoundedCornerShape(9999.dp),
-            )
-            IconButton(
-                onClick  = {
-                    if (inputText.isNotBlank() && !state.isLoading) {
-                        viewModel.updateInput(inputText.trim())
-                        viewModel.sendMessage()
-                        inputText = ""
-                        focusManager.clearFocus()
+                trailingIcon = {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color       = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        IconButton(onClick = { send(inputText) }, enabled = canSend) {
+                            Icon(
+                                imageVector        = Icons.Outlined.Send,
+                                contentDescription = "Send",
+                                tint               = if (canSend) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outlineVariant
+                                },
+                            )
+                        }
                     }
                 },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-            ) {
-                Icon(
-                    imageVector        = Icons.Outlined.Send,
-                    contentDescription = "Send",
-                    tint               = MaterialTheme.colorScheme.onPrimary,
-                    modifier           = Modifier.size(20.dp),
-                )
-            }
+            )
         }
     }
 }
 
 // ─── Chat bubble ─────────────────────────────────────────────────────────────
 
-@Composable
-private fun ChatBubble(message: ChatMessage) {
-    val isDark   = isSystemInDarkTheme()
-    val isUser   = message.role == "user"
+private val CHAT_TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    Column(
+@Composable
+private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
+    val isUser = message.role == "user"
+    val shape = RoundedCornerShape(
+        topStart    = 20.dp,
+        topEnd      = 20.dp,
+        bottomStart = if (isUser) 20.dp else 4.dp,
+        bottomEnd   = if (isUser) 4.dp else 20.dp,
+    )
+    val bubbleColor = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val borderColor = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val textColor   = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val timeColor   = if (isUser) {
+        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val timeLabel = remember(message.createdAt) {
+        runCatching { OffsetDateTime.parse(message.createdAt).format(CHAT_TIME_FMT) }.getOrDefault("")
+    }
+
+    Row(
         modifier              = Modifier.fillMaxWidth(),
-        horizontalAlignment   = if (isUser) Alignment.End else Alignment.Start,
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 280.dp)
-                .background(
-                    color = if (isUser) {
-                        MaterialTheme.colorScheme.primary
-                    } else if (isDark) {
-                        Color(0xFF1E1E2A)
-                    } else {
-                        Color(0xFFF0F4F8)
-                    },
-                    shape = RoundedCornerShape(
-                        topStart     = 16.dp,
-                        topEnd       = 16.dp,
-                        bottomStart  = if (isUser) 16.dp else 4.dp,
-                        bottomEnd    = if (isUser) 4.dp else 16.dp,
-                    ),
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+        Row(
+            modifier             = Modifier.widthIn(max = 280.dp),
+            verticalAlignment    = Alignment.Bottom,
         ) {
-            Text(
-                text  = message.content,
-                color = if (isUser) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        // AS-1: render interactive action chips for assistant messages
-        if (!isUser && message.actions.isNotEmpty()) {
-            Spacer(Modifier.height(4.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.wrapContentWidth(),
-            ) {
-                message.actions.forEach { action ->
-                    AssistChip(
-                        onClick = { /* handled by parent via sendPrompt */ },
-                        label = { Text(action, style = MaterialTheme.typography.bodySmall) },
+            // AS-6: bot avatar next to assistant messages, bottom-aligned with the bubble
+            if (!isUser) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.AutoAwesome,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(16.dp),
                     )
+                }
+                Spacer(Modifier.width(8.dp))
+            }
+
+            Column(horizontalAlignment = if (isUser) Alignment.End else Alignment.Start) {
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, borderColor, shape)
+                        .background(bubbleColor, shape)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Column {
+                        Text(
+                            text       = message.content,
+                            color      = textColor,
+                            style      = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isUser) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                        if (timeLabel.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                Text(timeLabel, style = MaterialTheme.typography.bodySmall, color = timeColor)
+                            }
+                        }
+                    }
+                }
+                // AS-1: interactive action chips for assistant messages — tapping one
+                // sends its text through the same pipeline as manual input.
+                if (!isUser && message.actions.isNotEmpty()) {
+                    Spacer(Modifier.height(Spacing.sm))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        modifier = Modifier.wrapContentWidth(),
+                    ) {
+                        message.actions.forEach { action ->
+                            AssistChip(
+                                onClick = { onActionPress(action) },
+                                label   = { Text(action, style = MaterialTheme.typography.bodySmall) },
+                                colors  = AssistChipDefaults.assistChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor     = MaterialTheme.colorScheme.primary,
+                                ),
+                                border  = AssistChipDefaults.assistChipBorder(
+                                    enabled     = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                ),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -381,15 +456,16 @@ private fun TypingIndicator() {
         )
     }
 
-    // AS-4: wrap dots + "Thinking…" label in the same bubble
+    // AS-4: wrap dots + "Thinking…" label in a bordered pill, matching React's TypingIndicator
     Row(horizontalArrangement = Arrangement.Start) {
         Box(
             modifier         = Modifier
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
                 .background(
-                    color = if (isSystemInDarkTheme()) Color(0xFF1E1E2A) else Color(0xFFF0F4F8),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 4.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(20.dp),
                 )
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center,
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
