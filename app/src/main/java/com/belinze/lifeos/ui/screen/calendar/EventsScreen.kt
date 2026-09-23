@@ -122,9 +122,9 @@ fun EventsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                                if (!event.location.isNullOrBlank()) {
+                                com.belinze.lifeos.util.formatLocation(event.location)?.let { loc ->
                                     Text(
-                                        event.location!!,
+                                        loc,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,

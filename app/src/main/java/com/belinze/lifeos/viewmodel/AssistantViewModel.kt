@@ -497,7 +497,8 @@ class AssistantViewModel
             } catch (e: Exception) {
                 ev.date.take(10)
             }
-            "  • $dateLabel — ${ev.title}${if (!ev.location.isNullOrBlank()) " @ ${ev.location}" else ""}"
+            val loc = com.belinze.lifeos.util.formatLocation(ev.location)
+            "  • $dateLabel — ${ev.title}${if (loc != null) " @ $loc" else ""}"
         }
         return "📆 Upcoming events:\n$lines"
     }

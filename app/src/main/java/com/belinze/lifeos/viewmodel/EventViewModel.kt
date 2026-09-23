@@ -79,7 +79,8 @@ data class EventFormState(
     val repeatRule:           String       = "none",
     val repeatEndDate:        String?      = null,
     // ─ Event-specific ─
-    val location:             String       = "",
+    val locations:            ImmutableList<String> = persistentListOf(),
+    val locationInput:        String       = "",
     val guests:               ImmutableList<String> = persistentListOf(),
     val timeZoneId:           String       = ZoneId.systemDefault().id,
     val kind:                 String       = "other",       // event category dropdown
@@ -244,7 +245,21 @@ class EventViewModel
 
     fun updateRepeatEndDate(v: String?) = _formState.update { it.copy(repeatEndDate = v) }
 
-    fun updateLocation(v: String) = _formState.update { it.copy(location = v) }
+    fun updateLocationInput(v: String) = _formState.update { it.copy(locationInput = v) }
+
+    fun addLocation(loc: String) {
+        val trimmed = loc.trim()
+        _formState.update { s ->
+            if (trimmed.isBlank() || s.locations.contains(trimmed)) {
+                s
+            } else {
+                s.copy(locations = (s.locations + trimmed).toImmutableList(), locationInput = "")
+            }
+        }
+    }
+
+    fun removeLocation(loc: String) =
+        _formState.update { it.copy(locations = it.locations.filter { l -> l != loc }.toImmutableList()) }
 
     fun updateTimeZoneId(v: String) = _formState.update { it.copy(timeZoneId = v) }
 
@@ -336,7 +351,7 @@ class EventViewModel
             allDay               = e.allDay != 0,
             repeatRule           = e.repeatRule,
             repeatEndDate        = e.repeatEndDate,
-            location             = e.location ?: "",
+            locations            = parseLocations(e.location).toImmutableList(),
             guests               = parseJsonStringArray(e.guests).toImmutableList(),
             timeZoneId           = e.timeZoneId,
             kind                 = e.kind,
@@ -400,7 +415,7 @@ class EventViewModel
             importance               = form.importance,
             repeatRule               = form.repeatRule,
             repeatEndDate            = form.repeatEndDate,
-            location                 = form.location.ifBlank { null },
+            location                 = if (form.locations.isEmpty()) null else JSONArray(form.locations).toString(),
             guests                   = guestsJson,
             timeZoneId               = form.timeZoneId,
             reminderOffsets          = finalOffsets,
@@ -461,6 +476,13 @@ class EventViewModel
         } catch (_: Exception) {
             emptyList()
         }
+    }
+
+    /** Parses a JSON array of locations; falls back to a single legacy plain-string location. */
+    private fun parseLocations(raw: String?): List<String> {
+        if (raw.isNullOrBlank()) return emptyList()
+        val parsed = parseJsonStringArray(raw)
+        return if (parsed.isNotEmpty()) parsed else listOf(raw)
     }
 
     private fun parseJsonStringArray(json: String?): List<String> {

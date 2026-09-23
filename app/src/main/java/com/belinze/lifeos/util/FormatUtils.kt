@@ -113,3 +113,28 @@ fun formatDelta(amount: Double): String {
     val prefix = if (amount >= 0) "+" else ""
     return "$prefix${formatCurrency(amount)}"
 }
+
+/**
+ * Event location is stored as a JSON array of strings (multi-location support);
+ * falls back to a legacy plain-string location. Renders as a comma-joined list.
+ */
+fun formatLocation(raw: String?): String? {
+    if (raw.isNullOrBlank()) return null
+    return try {
+        val arr = org.json.JSONArray(raw)
+        (0 until arr.length()).map { arr.getString(it) }.joinToString(", ").ifBlank { null }
+    } catch (_: Exception) {
+        raw
+    }
+}
+
+/** Compact variant for single-line list rows: shows only the first location. */
+fun formatLocationFirst(raw: String?): String? {
+    if (raw.isNullOrBlank()) return null
+    return try {
+        val arr = org.json.JSONArray(raw)
+        if (arr.length() > 0) arr.getString(0) else null
+    } catch (_: Exception) {
+        raw
+    }
+}

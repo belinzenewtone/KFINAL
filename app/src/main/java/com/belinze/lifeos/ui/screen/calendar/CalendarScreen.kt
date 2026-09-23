@@ -79,6 +79,7 @@ import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.formatLocationFirst
 import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.SettingsViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
@@ -100,6 +101,12 @@ private val SUCCESS = Color(0xFF7BC47B)
 private val WARNING = Color(0xFFF5CB5C)
 private val BIRTHDAY = Color(0xFFEC4899)
 private val ANNIVERSARY = Color(0xFF22C55E)
+
+private val PRIORITY_COLORS = mapOf(
+    "low"    to Color(0xFF7FC8F8),
+    "medium" to Color(0xFFFBBF24),
+    "high"   to Color(0xFFF2B8B5),
+)
 
 // HorizontalPager bounds — ±100 years around today so months can be swiped
 // freely in either direction (same paging engine the Material3 date picker uses).
@@ -218,7 +225,13 @@ fun CalendarScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = { addMenuOpen = true }) {
+                IconButton(onClick = {
+                    when (selectedTab) {
+                        CalendarTab.Tasks    -> navController.navigate(NavTo.eventForm(type = "task"))
+                        CalendarTab.Events   -> navController.navigate(NavTo.eventForm(type = "event"))
+                        CalendarTab.Calendar -> addMenuOpen = true
+                    }
+                }) {
                     Icon(
                         Icons.Outlined.Add,
                         contentDescription = "Add",
@@ -293,7 +306,7 @@ fun CalendarScreen(
 
             // Weekday header
             Row(modifier = Modifier.fillMaxWidth()) {
-                listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
+                listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { label ->
                     Text(
                         text = label,
                         modifier = Modifier.weight(1f),
@@ -580,7 +593,26 @@ private fun DayItemGroup(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        val today = LocalDate.now()
         items.forEach { item ->
+            val barColor = PRIORITY_COLORS[item.importance] ?: color
+            val isCountdown = item.type == "countdown"
+            val subtitle = if (isCountdown) {
+                val eventDate = runCatching { LocalDate.parse(item.date.take(10)) }.getOrNull()
+                val days = eventDate?.let { (it.toEpochDay() - today.toEpochDay()).toInt() }
+                when {
+                    days == null -> null
+                    days == 0    -> "Today!"
+                    days > 0     -> "$days day${if (days != 1) "s" else ""} to go"
+                    else         -> null
+                }
+            } else {
+                val timePart = if (item.date.length >= 16) item.date.substring(11, 16) else null
+                val loc = formatLocationFirst(item.location)
+                listOfNotNull(timePart, loc).joinToString(" · ").ifEmpty { null }
+            }
+            val subtitleColor = if (isCountdown) color else MaterialTheme.colorScheme.onSurfaceVariant
+
             GlassCard(
                 modifier = Modifier.padding(top = Spacing.sm),
                 onClick = { onItemClick(item) },
@@ -592,16 +624,16 @@ private fun DayItemGroup(
                     Box(
                         modifier = Modifier
                             .size(width = 3.dp, height = 40.dp)
-                            .background(color, MaterialTheme.shapes.extraSmall),
+                            .background(barColor, MaterialTheme.shapes.extraSmall),
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(item.title, style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                        if (item.date.length > 10) {
+                        if (subtitle != null) {
                             Text(
-                                item.date.take(16).replace("T", " "),
+                                subtitle,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = subtitleColor,
                                 maxLines = 1,
                             )
                         }
@@ -716,7 +748,10 @@ private fun EventListItem(
             Box(
                 modifier = Modifier
                     .size(width = 3.dp, height = 40.dp)
-                    .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall),
+                    .background(
+                        PRIORITY_COLORS[event.importance] ?: MaterialTheme.colorScheme.primary,
+                        MaterialTheme.shapes.extraSmall,
+                    ),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(event.title, style = MaterialTheme.typography.bodyLarge,
@@ -859,7 +894,7 @@ private fun formatCalendarEventSubtitle(iso: String, type: String, location: Str
     }
     return buildString {
         append(datePart)
-        if (!location.isNullOrBlank()) append(" · $location")
+        formatLocationFirst(location)?.let { append(" · $it") }
         append(" · $typeLabel")
     }
 }

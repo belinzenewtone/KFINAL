@@ -147,6 +147,7 @@ fun EventFormScreen(
     var showCdTimePicker       by remember { mutableStateOf(false) }
     var showDeleteConfirm      by remember { mutableStateOf(false) }
     var guestInput             by remember { mutableStateOf("") }
+    var locationInput          by remember { mutableStateOf("") }
     var tzSearch               by remember { mutableStateOf("") }
     var successMsg             by remember { mutableStateOf<String?>(null) }
 
@@ -178,6 +179,8 @@ fun EventFormScreen(
                         viewModel          = viewModel,
                         guestInput         = guestInput,
                         onGuestInputChange = { guestInput = it },
+                        locationInput      = locationInput,
+                        onLocationInputChange = { locationInput = it },
                         onDismiss          = { navController.popBackStack() },
                         onDeleteConfirm    = { showDeleteConfirm = true },
                         onOpenStartDate    = { showStartDatePicker = true },
@@ -328,11 +331,13 @@ fun EventFormScreen(
 
 @Composable
 private fun FormPage(
-    form:               EventFormState,
-    isEdit:             Boolean,
-    viewModel:          EventViewModel,
-    guestInput:         String,
-    onGuestInputChange: (String) -> Unit,
+    form:                  EventFormState,
+    isEdit:                Boolean,
+    viewModel:             EventViewModel,
+    guestInput:            String,
+    onGuestInputChange:    (String) -> Unit,
+    locationInput:         String,
+    onLocationInputChange: (String) -> Unit,
     onDismiss:          () -> Unit,
     onDeleteConfirm:    () -> Unit,
     onOpenStartDate:    () -> Unit,
@@ -435,10 +440,12 @@ private fun FormPage(
                     onOpenReminders = onOpenReminders,
                 )
                 "event" -> EventFormContent(
-                    form            = form,
-                    viewModel       = viewModel,
-                    guestInput      = guestInput,
-                    onGuestInput    = onGuestInputChange,
+                    form                  = form,
+                    viewModel             = viewModel,
+                    guestInput            = guestInput,
+                    onGuestInput          = onGuestInputChange,
+                    locationInput         = locationInput,
+                    onLocationInputChange = onLocationInputChange,
                     onOpenStartDate = onOpenStartDate,
                     onOpenStartTime = onOpenStartTime,
                     onOpenEndDate   = onOpenEndDate,
@@ -544,10 +551,12 @@ private fun TaskFormContent(
 
 @Composable
 private fun EventFormContent(
-    form:            EventFormState,
-    viewModel:       EventViewModel,
-    guestInput:      String,
-    onGuestInput:    (String) -> Unit,
+    form:                  EventFormState,
+    viewModel:             EventViewModel,
+    guestInput:            String,
+    onGuestInput:          (String) -> Unit,
+    locationInput:         String,
+    onLocationInputChange: (String) -> Unit,
     onOpenStartDate: () -> Unit,
     onOpenStartTime: () -> Unit,
     onOpenEndDate:   () -> Unit,
@@ -649,11 +658,12 @@ private fun EventFormContent(
     )
 
     // Location
-    FormTextField(
-        value         = form.location,
-        onValueChange = { viewModel.updateLocation(it) },
-        label         = "Location",
-        icon          = Icons.Outlined.LocationOn,
+    LocationSection(
+        locations     = form.locations,
+        inputText     = locationInput,
+        onInputChange = onLocationInputChange,
+        onAdd         = { viewModel.addLocation(locationInput); onLocationInputChange("") },
+        onRemove      = { viewModel.removeLocation(it) },
     )
 
     // Time zone (hidden for all-day)
@@ -1290,6 +1300,96 @@ private fun GuestsSection(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(Icons.Outlined.Close, contentDescription = "Remove $guest",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationSection(
+    locations:     List<String>,
+    inputText:     String,
+    onInputChange: (String) -> Unit,
+    onAdd:         () -> Unit,
+    onRemove:      (String) -> Unit,
+) {
+    FormSectionLabel("Location")
+    Row(
+        modifier              = Modifier.fillMaxWidth(),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value         = inputText,
+            onValueChange = onInputChange,
+            label         = { Text("Add location") },
+            singleLine    = true,
+            modifier      = Modifier.weight(1f),
+            shape         = RoundedCornerShape(10.dp),
+            leadingIcon   = {
+                Icon(Icons.Outlined.LocationOn, null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onAdd() }),
+            colors          = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor    = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor  = MaterialTheme.colorScheme.outlineVariant,
+                focusedContainerColor   = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            ),
+        )
+        val canAdd = inputText.isNotBlank()
+        IconButton(
+            onClick  = onAdd,
+            enabled  = canAdd,
+            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp))
+                .background(
+                    if (canAdd) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    },
+                ),
+        ) {
+            Icon(Icons.Outlined.Add, contentDescription = "Add location",
+                tint = if (canAdd) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                },
+                modifier = Modifier.size(20.dp))
+        }
+    }
+
+    if (locations.isNotEmpty()) {
+        Row(
+            modifier              = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            locations.forEach { loc ->
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                        .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                ) {
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(loc, style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary)
+                        Box(
+                            modifier = Modifier.size(18.dp).clip(CircleShape)
+                                .clickable { onRemove(loc) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Remove $loc",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
                         }
                     }

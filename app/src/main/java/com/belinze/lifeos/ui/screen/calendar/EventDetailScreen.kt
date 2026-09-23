@@ -109,7 +109,7 @@ fun EventDetailScreen(
 
             DetailRow("Starts", formatDateTime(event.date))
             event.endDate?.let { DetailRow("Ends", formatDateTime(it)) }
-            event.location?.let { DetailRow("Location", it) }
+            com.belinze.lifeos.util.formatLocation(event.location)?.let { DetailRow("Location", it) }
             DetailRow("Status", event.status)
             DetailRow("Repeat", event.repeatRule ?: "none")
             if (event.allDay != 0) DetailRow("All day", "Yes")

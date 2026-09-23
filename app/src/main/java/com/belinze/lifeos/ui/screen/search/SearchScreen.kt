@@ -248,7 +248,11 @@ fun SearchScreen(
                 items(state.events, key = { it.id }) { event ->
                     SearchRow(
                         title = highlightText(event.title, query),
-                        subtitle = highlightText(formatDateTime(event.date) + (event.location?.let { " · $it" } ?: ""), query),
+                        subtitle = highlightText(
+                            formatDateTime(event.date) +
+                                (com.belinze.lifeos.util.formatLocationFirst(event.location)?.let { " · $it" } ?: ""),
+                            query,
+                        ),
                         icon = Icons.Outlined.CalendarMonth,
                         iconColor = MaterialTheme.colorScheme.primary,
                         onClick = { navController.navigate(NavTo.eventDetail(event.id)) },
