@@ -107,9 +107,8 @@ data class LoanFormState(
     val notes:             String   = "",
     val isSaving:          Boolean  = false,
     val error:             String?  = null,
-    // Read-only display fields populated from the stored entity
-    val totalRepaidKes:     Double   = 0.0,
-    val lastRepaymentDate:  String?  = null,
+    val totalRepaidKes:     String   = "",
+    val lastRepaymentDate:  String   = "",
 )
 
 @Immutable
@@ -212,6 +211,10 @@ class PlannerViewModel
     fun updateLoanDrawDate(v: String) = _loanForm.update { it.copy(drawDate = v) }
 
     fun updateLoanStatus(v: String) = _loanForm.update { it.copy(status = v) }
+
+    fun updateLoanTotalRepaid(v: String) = _loanForm.update { it.copy(totalRepaidKes = v) }
+
+    fun updateLoanLastRepaymentDate(v: String) = _loanForm.update { it.copy(lastRepaymentDate = v) }
 
     fun updateLoanError(v: String?) = _loanForm.update { it.copy(error = v) }
 
@@ -530,8 +533,8 @@ class PlannerViewModel
                     id = e.id, drawCode = e.drawCode ?: "",
                     drawAmountKes = e.drawAmountKes.toString(), drawDate = e.drawDate ?: nowIso(),
                     status = e.status, notes = "",
-                    totalRepaidKes = e.totalRepaidKes,
-                    lastRepaymentDate = e.lastRepaymentDate,
+                    totalRepaidKes = e.totalRepaidKes.toString(),
+                    lastRepaymentDate = e.lastRepaymentDate?.take(10) ?: "",
                 )
                 }
             }
@@ -587,6 +590,7 @@ class PlannerViewModel
             _loanForm.update { it.copy(error = "Enter a valid draw amount") }
             return
         }
+        val repaid = form.totalRepaidKes.toDoubleOrNull() ?: 0.0
         _loanForm.update { it.copy(isSaving = true, error = null) }
         viewModelScope.launch {
             try {
@@ -601,6 +605,8 @@ class PlannerViewModel
                 )).copy(
                     drawCode = form.drawCode.ifBlank { null },
                     drawAmountKes = amt,
+                    totalRepaidKes = repaid,
+                    lastRepaymentDate = form.lastRepaymentDate.ifBlank { null },
                     status = form.status,
                     drawDate = form.drawDate,
                     updatedAt = nowIso(),

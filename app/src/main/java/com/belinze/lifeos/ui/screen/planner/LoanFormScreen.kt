@@ -2,6 +2,8 @@ package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +24,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -47,7 +49,6 @@ import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
-import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,6 +56,11 @@ import java.util.Calendar
 import java.util.TimeZone
 
 private val LOAN_STATUSES = listOf("active", "repaid", "defaulted")
+private val LOAN_STATUS_COLOR = mapOf(
+    "active"    to androidx.compose.ui.graphics.Color(0xFFFBBF24),
+    "repaid"    to androidx.compose.ui.graphics.Color(0xFF4ADE80),
+    "defaulted" to androidx.compose.ui.graphics.Color(0xFFF87171),
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,8 +126,8 @@ fun LoanFormScreen(
     if (showDeleteConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { androidx.compose.material3.Text("Delete loan?") },
-            text  = { androidx.compose.material3.Text("This loan record will be permanently removed.") },
+            title = { androidx.compose.material3.Text("Delete loan") },
+            text  = { androidx.compose.material3.Text("Are you sure?") },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     showDeleteConfirm = false
@@ -203,72 +209,128 @@ fun LoanFormScreen(
                 )
             }
 
-            // LF-1: Total repaid (read-only)
-            if (isEdit) {
+            OutlinedTextField(
+                value = form.totalRepaidKes,
+                onValueChange = { viewModel.updateLoanTotalRepaid(it) },
+                label = { Text("Total repaid") },
+                placeholder = { Text("0.00") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            var showRepayDatePicker by remember { mutableStateOf(false) }
+            val repayDatePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = form.lastRepaymentDate.takeIf { it.isNotBlank() }?.take(10)?.let {
+                    runCatching {
+                        java.time.LocalDate.parse(it)
+                            .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                    }.getOrNull()
+                } ?: System.currentTimeMillis(),
+            )
+            if (showRepayDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showRepayDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showRepayDatePicker = false
+                            repayDatePickerState.selectedDateMillis?.let { millis ->
+                                val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                                cal.timeInMillis = millis
+                                val dateStr = "%04d-%02d-%02d".format(
+                                    cal.get(Calendar.YEAR),
+                                    cal.get(Calendar.MONTH) + 1,
+                                    cal.get(Calendar.DAY_OF_MONTH),
+                                )
+                                viewModel.updateLoanLastRepaymentDate(dateStr)
+                            }
+                        }) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showRepayDatePicker = false }) { Text("Cancel") }
+                    },
+                ) { DatePicker(state = repayDatePickerState) }
+            }
+            Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    value = formatCurrency(form.totalRepaidKes),
+                    value = form.lastRepaymentDate.take(10),
                     onValueChange = {},
                     readOnly = true,
-                    enabled = false,
-                    label = { Text("Total repaid") },
+                    label = { Text("Last repayment date (optional)") },
+                    trailingIcon = {
+                        Icon(Icons.Outlined.CalendarToday, contentDescription = "Pick date",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-            }
-
-            // LF-2: Last repayment date (read-only)
-            val lastRepayDate = form.lastRepaymentDate
-            if (isEdit && lastRepayDate != null) {
-                OutlinedTextField(
-                    value = lastRepayDate.take(10),
-                    onValueChange = {},
-                    readOnly = true,
-                    enabled = false,
-                    label = { Text("Last repayment date") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { showRepayDatePicker = true },
                 )
-            }
-
-            Text("Status", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                LOAN_STATUSES.forEach { status ->
-                    FilterChip(
-                        selected = form.status == status,
-                        onClick = { viewModel.updateLoanStatus(status) },
-                        label = { Text(status.replaceFirstChar { it.uppercase() }) },
-                    )
-                }
             }
 
             if (form.error != null) {
                 Text(form.error!!, color = MaterialTheme.colorScheme.error)
             }
 
-            Button(
-                onClick = {
-                    // CC-3: banner + delayed navigation
-                    viewModel.saveLoan {
-                        successMsg = if (isEdit) "Loan updated" else "Loan added"
-                        scope.launch {
-                            delay(1200)
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                enabled = !form.isSaving,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
+            // Matches LoanFormScreen.tsx statusRow: a single rotating status pill
+            // (cycles active -> repaid -> defaulted on tap) next to the
+            // flex-width Save button.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Text(
-                    if (form.isSaving) {
-                        "Saving…"
-                    } else if (isEdit) {
-                        "Update Loan"
-                    } else {
-                        "Add Loan"
-                    }
-                )
+                val statusColor = LOAN_STATUS_COLOR[form.status] ?: MaterialTheme.colorScheme.primary
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, statusColor, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .background(statusColor.copy(alpha = 0x25 / 255f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = androidx.compose.material3.ripple(),
+                        ) {
+                            val next = LOAN_STATUSES[(LOAN_STATUSES.indexOf(form.status).let { if (it < 0) 0 else it } + 1) % LOAN_STATUSES.size]
+                            viewModel.updateLoanStatus(next)
+                        }
+                        .padding(horizontal = Spacing.base, vertical = Spacing.sm),
+                ) {
+                    Text(
+                        form.status.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusColor,
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        // CC-3: banner + delayed navigation
+                        viewModel.saveLoan {
+                            successMsg = if (isEdit) "Loan updated" else "Loan added"
+                            scope.launch {
+                                delay(1200)
+                                navController.popBackStack()
+                            }
+                        }
+                    },
+                    enabled = !form.isSaving,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        if (form.isSaving) {
+                            "Saving…"
+                        } else if (isEdit) {
+                            "Update Loan"
+                        } else {
+                            "Add Loan"
+                        },
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

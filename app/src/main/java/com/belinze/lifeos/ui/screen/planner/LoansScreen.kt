@@ -1,6 +1,8 @@
 package com.belinze.lifeos.ui.screen.planner
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -51,8 +53,21 @@ import com.belinze.lifeos.viewmodel.PlannerViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private val SUCCESS = Color(0xFF7BC47B)
-private val WARNING = Color(0xFFF5CB5C)
+// Matches LoansScreen.tsx's local SEMANTIC/STATUS_COLOR constants exactly.
+private val SUCCESS = Color(0xFF4ADE80)
+private val WARNING = Color(0xFFFBBF24)
+private val DANGER = Color(0xFFF87171)
+
+private val LOAN_STATUS_COLOR = mapOf(
+    "active"    to WARNING,
+    "repaid"    to SUCCESS,
+    "defaulted" to DANGER,
+)
+private val LOAN_STATUS_LABEL = mapOf(
+    "active"    to "Active",
+    "repaid"    to "Repaid",
+    "defaulted" to "Defaulted",
+)
 
 @Composable
 fun LoansScreen(
@@ -97,7 +112,7 @@ fun LoansScreen(
                 Icon(Icons.Outlined.Payments, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
-                Text("No Fuliza history yet", style = MaterialTheme.typography.titleLarge,
+                Text("No Fuliza history yet", style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(Spacing.xs))
                 Text("Import M-Pesa messages from Finance to track Fuliza draws and repayments automatically.",
@@ -190,8 +205,23 @@ fun LoansScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        viewModel.logRepayment(loan.id, payAmount.toDoubleOrNull() ?: 0.0) { ok ->
-                            if (ok) banner = "Logged repayment"
+                        val delta = payAmount.toDoubleOrNull() ?: 0.0
+                        if (delta > 0) {
+                            val outstanding = (loan.drawAmountKes - loan.totalRepaidKes).coerceAtLeast(0.0)
+                            val applied = delta.coerceAtMost(outstanding)
+                            val fullyPaid = (loan.totalRepaidKes + applied) >= loan.drawAmountKes - 0.005
+                            viewModel.logRepayment(loan.id, delta) { ok ->
+                                if (ok) {
+                                    banner = if (fullyPaid) {
+                                        "Loan fully repaid 🎉"
+                                    } else {
+                                        "Logged ${formatCurrency(applied)} repayment"
+                                    }
+                                }
+                                payLoanId = null
+                                payAmount = ""
+                            }
+                        } else {
                             payLoanId = null
                             payAmount = ""
                         }
@@ -214,58 +244,100 @@ private fun LoanCard(
     onLogRepayment: (() -> Unit)? = null,
     onMarkRepaid: (() -> Unit)? = null,
 ) {
-    val outstanding = loan.drawAmountKes - loan.totalRepaidKes
-    val isClosed = loan.status != "active"
+    val outstanding = (loan.drawAmountKes - loan.totalRepaidKes).coerceAtLeast(0.0)
+    val isActive = loan.status == "active"
+    val percent = if (loan.drawAmountKes > 0) {
+        (loan.totalRepaidKes / loan.drawAmountKes * 100).coerceIn(0.0, 100.0)
+    } else {
+        0.0
+    }
+    val statusColor = LOAN_STATUS_COLOR[loan.status] ?: WARNING
+    val statusLabel = LOAN_STATUS_LABEL[loan.status] ?: loan.status.replaceFirstChar { it.uppercase() }
 
     GlassCard(
         onClick = onEdit,
-        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
+        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
     ) {
+        // Row 1: draw label | amount
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                loan.drawCode?.takeIf { it.isNotBlank() } ?: "Draw · ${formatDateShort(loan.drawDate)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).padding(end = Spacing.sm),
+            )
+            Text(
+                if (isActive) formatCurrency(outstanding) else formatCurrency(loan.drawAmountKes),
+                style = MaterialTheme.typography.titleMedium,
+                color = statusColor,
+            )
+        }
+
+        // Row 2: draw date | status badge
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                formatDate(loan.drawDate),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .background(statusColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
+                    .padding(horizontal = Spacing.sm, vertical = 2.dp),
+            ) {
+                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor)
+            }
+        }
+
+        // Row 3: progress bar
+        Box(
+            modifier = Modifier.fillMaxWidth().height(6.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.CircleShape),
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth((percent / 100.0).toFloat()).height(6.dp)
+                    .background(statusColor, androidx.compose.foundation.shape.CircleShape),
+            )
+        }
+        Spacer(Modifier.height(Spacing.sm))
+
+        // Row 4: repaid info | actions
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
-                Text("Draw: ${formatCurrency(loan.drawAmountKes)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                Text(formatDate(loan.drawDate), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    if (isClosed) "Repaid" else formatCurrency(outstanding),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isClosed) SUCCESS else WARNING,
-                )
-                Text(loan.status.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        if (loan.totalRepaidKes > 0) {
-            Text("Repaid: ${formatCurrency(loan.totalRepaidKes)}",
+            Text(
+                when (loan.status) {
+                    "repaid" -> {
+                        val when_ = loan.lastRepaymentDate?.let { " · ${formatDateShort(it)}" } ?: ""
+                        "Fully repaid$when_"
+                    }
+                    "defaulted" -> "Outstanding ${formatCurrency(outstanding)} unpaid"
+                    else -> "Repaid ${formatCurrency(loan.totalRepaidKes)} · ${percent.toInt()}%"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.sm))
-        }
-        if (!isClosed && (onLogRepayment != null || onMarkRepaid != null)) {
-            Spacer(Modifier.height(Spacing.sm))
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                modifier = Modifier.weight(1f),
+            )
+            if (isActive) {
                 onLogRepayment?.let {
-                    TextButton(onClick = it) {
-                        Icon(Icons.Outlined.AddCircleOutline, contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.size(4.dp))
-                        Text("Log Repayment", color = MaterialTheme.colorScheme.primary)
+                    IconButton(onClick = it, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Outlined.AddCircleOutline, contentDescription = "Log repayment",
+                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     }
                 }
                 onMarkRepaid?.let {
-                    TextButton(onClick = it) {
-                        Icon(Icons.Outlined.CheckCircle, contentDescription = null,
-                            tint = SUCCESS, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.size(4.dp))
-                        Text("Mark Repaid", color = SUCCESS)
+                    IconButton(onClick = it, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Outlined.CheckCircle, contentDescription = "Mark repaid",
+                            tint = SUCCESS, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -275,6 +347,12 @@ private fun LoanCard(
 
 private fun formatDate(iso: String?): String = try {
     LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+} catch (_: Exception) {
+    iso?.take(10) ?: ""
+}
+
+private fun formatDateShort(iso: String?): String = try {
+    LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM d"))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }
