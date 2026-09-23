@@ -439,6 +439,7 @@ class AssistantViewModel
         val month = now.monthValue
 
         fun ms(zdt: ZonedDateTime) = zdt.toInstant().toEpochMilli()
+
         fun endOfDay(date: LocalDate) = date.atTime(23, 59, 59, 999_000_000).atZone(zone)
 
         if (text.contains("yesterday")) {

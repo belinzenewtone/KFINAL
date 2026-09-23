@@ -70,8 +70,8 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.viewmodel.AssistantViewModel
 import com.belinze.lifeos.viewmodel.ChatMessage
-import java.time.format.DateTimeFormatter
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AssistantScreen

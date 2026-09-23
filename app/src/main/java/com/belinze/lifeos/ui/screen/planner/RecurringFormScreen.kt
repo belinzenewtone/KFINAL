@@ -71,6 +71,7 @@ private val CADENCE_LABELS = mapOf(
     "monthly"   to "Monthly",
     "yearly"    to "Yearly",
 )
+
 // Mirrors RecurringFormScreen.tsx: every CATEGORY_COLORS key except income/uncategorized.
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",

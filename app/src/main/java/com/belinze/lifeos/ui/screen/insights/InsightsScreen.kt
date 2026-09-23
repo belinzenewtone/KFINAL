@@ -93,6 +93,7 @@ import kotlinx.coroutines.launch
 
 private val GOOD    = Color(0xFF22C55E)
 private val BAD     = Color(0xFFEF4444)
+
 // Matches AnalyticsSummaryCards.tsx / InsightsTab.tsx SUCCESS constant.
 private val SUCCESS = Color(0xFF4ADE80)
 

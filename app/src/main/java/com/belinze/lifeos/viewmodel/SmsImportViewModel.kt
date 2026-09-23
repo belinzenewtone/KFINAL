@@ -130,6 +130,7 @@ class SmsImportViewModel
     )
 
     private data class PendingImport(val periodDays: Long?, val filter: String)
+
     private var pendingImport: PendingImport? = null
 
     private val _uiState = MutableStateFlow(SmsImportUiState())

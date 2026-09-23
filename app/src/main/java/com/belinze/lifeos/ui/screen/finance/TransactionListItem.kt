@@ -184,7 +184,11 @@ fun DayGroupHeader(
 
 /** Mirrors RN's formatRelativeDay(): Today/Tomorrow/Yesterday, weekday name for ±1-6 days, else "dd MMM". */
 fun formatRelativeDay(dateIso: String): String {
-    val date = try { LocalDate.parse(dateIso.take(10)) } catch (_: Exception) { return dateIso }
+    val date = try {
+        LocalDate.parse(dateIso.take(10))
+    } catch (_: Exception) {
+        return dateIso
+    }
     val today = LocalDate.now()
     val diffDays = java.time.temporal.ChronoUnit.DAYS.between(today, date)
     return when {

@@ -26,9 +26,9 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +89,7 @@ private fun lookupFee(tiers: List<FeeTier>, principal: Double): Double =
     tiers.firstOrNull { principal <= it.maxAmount }?.fee ?: tiers.last().fee
 
 private fun accessFeeForAmount(principalKes: Double) = lookupFee(ACCESS_FEE_TIERS, principalKes)
+
 private fun dailyFeeForAmount(principalKes: Double) = lookupFee(DAILY_FEE_TIERS, principalKes)
 
 private data class FulizaProjectionResult(

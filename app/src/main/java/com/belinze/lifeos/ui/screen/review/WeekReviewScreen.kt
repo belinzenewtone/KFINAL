@@ -381,8 +381,11 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                     Text(
                         text  = dowLabel(bar.dayOfWeek),
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) barColor
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isSelected) {
+                            barColor
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         fontSize = 9.sp,
                     )
                 }
