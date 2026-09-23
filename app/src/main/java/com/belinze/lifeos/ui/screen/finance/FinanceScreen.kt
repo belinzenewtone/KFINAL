@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -27,15 +28,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FileDownload
-import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Message
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
@@ -66,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -94,9 +99,6 @@ import com.belinze.lifeos.viewmodel.BudgetViewModel
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import com.belinze.lifeos.viewmodel.SmsImportViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FinanceScreen
@@ -189,12 +191,15 @@ fun FinanceScreen(
                      results[Manifest.permission.RECEIVE_SMS] == true
     }
 
-    // Top budget alert — derived from activeBudgetsDs so it doesn't recompute on scroll
+    // Top budget alert — mirrors RN: prefer a budget that's crossed its alert
+    // threshold, else fall back to the single highest-usage active budget so a
+    // card is shown whenever at least one active budget exists (RN always
+    // shows one here, not only once a threshold is crossed).
     val alertBudget by remember {
         derivedStateOf {
             activeBudgetsDs.firstOrNull { b ->
                 b.pct >= (b.budget.alertThreshold ?: 0.8).toFloat()
-            }
+            } ?: activeBudgetsDs.maxByOrNull { it.pct }
         }
     }
 
@@ -238,7 +243,7 @@ fun FinanceScreen(
             Row(
                 modifier              = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.md),
+                    .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
@@ -251,11 +256,13 @@ fun FinanceScreen(
                 IconButton(onClick = {
                     pagingItems.refresh()
                     viewModel.refreshMetrics()
+                    budgetViewModel.load()
                 }) {
                     Icon(
                         imageVector        = Icons.Outlined.Refresh,
                         contentDescription = "Refresh",
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint               = MaterialTheme.colorScheme.onSurface,
+                        modifier           = Modifier.size(22.dp),
                     )
                 }
             }
@@ -324,7 +331,8 @@ fun FinanceScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(actionChipsScrollState)
-                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                            .padding(horizontal = Spacing.screenHorizontal, vertical = 0.dp)
+                            .padding(bottom = 14.dp),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
                         ActionChip(
@@ -339,12 +347,12 @@ fun FinanceScreen(
                         )
                         ActionChip(
                             label   = "Import CSV",
-                            icon    = Icons.Outlined.FileDownload,
+                            icon    = Icons.Outlined.Description,
                             onClick = { showImportCsvSheet = true },
                         )
                         ActionChip(
-                            label   = "Export Data",
-                            icon    = Icons.Outlined.FileUpload,
+                            label   = "Export",
+                            icon    = Icons.Outlined.FileDownload,
                             onClick = { navController.navigate(Route.EXPORT_DATA) },
                         )
                     }
@@ -358,8 +366,7 @@ fun FinanceScreen(
                             .padding(
                                 start  = Spacing.screenHorizontal,
                                 end    = Spacing.screenHorizontal,
-                                top    = Spacing.sm,
-                                bottom = Spacing.base,
+                                bottom = 14.dp,
                             ),
                     ) {
                         Text(
@@ -368,7 +375,7 @@ fun FinanceScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text  = formatCurrency(monthExpense),
+                            text  = formatCurrency(monthExpense, decimals = 0),
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight    = FontWeight.Bold,
                                 letterSpacing = (-0.5).sp,
@@ -378,7 +385,7 @@ fun FinanceScreen(
                         )
                         Row(
                             modifier              = Modifier.fillMaxWidth().padding(top = Spacing.sm),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.base),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
                             HeroSubMetric(label = "Today",     amount = todayExpense)
                             HeroSubMetric(label = "This week", amount = weekExpense)
@@ -449,12 +456,12 @@ fun FinanceScreen(
                 if (uncategorized > 0) {
                     item {
                         InlineBanner(
-                            message  = "$uncategorized transactions need a category",
+                            message  = "$uncategorized uncategorized transaction${if (uncategorized == 1) "" else "s"}",
                             tone     = BannerTone.Info,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
-                            action   = "Review",
+                            action   = "Fix",
                             onAction = { navController.navigate(Route.CATEGORIZE) },
                         )
                     }
@@ -525,14 +532,14 @@ fun FinanceScreen(
                 }
 
                 item {
-                    OutlinedTextField(
+                    FinanceSearchField(
                         value         = activeFilters.search,
                         onValueChange = { viewModel.setSearch(it) },
-                        placeholder   = { Text("Name, ref code…") },
-                        singleLine    = true,
+                        placeholder   = "Name, ref code…",
                         modifier      = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
+                            .padding(horizontal = Spacing.screenHorizontal)
+                            .padding(bottom = 14.dp),
                     )
                 }
 
@@ -559,11 +566,12 @@ fun FinanceScreen(
                         Box(
                             modifier         = Modifier
                                 .fillMaxWidth()
-                                .padding(Spacing.x2l),
+                                .padding(36.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                "No transactions yet.",
+                                "No transactions found",
+                                style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -588,7 +596,7 @@ fun FinanceScreen(
 
                     if (isFirstOfDay) {
                         DayGroupHeader(
-                            dateLabel = formatDateKey(currDate),
+                            dateLabel = formatRelativeDay(currDate),
                             modifier  = Modifier.padding(top = if (index == 0) 0.dp else Spacing.sm),
                         )
                     }
@@ -599,7 +607,7 @@ fun FinanceScreen(
                             .padding(
                                 start  = Spacing.screenHorizontal,
                                 end    = Spacing.screenHorizontal,
-                                bottom = Spacing.xs,
+                                bottom = Spacing.sm,
                             )
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -640,7 +648,12 @@ fun FinanceScreen(
                 .padding(end = Spacing.lg, bottom = 72.dp),
             containerColor = MaterialTheme.colorScheme.primary,
         ) {
-            Icon(Icons.Outlined.Add, contentDescription = "Add transaction", tint = MaterialTheme.colorScheme.onPrimary)
+            Icon(
+                Icons.Outlined.Add,
+                contentDescription = "Add transaction",
+                tint     = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(28.dp),
+            )
         }
 
         // BUG-F9: merge into one TopBanner — error takes priority over import result,
@@ -681,6 +694,62 @@ fun FinanceScreen(
     }
 }
 
+// ─── Search field — pill-shaped, mirrors RN's SearchField (44dp height) ───────
+
+@Composable
+private fun FinanceSearchField(
+    value:         String,
+    onValueChange: (String) -> Unit,
+    placeholder:   String,
+    modifier:      Modifier = Modifier,
+) {
+    val onSurface        = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = modifier
+            .heightIn(min = 44.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .padding(horizontal = 12.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            Icons.Outlined.Search,
+            contentDescription = null,
+            tint     = onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
+        Box(modifier = Modifier.weight(1f)) {
+            BasicTextField(
+                value          = value,
+                onValueChange  = onValueChange,
+                singleLine     = true,
+                textStyle      = MaterialTheme.typography.bodyMedium.copy(color = onSurface),
+                cursorBrush    = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier       = Modifier.fillMaxWidth(),
+            )
+            if (value.isEmpty()) {
+                Text(
+                    placeholder,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = onSurfaceVariant,
+                )
+            }
+        }
+        if (value.isNotEmpty()) {
+            Icon(
+                Icons.Outlined.Cancel,
+                contentDescription = "Clear",
+                tint     = onSurfaceVariant,
+                modifier = Modifier
+                    .size(18.dp)
+                    .clickable { onValueChange("") },
+            )
+        }
+    }
+}
+
 // ─── Action chip ──────────────────────────────────────────────────────────────
 
 @Composable
@@ -690,6 +759,8 @@ private fun ActionChip(
     onClick: () -> Unit,
 ) {
     val primary           = MaterialTheme.colorScheme.primary
+    val onSurface         = MaterialTheme.colorScheme.onSurface
+    val outlineVariant    = MaterialTheme.colorScheme.outlineVariant
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
@@ -697,6 +768,7 @@ private fun ActionChip(
                 MaterialTheme.colorScheme.surfaceVariant,
                 MaterialTheme.shapes.medium,
             )
+            .border(1.dp, outlineVariant, MaterialTheme.shapes.medium)
             .clickable(
                 interactionSource = interactionSource,
                 indication        = ripple(color = primary.copy(0.15f)),
@@ -706,8 +778,8 @@ private fun ActionChip(
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(icon, contentDescription = label, tint = primary, modifier = Modifier.size(16.dp))
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+        Icon(icon, contentDescription = label, tint = onSurface, modifier = Modifier.size(16.dp))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = onSurface)
     }
 }
 
@@ -824,18 +896,8 @@ private fun InsightCard(
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-private fun formatDateKey(dateKey: String): String = try {
-    val d = LocalDate.parse(dateKey)
-    val today = LocalDate.now()
-    when {
-        d == today               -> "Today"
-        d == today.minusDays(1)  -> "Yesterday"
-        else -> d.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH))
-    }
-} catch (_: Exception) {
-    dateKey
-}
+// Date-group labels are formatted via formatRelativeDay() in TransactionListItem.kt
+// (mirrors RN's formatRelativeDay(): Today/Tomorrow/Yesterday/weekday/"dd MMM").
 
 // ─── Import CSV sheet ─────────────────────────────────────────────────────────
 

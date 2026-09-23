@@ -55,6 +55,64 @@ class SmsImportViewModel
     )
 
     @Immutable
+    data class DetectedInstitution(val institutionId: String, val count: Int)
+
+    /** Mirrors RN's INSTITUTION_DISPLAY map (ImportSmsSheet.tsx). */
+    companion object {
+        val INSTITUTION_DISPLAY: Map<String, String> = mapOf(
+            "mpesa" to "M-Pesa",
+            "kcb" to "KCB Bank",
+            "equity" to "Equity Bank",
+            "coopbank" to "Co-op Bank",
+            "ncba" to "NCBA / Loop",
+            "absa" to "Absa Bank",
+            "stanchart" to "Standard Chartered",
+            "dtb" to "DTB Bank",
+            "family" to "Family Bank",
+            "im" to "I&M Bank",
+            "stanbic" to "Stanbic Bank",
+            "pesalink" to "PesaLink",
+            "airtel" to "Airtel Money",
+            "tkash" to "T-Kash",
+            "sbm" to "SBM Bank",
+            "hfgroup" to "HF Group",
+            "gulf" to "Gulf African Bank",
+            "boa" to "Bank of Africa",
+            "primebank" to "Prime Bank",
+        )
+
+        fun institutionLabel(id: String): String = INSTITUTION_DISPLAY[id] ?: id.uppercase()
+
+        /** Best-effort sender-address → institution-id matching (uppercase substrings). */
+        private val INSTITUTION_KEYWORDS: List<Pair<String, List<String>>> = listOf(
+            "mpesa" to listOf("MPESA", "M-PESA"),
+            "kcb" to listOf("KCB"),
+            "equity" to listOf("EQUITY"),
+            "coopbank" to listOf("COOPBANK", "CO-OP", "COOPERATIVE"),
+            "ncba" to listOf("NCBA", "LOOP"),
+            "absa" to listOf("ABSA"),
+            "stanchart" to listOf("STANCHART", "STANDARD CHARTERED"),
+            "dtb" to listOf("DTB"),
+            "family" to listOf("FAMILY"),
+            "im" to listOf("I&M", "IMBANK"),
+            "stanbic" to listOf("STANBIC"),
+            "pesalink" to listOf("PESALINK"),
+            "airtel" to listOf("AIRTEL"),
+            "tkash" to listOf("TKASH", "T-KASH"),
+            "sbm" to listOf("SBM"),
+            "hfgroup" to listOf("HFGROUP", "HF GROUP", "HFC"),
+            "gulf" to listOf("GULF"),
+            "boa" to listOf("BANK OF AFRICA", "BOA"),
+            "primebank" to listOf("PRIMEBANK", "PRIME BANK"),
+        )
+
+        private fun institutionFor(address: String): String? {
+            val upper = address.uppercase()
+            return INSTITUTION_KEYWORDS.firstOrNull { (_, keywords) -> keywords.any { it in upper } }?.first
+        }
+    }
+
+    @Immutable
     data class SmsImportUiState(
         val permissionGranted: Boolean = false,
         val isImporting:       Boolean = false,
@@ -65,7 +123,14 @@ class SmsImportViewModel
         val importProgress:    ImportProgress? = null,
         /** Final counts once the worker succeeds — shown until next import starts. */
         val importResult:      ImportResult?   = null,
+        /** Bank-detection phase (banks_only/all modes only — mpesa_only skips straight to import). */
+        val isDetecting:          Boolean = false,
+        val detectedInstitutions: List<DetectedInstitution>? = null,
+        val showDetectionResult:  Boolean = false,
     )
+
+    private data class PendingImport(val periodDays: Long?, val filter: String)
+    private var pendingImport: PendingImport? = null
 
     private val _uiState = MutableStateFlow(SmsImportUiState())
     val uiState: StateFlow<SmsImportUiState> = _uiState.asStateFlow()
@@ -125,6 +190,18 @@ class SmsImportViewModel
                                 running -> null            // hide result while re-importing
                                 result != null -> result   // fresh result just finished
                                 else -> cur.importResult   // keep existing result
+                            },
+                            // RN's exact result-banner copy (FinanceScreen.tsx).
+                            banner = if (result != null) {
+                                when {
+                                    result.total == 0 -> "No messages found in this window"
+                                    result.imported == 0 && result.duplicates > 0 && result.failed == 0 ->
+                                        "Everything up to date · ${result.duplicates} already imported"
+                                    else ->
+                                        "Import complete · ${result.imported} new · ${result.duplicates} dupes · ${result.failed} failed"
+                                }
+                            } else {
+                                cur.banner
                             },
                         )
                     }
@@ -197,6 +274,65 @@ class SmsImportViewModel
             }
             _uiState.value = _uiState.value.copy(isPreviewing = false, previewCount = count)
         }
+    }
+
+    /** Entry point from the sheet: mpesa_only imports immediately; banks_only/all detect first. */
+    fun startImportFlow(periodDays: Long?, filter: String) {
+        if (filter == "mpesa_only") {
+            runImport(periodDays, filter)
+        } else {
+            detectInstitutions(periodDays, filter)
+        }
+    }
+
+    fun detectInstitutions(periodDays: Long?, filter: String) {
+        if (!_uiState.value.permissionGranted) return
+        pendingImport = PendingImport(periodDays, filter)
+        _uiState.value = _uiState.value.copy(isDetecting = true, showDetectionResult = false, detectedInstitutions = null)
+        viewModelScope.launch {
+            val detected = withContext(Dispatchers.IO) {
+                runCatching {
+                    val now    = System.currentTimeMillis()
+                    val fromMs = periodDays?.let { now - TimeUnit.DAYS.toMillis(it) } ?: 0L
+                    val uri    = android.net.Uri.parse("content://sms")
+                    val selection = if (fromMs > 0L) "date >= ?" else null
+                    val selArgs   = if (fromMs > 0L) arrayOf(fromMs.toString()) else null
+                    val c: Cursor? = context.contentResolver.query(
+                        uri, arrayOf("_id", "address"), selection, selArgs, null
+                    )
+                    val counts = mutableMapOf<String, Int>()
+                    if (c != null) {
+                        val addrIdx = c.getColumnIndexOrThrow("address")
+                        while (c.moveToNext()) {
+                            val addr = c.getString(addrIdx) ?: continue
+                            val inst = institutionFor(addr) ?: continue
+                            if (filter == "banks_only" && inst == "mpesa") continue
+                            counts[inst] = (counts[inst] ?: 0) + 1
+                        }
+                        c.close()
+                    }
+                    counts.map { (id, n) -> DetectedInstitution(id, n) }
+                        .sortedWith(compareBy({ it.institutionId != "mpesa" }, { -it.count }))
+                }.getOrElse { emptyList() }
+            }
+            _uiState.value = _uiState.value.copy(
+                isDetecting          = false,
+                detectedInstitutions = detected,
+                showDetectionResult  = true,
+            )
+        }
+    }
+
+    fun confirmBankImport() {
+        val pending = pendingImport ?: return
+        _uiState.value = _uiState.value.copy(showDetectionResult = false, detectedInstitutions = null)
+        pendingImport = null
+        runImport(pending.periodDays, pending.filter)
+    }
+
+    fun cancelDetection() {
+        pendingImport = null
+        _uiState.value = _uiState.value.copy(showDetectionResult = false, detectedInstitutions = null, isDetecting = false)
     }
 
     fun runImport(periodDays: Long?, filter: String) {

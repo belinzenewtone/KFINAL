@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -32,6 +33,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -63,6 +65,7 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
+import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import java.time.LocalDateTime
@@ -284,12 +287,12 @@ fun TransactionDetailDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
     ) {
         Box(
             modifier         = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f))
+                .background(Color.Black.copy(alpha = 0.4f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication        = null,
@@ -301,13 +304,13 @@ fun TransactionDetailDialog(
                 modifier  = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 520.dp)
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 24.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication        = null,
                         onClick           = {},
                     ),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
             ) {
                 when {
@@ -318,7 +321,8 @@ fun TransactionDetailDialog(
                         ) { CircularProgressIndicator(modifier = Modifier.size(24.dp)) }
                     }
                     else -> {
-                        val categoryColor = categoryColor(tx.category ?: "")
+                        val categoryKey = tx.category?.takeIf { it.isNotBlank() } ?: (tx.transactionType ?: "expense")
+                        val catColor = categoryColor(categoryKey)
                         val amountColor = when (tx.transactionType) {
                             "income" -> Color(0xFF34D399)
                             "expense" -> MaterialTheme.colorScheme.error
@@ -328,56 +332,42 @@ fun TransactionDetailDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                                .padding(horizontal = 14.dp, vertical = 14.dp),
                         ) {
-                            // Compact hero row — icon + merchant/category + amount side by side
+                            // Header block — icon chip + Merchant/Category/Amount label-value rows
                             Row(
-                                modifier          = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                                modifier          = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 Box(
                                     modifier         = Modifier
-                                        .size(44.dp)
-                                        .background(categoryColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(20.dp)),
+                                        .size(40.dp)
+                                        .background(catColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(12.dp)),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
-                                        when (tx.transactionType) {
-                                            "income"   -> Icons.Outlined.ArrowDownward
-                                            "transfer" -> Icons.Outlined.SwapHoriz
-                                            else       -> Icons.Outlined.ArrowUpward
-                                        },
+                                        categoryIcon(categoryKey),
                                         contentDescription = null,
-                                        tint     = categoryColor,
+                                        tint     = catColor,
                                         modifier = Modifier.size(22.dp),
                                     )
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        tx.merchant ?: "",
-                                        style    = MaterialTheme.typography.titleMedium,
-                                        color    = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                    )
-                                    Text(
-                                        "${tx.category ?: "uncategorized"} · ${tx.transactionType}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
+                                    DetailRow("Merchant", tx.merchant ?: "")
+                                    DetailRow("Category", categoryKey.replaceFirstChar { it.uppercase() })
+                                    DetailRow("Amount", formatCurrency(tx.amount), valueColor = amountColor)
                                 }
-                                Text(
-                                    formatCurrency(tx.amount),
-                                    style     = MaterialTheme.typography.titleMedium,
-                                    color     = amountColor,
-                                    textAlign = TextAlign.End,
-                                )
                             }
+
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = Spacing.xs),
+                                color    = MaterialTheme.colorScheme.outlineVariant,
+                            )
 
                             // Details
                             GlassCard(modifier = Modifier.padding(bottom = 12.dp)) {
                                 DetailRow("Date", tx.date?.let { formatDetailDate(it) } ?: "")
-                                DetailRow("Status", tx.status)
                                 tx.mpesaCode?.let { DetailRow("M-Pesa Code", it) }
                                 if (tx.mpesaCode == null) tx.externalRef?.let { DetailRow("Reference", it) }
                                 tx.description?.let { DetailRow("Description", it) }
@@ -396,7 +386,8 @@ fun TransactionDetailDialog(
                             } else {
                                 Row(
                                     modifier              = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment     = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
                                     TextButton(
                                         onClick  = {
@@ -413,13 +404,20 @@ fun TransactionDetailDialog(
                                             }
                                             context.startActivity(Intent.createChooser(intent, "Share"))
                                         },
-                                        modifier = Modifier.weight(1f),
-                                    ) { Text("Share") }
+                                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                                    ) {
+                                        Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Share")
+                                    }
                                     TextButton(
                                         onClick  = { showDeleteDialog = true },
-                                        modifier = Modifier.weight(1f),
                                         colors   = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                                    ) { Text("Delete") }
+                                    ) {
+                                        Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Delete")
+                                    }
                                     Button(
                                         onClick = {
                                             viewModel.openForm(tx.id)
@@ -466,7 +464,7 @@ private fun InlineEditPanel(
     GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 TX_TYPES_DETAIL.forEachIndexed { idx, type ->
@@ -491,6 +489,14 @@ private fun InlineEditPanel(
                 ExposedDropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
                     CATEGORIES_DETAIL.forEach { cat ->
                         DropdownMenuItem(
+                            leadingIcon = {
+                                Icon(categoryIcon(cat), contentDescription = null, tint = categoryColor(cat), modifier = Modifier.size(18.dp))
+                            },
+                            trailingIcon = {
+                                if (formState.category == cat) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                }
+                            },
                             text = { Text(cat.replaceFirstChar { it.uppercase() }) },
                             onClick = { viewModel.updateFormCategory(cat); catExpanded = false },
                         )
@@ -518,25 +524,38 @@ private fun InlineEditPanel(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
                 TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel") }
                 Button(
-                    onClick  = { viewModel.saveForm { onSaved(); viewModel.loadTransaction(transactionId) } },
-                    shape    = RoundedCornerShape(20.dp),
-                    modifier = Modifier.weight(1f),
-                ) { Text("Save") }
+                    onClick  = {
+                        viewModel.saveForm { onSaved(); viewModel.loadTransaction(transactionId) }
+                    },
+                    enabled  = !formState.isSaving,
+                    shape    = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(3f),
+                ) {
+                    if (formState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color       = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text("Save")
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, valueColor: Color? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = Spacing.sm),
+            .padding(vertical = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -547,9 +566,9 @@ private fun DetailRow(label: String, value: String) {
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f).padding(start = Spacing.base),
+            modifier = Modifier.weight(1f).padding(start = 14.dp),
         )
     }
 }

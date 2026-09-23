@@ -79,7 +79,7 @@ data class TransactionFormState(
     val id:              String?  = null,      // null = new
     val merchant:        String   = "",
     val amount:          String   = "",        // raw input
-    val category:        String   = "uncategorized",
+    val category:        String   = "food",
     val transactionType: String   = "expense",
     val date:            String   = nowIso(),
     val description:     String   = "",
@@ -362,9 +362,14 @@ class TransactionViewModel
         val form = _formState.value
         val amt  = form.amount.toDoubleOrNull()
         if (amt == null || amt <= 0) {
-            _formState.update { it.copy(error = "Enter a valid amount") }
+            _formState.update { it.copy(error = "Please enter a positive amount") }
             return
         }
+        if (form.merchant.isBlank()) {
+            _formState.update { it.copy(error = "Please enter a merchant") }
+            return
+        }
+        Haptics.light()
         _formState.update { it.copy(isSaving = true, error = null) }
         viewModelScope.launch {
             try {
@@ -401,10 +406,12 @@ class TransactionViewModel
                 Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
                 onSuccess()
-                // Fire budget alerts for the transaction's category (mirrors RN).
-                runCatching {
-                    val state = prefs.state.first()
-                    budgetAlertService.checkBudgetThresholds(state, form.category)
+                // Fire budget alerts for the transaction's category — expense only (mirrors RN).
+                if (form.transactionType == "expense") {
+                    runCatching {
+                        val state = prefs.state.first()
+                        budgetAlertService.checkBudgetThresholds(state, form.category)
+                    }
                 }
             } catch (e: Exception) {
                 _formState.update { it.copy(isSaving = false, error = e.message) }

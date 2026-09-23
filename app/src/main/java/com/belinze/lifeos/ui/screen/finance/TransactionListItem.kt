@@ -6,16 +6,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDownward
-import androidx.compose.material.icons.outlined.ArrowUpward
-import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,13 +23,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.ui.theme.categoryColor
+import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.formatCurrency
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -60,46 +60,47 @@ fun TransactionListItem(
                 indication        = ripple(color = MaterialTheme.colorScheme.primary.copy(0.12f)),
                 onClick           = onClick,
             )
-            .padding(horizontal = Spacing.screenHorizontal, vertical = 10.dp),
+            .padding(PaddingValues(start = 14.dp, top = 14.dp, bottom = 14.dp, end = 16.dp)),
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // ── Icon ────────────────────────────────────────────────────────────
-        val txType = tx.transactionType ?: "expense"
+        // ── Icon — category-based (mirrors RN's CATEGORY_ICONS/CATEGORY_COLORS) ──
+        val txType    = tx.transactionType ?: "expense"
+        val category  = tx.category?.takeIf { it.isNotBlank() } ?: txType
+        val catColor  = categoryColor(category)
         Box(
             modifier         = Modifier
                 .size(44.dp)
-                .background(txIconBg(txType), MaterialTheme.shapes.medium),
+                .background(catColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector        = txIcon(txType),
-                contentDescription = txType,
-                tint               = txIconTint(txType),
+                imageVector        = categoryIcon(category),
+                contentDescription = category,
+                tint               = catColor,
                 modifier           = Modifier.size(20.dp),
             )
         }
 
-        Spacer(Modifier.width(Spacing.base))
+        Spacer(Modifier.width(14.dp))
 
         // ── Main text (merchant + category + description) ────────────────
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text     = tx.merchant?.ifBlank { null } ?: tx.description?.take(40) ?: "Unknown",
+                text     = tx.merchant.orEmpty(),
                 style    = MaterialTheme.typography.bodyLarge,
                 color    = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (tx.category?.isNotBlank() == true) {
-                Text(
-                    text     = tx.category ?: "",
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-            }
-            if (!tx.description.isNullOrBlank() && tx.merchant?.isNotBlank() == true) {
+            Text(
+                text     = category.replaceFirstChar { it.uppercase() },
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            if (!tx.description.isNullOrBlank()) {
                 Text(
                     text     = tx.description ?: "",
                     style    = MaterialTheme.typography.bodySmall,
@@ -109,7 +110,7 @@ fun TransactionListItem(
             }
         }
 
-        Spacer(Modifier.width(Spacing.base))
+        Spacer(Modifier.width(14.dp))
 
         // ── Amount + date + status ───────────────────────────────────────
         Column(horizontalAlignment = Alignment.End) {
@@ -138,9 +139,10 @@ fun TransactionListItem(
             )
             if (tx.status != "completed" && tx.status.isNotBlank()) {
                 Text(
-                    text  = tx.status,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = statusColor(tx.status),
+                    text     = tx.status.replaceFirstChar { it.uppercase() },
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = statusColor(tx.status),
+                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
         }
@@ -158,25 +160,39 @@ fun DayGroupHeader(
     Row(
         modifier              = modifier
             .fillMaxWidth()
-            .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.base, bottom = Spacing.xs),
+            .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = 14.dp, bottom = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment     = Alignment.CenterVertically,
     ) {
         Text(
-            text      = dateLabel,
-            fontSize  = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant,
+            text          = dateLabel.uppercase(),
+            style         = MaterialTheme.typography.labelMedium,
+            color         = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.5.sp,
         )
-        if (total != null) {
+        if (total != null && total != 0.0) {
+            val negative = total < 0
             Text(
-                text       = "-${formatCurrency(total)}",
-                fontSize   = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                text          = "${if (negative) "-" else "+"}${formatCurrency(kotlin.math.abs(total))}",
+                style         = MaterialTheme.typography.labelMedium,
+                color         = if (negative) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                letterSpacing = 0.3.sp,
             )
         }
+    }
+}
+
+/** Mirrors RN's formatRelativeDay(): Today/Tomorrow/Yesterday, weekday name for ±1-6 days, else "dd MMM". */
+fun formatRelativeDay(dateIso: String): String {
+    val date = try { LocalDate.parse(dateIso.take(10)) } catch (_: Exception) { return dateIso }
+    val today = LocalDate.now()
+    val diffDays = java.time.temporal.ChronoUnit.DAYS.between(today, date)
+    return when {
+        diffDays == 0L -> "Today"
+        diffDays == 1L -> "Tomorrow"
+        diffDays == -1L -> "Yesterday"
+        diffDays in 2..6 -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.US)
+        else -> date.format(DATE_FMT)
     }
 }
 
@@ -203,28 +219,6 @@ fun CategoryChip(category: String) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-@Composable
-private fun txIconBg(type: String): Color {
-    val scheme = MaterialTheme.colorScheme
-    return when (type) {
-        "income"   -> Color(0xFF10B981).copy(alpha = 0.15f)
-        "transfer" -> scheme.primary.copy(alpha = 0.12f)
-        "fuliza"   -> Color(0xFFF59E0B).copy(alpha = 0.15f)
-        else       -> scheme.surfaceVariant
-    }
-}
-
-@Composable
-private fun txIconTint(type: String): Color {
-    val scheme = MaterialTheme.colorScheme
-    return when (type) {
-        "income"   -> Color(0xFF10B981)
-        "transfer" -> scheme.primary
-        "fuliza"   -> Color(0xFFF59E0B)
-        else       -> scheme.onSurfaceVariant
-    }
-}
-
 private val DATE_FMT = DateTimeFormatter.ofPattern("dd MMM")
 
 private fun isoToDate(iso: String?): String {
@@ -236,16 +230,10 @@ private fun isoToDate(iso: String?): String {
     }
 }
 
-private fun txIcon(type: String) = when (type) {
-    "income"   -> Icons.Outlined.ArrowDownward
-    "transfer" -> Icons.Outlined.SwapHoriz
-    else       -> Icons.Outlined.ArrowUpward
-}
-
 @Composable
 private fun statusColor(status: String): Color = when (status) {
-    "pending"   -> Color(0xFFF59E0B)
-    "failed"    -> Color(0xFFEF4444)
+    "pending"   -> Color(0xFFFBBF24)
+    "failed"    -> MaterialTheme.colorScheme.error
     "reversed"  -> MaterialTheme.colorScheme.onSurfaceVariant
     else        -> MaterialTheme.colorScheme.onSurfaceVariant
 }

@@ -15,10 +15,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -41,18 +44,20 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.ui.theme.categoryColor
+import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 
 private val TX_TYPES = listOf("expense", "income", "transfer")
 private val STATUSES = listOf("completed", "pending", "failed", "reversed")
 
-// Unified category list — matches CategorizeScreen categories
+// Unified category list — mirrors RN's CATEGORY_COLORS key order exactly.
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
     "entertainment", "health", "education", "shopping", "savings", "investment",
-    "housing", "personal_care", "subscriptions", "miscellaneous",
-    "income", "uncategorized",
+    "housing", "personal_care", "subscriptions", "fuel", "loans", "insurance",
+    "miscellaneous", "uncategorized", "income",
 )
 
 @Suppress("LongMethod")
@@ -188,6 +193,14 @@ fun TransactionFormScreen(
                 ) {
                     CATEGORIES.forEach { cat ->
                         DropdownMenuItem(
+                            leadingIcon = {
+                                Icon(categoryIcon(cat), contentDescription = null, tint = categoryColor(cat), modifier = Modifier.size(18.dp))
+                            },
+                            trailingIcon = {
+                                if (formState.category == cat) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                }
+                            },
                             text = { Text(cat.replaceFirstChar { it.uppercase() }) },
                             onClick = {
                                 viewModel.updateFormCategory(cat)
@@ -245,6 +258,8 @@ fun TransactionFormScreen(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
+                    Spacer(Modifier.width(Spacing.xs))
+                    Text("Saving...")
                 } else {
                     Text(if (isEdit) "Update" else "Save")
                 }
