@@ -62,6 +62,7 @@ import java.util.TimeZone
 
 private val FREQUENCIES = listOf("once", "daily", "weekly", "monthly", "yearly")
 
+@Suppress("LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IncomeFormScreen(

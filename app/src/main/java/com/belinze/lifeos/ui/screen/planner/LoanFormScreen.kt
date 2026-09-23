@@ -62,6 +62,7 @@ private val LOAN_STATUS_COLOR = mapOf(
     "defaulted" to androidx.compose.ui.graphics.Color(0xFFF87171),
 )
 
+@Suppress("LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanFormScreen(

@@ -445,6 +445,7 @@ class InsightsViewModel
         // both the Analytics tab's category sparklines and the Insights tab's
         // top-category/history colors — the app's own analyticsService.ts map is a
         // strict subset of this with identical hex values for every shared key.
+        @Suppress("CyclomaticComplexMethod")
         fun categoryColor(category: String): String = when (category.lowercase()) {
             "food"           -> "#F59E0B"
             "transport"      -> "#3B82F6"

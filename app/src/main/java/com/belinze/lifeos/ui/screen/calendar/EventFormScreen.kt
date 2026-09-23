@@ -329,6 +329,7 @@ fun EventFormScreen(
 // FormPage — the main form
 // ─────────────────────────────────────────────────────────────────────────────
 
+@Suppress("LongParameterList")
 @Composable
 private fun FormPage(
     form:                  EventFormState,
@@ -549,6 +550,7 @@ private fun TaskFormContent(
     )
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun EventFormContent(
     form:                  EventFormState,
