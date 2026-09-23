@@ -33,4 +33,7 @@ interface IncomeDao {
 
     @Query("UPDATE incomes SET deleted_at = :timestamp WHERE id = :id")
     suspend fun softDelete(id: String, timestamp: String)
+
+    @Query("UPDATE incomes SET is_active = :active WHERE id = :id")
+    suspend fun updateActive(id: String, active: Int)
 }

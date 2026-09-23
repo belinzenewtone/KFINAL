@@ -668,4 +668,9 @@ class PlannerViewModel
     }
 
     fun deleteIncome(id: String) = viewModelScope.launch { incomeDao.softDelete(id, nowIso()); loadAll(); Haptics.warning() }
+
+    fun setIncomeActive(id: String, active: Boolean) = viewModelScope.launch {
+        incomeDao.updateActive(id, if (active) 1 else 0)
+        loadAll()
+    }
 }

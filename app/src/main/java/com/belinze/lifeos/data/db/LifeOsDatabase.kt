@@ -22,6 +22,9 @@ import com.belinze.lifeos.data.db.entity.*
  *           Room cannot declare; timestamps are now supplied by the writer).
  *  v3 → v4: drop orphaned legacy `idx_tx_*` indices that Room v3 validation
  *           rejects because they are not declared in @Entity annotations.
+ *  v4 → v5: add `incomes.is_active` (INTEGER NOT NULL DEFAULT 1) so income
+ *           sources can be paused/resumed like budgets, bills and recurring
+ *           rules already can.
  */
 @Database(
     entities = [
@@ -46,7 +49,7 @@ import com.belinze.lifeos.data.db.entity.*
         ImportAuditEntity::class,
         SmsIngestQueueEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class LifeOsDatabase : RoomDatabase() {
@@ -193,6 +196,14 @@ abstract class LifeOsDatabase : RoomDatabase() {
                 // 2 — fix body_hash index uniqueness on sms_ingest_queue
                 db.execSQL("DROP INDEX IF EXISTS `index_sms_ingest_queue_body_hash`")
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_sms_ingest_queue_body_hash` ON `sms_ingest_queue` (`body_hash`)")
+            }
+        }
+
+        // v4 → v5: add is_active to incomes (mirrors budgets/bills/recurring_rules
+        // pattern) so income sources can be paused without deleting them.
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `incomes` ADD COLUMN `is_active` INTEGER NOT NULL DEFAULT 1")
             }
         }
     }

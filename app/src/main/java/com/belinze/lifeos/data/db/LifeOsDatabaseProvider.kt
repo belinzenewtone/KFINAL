@@ -43,6 +43,7 @@ object LifeOsDatabaseProvider {
                 LifeOsDatabase.MIGRATION_1_2,
                 LifeOsDatabase.MIGRATION_2_3,
                 LifeOsDatabase.MIGRATION_3_4,
+                LifeOsDatabase.MIGRATION_4_5,
             )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()

@@ -7,10 +7,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -39,9 +42,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -121,8 +126,8 @@ fun IncomeFormScreen(
     if (showDeleteConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { androidx.compose.material3.Text("Delete income?") },
-            text  = { androidx.compose.material3.Text("This income record will be permanently removed.") },
+            title = { androidx.compose.material3.Text("Delete income") },
+            text  = { androidx.compose.material3.Text("Are you sure?") },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     showDeleteConfirm = false
@@ -215,13 +220,6 @@ fun IncomeFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            OutlinedButton(
-                onClick = { viewModel.updateIncomeRecurring(!form.isRecurring) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Recurring: ${if (form.isRecurring) "Yes" else "No"}")
-            }
-
             if (form.isRecurring) {
                 var frequencyExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -254,29 +252,67 @@ fun IncomeFormScreen(
                 Text(form.error!!, color = MaterialTheme.colorScheme.error)
             }
 
-            Button(
-                onClick = {
-                    // CC-3: banner + delayed navigation
-                    viewModel.saveIncome {
-                        successMsg = if (isEdit) "Income updated" else "Income added"
-                        scope.launch {
-                            delay(1200)
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                enabled = !form.isSaving,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
+            // Matches IncomeFormScreen.tsx actionRow: compact RECURRING toggle
+            // next to the flex-width Save button, bottom-aligned.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.xl),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Text(
-                    if (form.isSaving) {
-                        "Saving…"
-                    } else if (isEdit) {
-                        "Update Income"
-                    } else {
-                        "Add Income"
+                Column(
+                    modifier = Modifier.widthIn(min = 90.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "RECURRING",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = Spacing.xs),
+                    )
+                    OutlinedButton(
+                        onClick = { viewModel.updateIncomeRecurring(!form.isRecurring) },
+                        modifier = Modifier.widthIn(min = 90.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (form.isRecurring) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            contentColor = if (form.isRecurring) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        ),
+                    ) {
+                        Text(if (form.isRecurring) "Yes" else "No")
                     }
-                )
+                }
+
+                Button(
+                    onClick = {
+                        // CC-3: banner + delayed navigation
+                        viewModel.saveIncome {
+                            successMsg = if (isEdit) "Income updated" else "Income added"
+                            scope.launch {
+                                delay(1200)
+                                navController.popBackStack()
+                            }
+                        }
+                    },
+                    enabled = !form.isSaving,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        if (form.isSaving) {
+                            "Saving…"
+                        } else if (isEdit) {
+                            "Update Income"
+                        } else {
+                            "Add Income"
+                        },
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

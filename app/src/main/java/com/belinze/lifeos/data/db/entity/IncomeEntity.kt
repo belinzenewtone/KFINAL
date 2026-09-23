@@ -20,6 +20,8 @@ data class IncomeEntity(
     @ColumnInfo(name = "is_recurring", defaultValue = "0")
                                                 val isRecurring: Int = 0,
     @ColumnInfo(name = "frequency") val frequency: String? = null,
+    @ColumnInfo(name = "is_active", defaultValue = "1")
+                                                val isActive: Int = 1,
     @ColumnInfo(name = "created_at") val createdAt: String? = null,
     @ColumnInfo(name = "updated_at") val updatedAt: String? = null,
     @ColumnInfo(name = "sync_state") val syncState: String? = null,
