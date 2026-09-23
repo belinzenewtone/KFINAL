@@ -2,11 +2,14 @@ package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,14 +24,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,9 +39,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -57,6 +58,14 @@ import java.util.Calendar
 import java.util.TimeZone
 
 private val CYCLES = listOf("daily", "weekly", "monthly", "yearly", "one_time")
+private val CYCLE_LABELS = mapOf(
+    "daily"    to "Daily",
+    "weekly"   to "Weekly",
+    "monthly"  to "Monthly",
+    "yearly"   to "Yearly",
+    "one_time" to "One-time",
+)
+private val BILL_SUCCESS = androidx.compose.ui.graphics.Color(0xFF4ADE80)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,8 +93,8 @@ fun BillFormScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete bill?") },
-            text  = { Text("This bill will be permanently removed.") },
+            title = { Text("Delete bill") },
+            text  = { Text("Are you sure?") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
@@ -212,43 +221,40 @@ fun BillFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            var cycleExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = cycleExpanded,
-                onExpandedChange = { cycleExpanded = it },
+            // Matches BillFormScreen.tsx pillRow: three equal-width pill columns
+            // (Cycle / Paid / Status), each a label above a tappable pill.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                OutlinedTextField(
-                    value = form.frequency.replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Cycle") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(cycleExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                BillPillColumn(
+                    label = "Cycle",
+                    text  = CYCLE_LABELS[form.frequency] ?: form.frequency.replaceFirstChar { it.uppercase() },
+                    selected = true,
+                    selectedColor = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        val next = CYCLES[(CYCLES.indexOf(form.frequency).let { if (it < 0) 0 else it } + 1) % CYCLES.size]
+                        viewModel.updateBillFrequency(next)
+                    },
+                    modifier = Modifier.weight(1f),
                 )
-                ExposedDropdownMenu(
-                    expanded = cycleExpanded,
-                    onDismissRequest = { cycleExpanded = false },
-                ) {
-                    CYCLES.forEach { cycle ->
-                        DropdownMenuItem(
-                            text = { Text(cycle.replaceFirstChar { it.uppercase() }) },
-                            onClick = { viewModel.updateBillFrequency(cycle); cycleExpanded = false },
-                        )
-                    }
-                }
-            }
-
-            OutlinedButton(
-                onClick = { viewModel.updateBillPaid(!form.isPaid) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Paid: ${if (form.isPaid) "Yes" else "No"}")
-            }
-            OutlinedButton(
-                onClick = { viewModel.updateBillActive(!form.isActive) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Active: ${if (form.isActive) "Yes" else "No"}")
+                BillPillColumn(
+                    label = "Paid",
+                    text  = if (form.isPaid) "Paid" else "Unpaid",
+                    selected = form.isPaid,
+                    selectedColor = BILL_SUCCESS,
+                    onClick = { viewModel.updateBillPaid(!form.isPaid) },
+                    modifier = Modifier.weight(1f),
+                )
+                BillPillColumn(
+                    label = "Status",
+                    text  = if (form.isActive) "Active" else "Inactive",
+                    selected = form.isActive,
+                    selectedColor = MaterialTheme.colorScheme.primary,
+                    onClick = { viewModel.updateBillActive(!form.isActive) },
+                    modifier = Modifier.weight(1f),
+                )
             }
 
             if (form.error != null) {
@@ -281,6 +287,42 @@ fun BillFormScreen(
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))
+        }
+    }
+}
+
+@Composable
+private fun BillPillColumn(
+    label: String,
+    text: String,
+    selected: Boolean,
+    selectedColor: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val borderColor = if (selected) selectedColor else MaterialTheme.colorScheme.outline
+    val contentColor = if (selected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = Spacing.xs),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, borderColor, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                .background(borderColor.copy(alpha = 0x22 / 255f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = androidx.compose.material3.ripple(),
+                    onClick = onClick,
+                )
+                .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text, style = MaterialTheme.typography.labelMedium, color = contentColor, maxLines = 1)
         }
     }
 }

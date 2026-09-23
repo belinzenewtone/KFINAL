@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -50,9 +51,10 @@ import com.belinze.lifeos.viewmodel.PlannerViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private val SUCCESS = Color(0xFF7BC47B)
-private val WARNING = Color(0xFFF5CB5C)
-private val DANGER = Color(0xFFFF6B6B)
+// Matches BillsScreen.tsx's local SEMANTIC constant exactly.
+private val SUCCESS = Color(0xFF4ADE80)
+private val WARNING = Color(0xFFFBBF24)
+private val DANGER = Color(0xFFF87171)
 
 @Composable
 fun BillsScreen(
@@ -61,16 +63,17 @@ fun BillsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var banner by remember { mutableStateOf<String?>(null) }
-    var billToDelete by remember { mutableStateOf<String?>(null) }
+    var billToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     if (billToDelete != null) {
+        val (deleteId, deleteTitle) = billToDelete!!
         AlertDialog(
             onDismissRequest = { billToDelete = null },
-            title = { Text("Delete bill?") },
-            text  = { Text("This bill will be permanently removed.") },
+            title = { Text("Delete bill") },
+            text  = { Text("Remove $deleteTitle?") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.deleteBill(billToDelete!!)
+                    viewModel.deleteBill(deleteId)
                     billToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
@@ -111,7 +114,7 @@ fun BillsScreen(
                 Icon(Icons.Outlined.Receipt, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
-                Text("No bills yet", style = MaterialTheme.typography.titleLarge,
+                Text("No bills yet", style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(Spacing.xs))
                 Text("Add a recurring obligation to track due dates and payments.",
@@ -132,7 +135,7 @@ fun BillsScreen(
                                 viewModel.toggleBillPaid(bill.id)
                                 banner = "${bill.title} marked as ${if (bill.paidStatus == 0) "paid" else "unpaid"}"
                             },
-                            onDelete = { billToDelete = bill.id },
+                            onDelete = { billToDelete = bill.id to bill.title },
                         )
                     }
                 }
@@ -154,64 +157,71 @@ private fun BillCard(
         bill.nextDueDate!!.take(10) < java.time.LocalDate.now().toString()
     val dueColor = if (isOverdue) DANGER else MaterialTheme.colorScheme.onSurfaceVariant
 
-    GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {
+    GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
+        // Row 1: title | amount
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
-                Text(bill.title, style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                    modifier = Modifier.padding(top = Spacing.xs),
-                ) {
-                    bill.nextDueDate?.let {
-                        BillChip("Due ${formatDate(it)}", dueColor)
-                    }
-                    BillChip(formatCycleLabel(bill.cycle), MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                bill.notes?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-                }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                bill.amount?.let {
-                    Text(formatCurrency(it), style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface)
-                }
-                Text(if (paid) "Paid" else "Unpaid", style = MaterialTheme.typography.bodySmall,
-                    color = if (paid) SUCCESS else WARNING)
+            Text(
+                bill.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).padding(end = Spacing.sm),
+            )
+            bill.amount?.let {
+                Text(formatCurrency(it), style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface)
             }
         }
-        Spacer(Modifier.height(Spacing.base))
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            TextButton(onClick = onTogglePaid) {
-                Icon(
-                    if (paid) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = null,
-                    tint = if (paid) WARNING else SUCCESS,
-                    modifier = Modifier.size(16.dp),
+
+        // Row 2: chips | actions
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.weight(1f).padding(end = Spacing.sm),
+            ) {
+                bill.nextDueDate?.let {
+                    BillChip("Due ${formatDate(it)}", dueColor)
+                }
+                BillChip(
+                    formatCycleLabel(bill.cycle),
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    borderColor = MaterialTheme.colorScheme.outline,
+                    background = MaterialTheme.colorScheme.surfaceVariant,
                 )
-                Spacer(Modifier.size(4.dp))
-                Text(if (paid) "Mark Unpaid" else "Mark Paid", color = if (paid) WARNING else SUCCESS)
             }
-            TextButton(onClick = onDelete) {
-                Icon(Icons.Outlined.Delete, contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.size(4.dp))
-                Text("Delete", color = MaterialTheme.colorScheme.error)
+            IconButton(onClick = onTogglePaid, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    if (paid) Icons.Outlined.Cancel else Icons.Outlined.CheckCircle,
+                    contentDescription = if (paid) "Mark unpaid" else "Mark paid",
+                    tint = if (paid) WARNING else SUCCESS,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Outlined.Delete, contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
             }
         }
     }
 }
 
 @Composable
-private fun BillChip(text: String, color: Color) {
+private fun BillChip(
+    text: String,
+    color: Color,
+    borderColor: Color = color,
+    background: Color = color.copy(alpha = 0x14 / 255f),
+) {
     Row(
         modifier = Modifier
-            .background(color.copy(alpha = 0x14 / 255f), RoundedCornerShape(9999.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(9999.dp))
+            .background(background, RoundedCornerShape(9999.dp))
             .padding(horizontal = Spacing.sm, vertical = 2.dp),
     ) {
         Text(text, style = MaterialTheme.typography.labelSmall, color = color)
