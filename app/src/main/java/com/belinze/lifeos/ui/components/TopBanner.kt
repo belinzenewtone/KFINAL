@@ -1,11 +1,12 @@
 package com.belinze.lifeos.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -13,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
@@ -36,37 +39,146 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.belinze.lifeos.ui.theme.Motion
+import androidx.compose.ui.unit.sp
 import com.belinze.lifeos.ui.theme.ShapeLg
+import com.belinze.lifeos.ui.theme.ShapePill
 import com.belinze.lifeos.ui.theme.Spacing
 import kotlinx.coroutines.delay
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TopBanner + InlineBanner
+// TopBanner (toast) + InlineBanner
 //
-// 1:1 port of src/components/common/TopBanner.tsx and InlineBanner.tsx.
-//
-// TopBanner:
-//  ‣ AnimatedVisibility with enter 220ms / exit 180ms slide+fade
-//  ‣ 4 tones: info, success, warning, error
-//  ‣ Shown at top of page, full-width, no horizontal margin
+// TopBanner:  1:1 port of src/context/ToastContext.tsx.
+//   ‣ Near-black glass pill, centred, icon + tone-coloured text
+//   ‣ Spring scale+translate enter, timing fade-out exit
+//   ‣ 4 tones: info, success, warning, error
 //
 // InlineBanner:
-//  ‣ Static (no animation), 3 tones: info, success, warning
-//  ‣ Horizontal margin applied by caller
+//   ‣ Static (no animation), per-tone light/dark bg+border+text
+//   ‣ Horizontal margin applied by caller
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum class BannerTone { Info, Success, Warning, Error }
 
+private val TONE_COLORS = mapOf(
+    BannerTone.Success to Color(0xFF4ADE80),
+    BannerTone.Error   to Color(0xFFF87171),
+    BannerTone.Warning to Color(0xFFFBBF24),
+    BannerTone.Info    to Color(0xFF60A5FA),
+)
+
+private val TONE_ICONS = mapOf(
+    BannerTone.Success to Icons.Outlined.CheckCircle,
+    BannerTone.Error   to Icons.Outlined.Error,
+    BannerTone.Warning to Icons.Outlined.Warning,
+    BannerTone.Info    to Icons.Outlined.Info,
+)
+
+private val PILL_BG = Color(0xF00E0E12)   // rgba(14, 14, 18, 0.94)
+private val PILL_SHAPE = ShapePill
+
+// ─── TopBanner (toast pill) ──────────────────────────────────────────────────
+
+@Composable
+fun TopBanner(
+    visible:       Boolean,
+    message:       String,
+    tone:          BannerTone   = BannerTone.Info,
+    onDismiss:     (() -> Unit)? = null,
+    autoDismissMs: Int?         = null,
+    modifier:      Modifier     = Modifier,
+) {
+    val toneColor = TONE_COLORS[tone] ?: MaterialTheme.colorScheme.primary
+    val toneIcon  = TONE_ICONS[tone] ?: Icons.Outlined.Info
+
+    if (autoDismissMs != null && onDismiss != null && visible) {
+        LaunchedEffect(message) {
+            delay(autoDismissMs.toLong())
+            onDismiss()
+        }
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = scaleIn(
+            animationSpec   = spring(dampingRatio = 0.65f, stiffness = 500f),
+            initialScale    = 0.82f,
+            transformOrigin = TransformOrigin.Center,
+        ) + slideInVertically(
+            animationSpec  = spring(dampingRatio = 0.65f, stiffness = 500f),
+            initialOffsetY = { -it / 3 },
+        ) + fadeIn(tween(160)),
+        exit = scaleOut(
+            animationSpec   = tween(200),
+            targetScale     = 0.88f,
+            transformOrigin = TransformOrigin.Center,
+        ) + slideOutVertically(
+            animationSpec = tween(200),
+            targetOffsetY = { -it / 4 },
+        ) + fadeOut(tween(180)),
+        modifier = modifier,
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            Row(
+                modifier = Modifier
+                    .shadow(
+                        elevation = 16.dp,
+                        shape = PILL_SHAPE,
+                        ambientColor = Color.Black.copy(alpha = 0.45f),
+                        spotColor = Color.Black.copy(alpha = 0.45f),
+                    )
+                    .background(PILL_BG, PILL_SHAPE)
+                    .then(
+                        if (onDismiss != null) {
+                            Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onDismiss,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .padding(horizontal = Spacing.base, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    imageVector = toneIcon,
+                    contentDescription = null,
+                    tint = toneColor,
+                    modifier = Modifier.size(15.dp),
+                )
+                Text(
+                    text = message,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.1.sp,
+                    color = toneColor,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+// ─── InlineBanner ────────────────────────────────────────────────────────────
+
 private data class ToneColors(
-    val bg:       Color,
-    val border:   Color,
-    val icon:     Color,
-    val text:     Color,
-    val icon2:    ImageVector,
+    val bg:     Color,
+    val border: Color,
+    val icon:   Color,
+    val text:   Color,
+    val icon2:  ImageVector,
 )
 
 @Composable
@@ -101,87 +213,19 @@ private fun toneColors(tone: BannerTone, isDark: Boolean): ToneColors = when (to
     )
 }
 
-// ─── TopBanner ────────────────────────────────────────────────────────────────
-// React TopBanner is a floating rounded pill anchored below the status bar, not a
-// full-width inline bar. Tone color: error→error, success→#7BC47B,
-// warning→#F5CB5C, info→primary. Background is that color at 12.5% alpha.
-
-@Composable
-fun TopBanner(
-    visible:       Boolean,
-    message:       String,
-    tone:          BannerTone   = BannerTone.Info,
-    onDismiss:     (() -> Unit)? = null,
-    autoDismissMs: Int?         = null,
-    modifier:      Modifier     = Modifier,
-) {
-    val toneColor = when (tone) {
-        BannerTone.Error   -> MaterialTheme.colorScheme.error
-        BannerTone.Success -> Color(0xFF7BC47B)
-        BannerTone.Warning -> Color(0xFFF5CB5C)
-        BannerTone.Info    -> MaterialTheme.colorScheme.primary
-    }
-    val colors = ToneColors(
-        bg     = toneColor.copy(alpha = 0.125f),
-        border = toneColor,
-        icon   = toneColor,
-        text   = toneColor,
-        icon2  = when (tone) {
-            BannerTone.Error   -> Icons.Outlined.Error
-            BannerTone.Success -> Icons.Outlined.CheckCircle
-            BannerTone.Warning -> Icons.Outlined.Warning
-            BannerTone.Info    -> Icons.Outlined.Info
-        },
-    )
-
-    if (autoDismissMs != null && onDismiss != null && visible) {
-        LaunchedEffect(visible, autoDismissMs, onDismiss) {
-            delay(autoDismissMs.toLong())
-            onDismiss()
-        }
-    }
-
-    AnimatedVisibility(
-        visible = visible,
-        // Twitter-style: spring slide in (slight overshoot) + fade
-        enter   = slideInVertically(
-            animationSpec  = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness    = Spring.StiffnessMedium,
-            ),
-            initialOffsetY = { -it },
-        ) + fadeIn(tween(Motion.bannerEnter)),
-        // Quick slide out upward + fade
-        exit    = slideOutVertically(
-            animationSpec = tween(durationMillis = Motion.bannerExit),
-            targetOffsetY = { -it },
-        ) + fadeOut(tween(Motion.bannerExit)),
-        modifier = modifier,
-    ) {
-        BannerContent(
-            message   = message,
-            colors    = colors,
-            onDismiss = onDismiss,
-            modifier  = Modifier.padding(horizontal = Spacing.screenHorizontal),
-        )
-    }
-}
-
-// ─── InlineBanner ─────────────────────────────────────────────────────────────
-
 @Composable
 fun InlineBanner(
     message:   String,
     tone:      BannerTone   = BannerTone.Info,
     modifier:  Modifier     = Modifier,
-    onDismiss: (() -> Unit)? = null,   // optional X dismiss button
-    action:    String?      = null,     // optional action button label
-    onAction:  (() -> Unit)? = null,    // action callback
+    onDismiss: (() -> Unit)? = null,
+    action:    String?      = null,
+    onAction:  (() -> Unit)? = null,
 ) {
     val isDark = isSystemInDarkTheme()
     val colors = toneColors(tone, isDark)
 
-    BannerContent(
+    InlineBannerContent(
         message   = message,
         colors    = colors,
         onDismiss = onDismiss,
@@ -191,10 +235,8 @@ fun InlineBanner(
     )
 }
 
-// ─── Shared content ───────────────────────────────────────────────────────────
-
 @Composable
-private fun BannerContent(
+private fun InlineBannerContent(
     message:   String,
     colors:    ToneColors,
     onDismiss: (() -> Unit)?,
@@ -202,62 +244,65 @@ private fun BannerContent(
     action:    String?      = null,
     onAction:  (() -> Unit)? = null,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = ShapeLg, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
+            .shadow(
+                elevation = 8.dp,
+                shape = ShapeLg,
+                ambientColor = Color.Black.copy(alpha = 0.25f),
+                spotColor = Color.Black.copy(alpha = 0.25f),
+            )
             .border(1.dp, colors.border, ShapeLg)
             .background(colors.bg, ShapeLg)
             .then(
                 if (onDismiss != null) {
                     Modifier.clickable(
-                    interactionSource = interactionSource,
-                    indication        = null,
-                    onClick           = onDismiss,
-                )
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismiss,
+                    )
                 } else {
                     Modifier
-                }
+                },
             )
             .padding(horizontal = Spacing.base, vertical = Spacing.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector        = colors.icon2,
+                imageVector = colors.icon2,
                 contentDescription = null,
-                tint               = colors.icon,
-                modifier           = Modifier.size(18.dp),
+                tint = colors.icon,
+                modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(Spacing.sm))
             Text(
-                text       = message,
-                style      = MaterialTheme.typography.bodyMedium,
-                color      = colors.text,
-                maxLines   = 2,
-                modifier   = Modifier.weight(1f),
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.text,
+                maxLines = 2,
+                modifier = Modifier.weight(1f),
             )
             if (action != null && onAction != null) {
                 Spacer(Modifier.width(Spacing.sm))
                 Text(
-                    text       = action,
-                    style      = MaterialTheme.typography.bodySmall,
+                    text = action,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color      = colors.icon,
-                    modifier   = Modifier.clickable(
+                    color = colors.icon,
+                    modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication        = null,
-                        onClick           = onAction,
+                        indication = null,
+                        onClick = onAction,
                     ),
                 )
             } else if (onDismiss != null) {
                 Spacer(Modifier.width(Spacing.sm))
                 Icon(
-                    imageVector        = Icons.Outlined.Close,
+                    imageVector = Icons.Outlined.Close,
                     contentDescription = "Dismiss",
-                    tint               = colors.icon,
-                    modifier           = Modifier.size(16.dp),
+                    tint = colors.icon,
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }

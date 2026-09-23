@@ -24,10 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SettingsRow — 1:1 port of src/components/settings/SettingsRow.tsx.
@@ -133,17 +135,10 @@ fun SettingsRow(
                     )
                 }
                 if (toggle) {
-                    Switch(
+                    LifeOSSwitch(
                         checked = toggleValue,
                         onCheckedChange = onToggleChange ?: {},
                         enabled = !disabled,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                        ),
                     )
                 } else if (showChevron) {
                     Icon(
@@ -167,4 +162,28 @@ fun SettingsRow(
     }
 
     row()
+}
+
+@Composable
+private fun LifeOSSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = { value ->
+            Haptics.light()
+            onCheckedChange(value)
+        },
+        enabled = enabled,
+        colors = SwitchDefaults.colors(
+            checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
+            checkedTrackColor    = MaterialTheme.colorScheme.primary,
+            uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
+            uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
+            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+        ),
+        modifier = Modifier.scale(0.85f),
+    )
 }

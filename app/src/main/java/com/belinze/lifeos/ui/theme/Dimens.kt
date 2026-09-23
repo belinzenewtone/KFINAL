@@ -13,9 +13,9 @@ object Spacing {
     val xs   = 4.dp    // extra-small
     val sm   = 8.dp    // small
     val md   = 12.dp   // medium (same as screenHorizontal)
-    val base = 12.dp   // base — tightened from 14dp; matches md for consistent card/section gaps
+    val base = 14.dp   // base — matches React theme spacing.base exactly
     val lg   = 16.dp   // large
-    val xl   = 20.dp   // extra-large — tightened from 24dp; removes the jarring lg→xl jump
+    val xl   = 24.dp   // extra-large — matches React theme spacing.xl exactly
     val x2l  = 28.dp   // 2xl
     val x3l  = 36.dp   // 3xl
     val x4l  = 48.dp   // 4xl

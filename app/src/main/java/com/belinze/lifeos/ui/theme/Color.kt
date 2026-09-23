@@ -35,36 +35,36 @@ import androidx.compose.ui.graphics.vector.ImageVector
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Background surfaces (dark)
-val BgPrimary    = Color(0xFF0B0E14)
-val BgSecondary  = Color(0xFF1A1E26)
-val BgElevated   = Color(0xFF1E232D)
-val BgTertiary   = Color(0xFF232A36)
+val BgPrimary    = Color(0xFF08090E)
+val BgSecondary  = Color(0xFF141825)
+val BgElevated   = Color(0xFF18202F)
+val BgTertiary   = Color(0xFF1B2335)
 
 // Accents
-val AccentPrimary   = Color(0xFF4DB8FF)
+val AccentPrimary   = Color(0xFF57B9FF)
 val AccentSecondary = Color(0xFF8B5CF6)
-val AccentTertiary  = Color(0xFF38BDF8)
+val AccentTertiary  = Color(0xFF5EEAD4)
 
 // Semantic
-val ColorSuccess = Color(0xFF34D399)
-val ColorWarning = Color(0xFFF59E0B)
-val ColorDanger  = Color(0xFFFF6B6B)
-val ColorInfo    = Color(0xFF4DB8FF)
+val ColorSuccess = Color(0xFF4ADE80)
+val ColorWarning = Color(0xFFFBBF24)
+val ColorDanger  = Color(0xFFF87171)
+val ColorInfo    = Color(0xFF60A5FA)
 
 // Text (dark)
-val TextPrimary   = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFF9CA3AF)
+val TextPrimary   = Color(0xFFF0F2F8)
+val TextSecondary = Color(0xFF9499B0)
 val TextTertiary  = Color(0xFF6B7280)
-val TextInverseDark = Color(0xFF0B0E14)
+val TextInverseDark = Color(0xFF08090E)
 
 // Borders (dark)
-val BorderDark       = Color(0xFF2A303C)
-val BorderSubtleDark = Color(0xFF1F2937)
+val BorderDark       = Color(0xFF2A2E42)
+val BorderSubtleDark = Color(0xFF1E2235)
 
 // Glass overlays (dark)
-val GlassWhite       = Color(0x0FFFFFFF) // rgba(255,255,255,0.06)
-val GlassWhiteStrong = Color(0x1EFFFFFF) // rgba(255,255,255,0.12)
-val GlassBlackDark   = Color(0x3D000000) // rgba(0,0,0,0.24)
+val GlassWhite       = Color(0x0DFFFFFF) // rgba(255,255,255,0.05)
+val GlassWhiteStrong = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
+val GlassBlackDark   = Color(0x47000000) // rgba(0,0,0,0.28)
 
 // Background surfaces (light)
 val BgPrimaryLight   = Color(0xFFE8EDF3)
@@ -171,21 +171,21 @@ val PriorityHigh   = Color(0xFFEF4444)
 /** Dark scheme — mirrors MD3DarkTheme overrides in paperTheme.ts */
 val LifeOsDarkColorScheme = darkColorScheme(
     primary              = Color(0xFF57B9FF),
-    onPrimary            = Color(0xFF0A0A0B),
+    onPrimary            = Color(0xFF08090E),
     primaryContainer     = Color(0xFF0F2A40),
     onPrimaryContainer   = Color(0xFFBFE3FF),
     secondary            = AccentSecondary,          // #8B5CF6
-    onSecondary          = Color(0xFF0A0A0B),
+    onSecondary          = Color(0xFF08090E),
     secondaryContainer   = Color(0xFF2E1065),
     onSecondaryContainer = Color(0xFFDDD6FE),
     tertiary             = AccentTertiary,           // #38BDF8
-    onTertiary           = Color(0xFF0A0A0B),
+    onTertiary           = Color(0xFF08090E),
     tertiaryContainer    = Color(0xFF082030),
     onTertiaryContainer  = Color(0xFFB3E8FD),
-    background           = Color(0xFF0A0A0B),
-    onBackground         = Color(0xFFF4F4F5),
-    surface              = Color(0xFF0A0A0B),
-    onSurface            = Color(0xFFF4F4F5),
+    background           = Color(0xFF08090E),
+    onBackground         = Color(0xFFF0F2F8),
+    surface              = Color(0xFF08090E),
+    onSurface            = Color(0xFFF0F2F8),
     surfaceVariant       = Color(0xFF161618),
     onSurfaceVariant     = Color(0xFFA1A1AA),
     outline              = Color(0xFF2E2E33),
@@ -195,8 +195,8 @@ val LifeOsDarkColorScheme = darkColorScheme(
     onError              = Color(0xFFFFFFFF),
     onErrorContainer     = Color(0xFFFCA5A5),
     surfaceTint          = Color(0xFF57B9FF),
-    inverseSurface       = Color(0xFFF4F4F5),
-    inverseOnSurface     = Color(0xFF0A0A0B),
+    inverseSurface       = Color(0xFFF0F2F8),
+    inverseOnSurface     = Color(0xFF08090E),
     inversePrimary       = Color(0xFF0369A1),
     scrim                = Color(0xFF000000),
 )
@@ -231,8 +231,8 @@ val LifeOsLightColorScheme = lightColorScheme(
     onError              = Color(0xFFFFFFFF),
     onErrorContainer     = Color(0xFF7F1D1D),
     surfaceTint          = Color(0xFF0369A1),
-    inverseSurface       = Color(0xFF0A0A0B),
-    inverseOnSurface     = Color(0xFFF4F4F5),
+    inverseSurface       = Color(0xFF08090E),
+    inverseOnSurface     = Color(0xFFF0F2F8),
     inversePrimary       = Color(0xFF57B9FF),
     scrim                = Color(0xFF000000),
 )
