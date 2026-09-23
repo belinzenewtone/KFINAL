@@ -1,169 +1,339 @@
 package com.belinze.lifeos.ui.screen.finance
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
+import androidx.compose.ui.unit.dp
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.theme.Spacing
-import com.belinze.lifeos.util.formatCurrency
-import com.lifeos.sms.FulizaProjection
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
-@Composable
-fun FulizaSimulatorCard(
-    activeLoans: List<FulizaLoanEntity>,
-    modifier:    Modifier = Modifier,
-) {
-    if (activeLoans.isEmpty()) return
+// ─────────────────────────────────────────────────────────────────────────────
+// FulizaSimulatorCard — 1:1 port of components/finance/FulizaSimulatorCard.tsx
+// and utils/fulizaProjection.ts (self-contained: the tariff tables here match
+// the React source exactly and are intentionally NOT shared with
+// com.lifeos.sms.FulizaProjection, whose tier tables are unrelated numbers
+// used elsewhere for live SMS fee prediction).
+// ─────────────────────────────────────────────────────────────────────────────
 
-    val outstanding = activeLoans.sumOf { (it.drawAmountKes - it.totalRepaidKes).coerceAtLeast(0.0) }
-    if (outstanding <= 0.0) return
+private const val MIN_DAILY = 10
+private const val MAX_DAILY = 5_000
+private const val STEP = 50
 
-    var expanded by remember { mutableStateOf(false) }
-    var dailyRepaymentText by remember { mutableStateOf("") }
+private data class FeeTier(val maxAmount: Double, val fee: Double)
 
-    val schedule by remember(dailyRepaymentText, outstanding) {
-        derivedStateOf {
-            val repayment = dailyRepaymentText.toDoubleOrNull() ?: 0.0
-            if (repayment > 0) {
-                FulizaProjection.project(
-                    FulizaProjection.Input(
-                        outstandingKes    = outstanding,
-                        dailyRepaymentKes = repayment,
-                    )
-                )
-            } else {
-                null
+private val ACCESS_FEE_TIERS = listOf(
+    FeeTier(100.0, 2.0),
+    FeeTier(500.0, 5.0),
+    FeeTier(1_000.0, 10.0),
+    FeeTier(1_500.0, 15.0),
+    FeeTier(2_500.0, 25.0),
+    FeeTier(5_000.0, 45.0),
+    FeeTier(7_500.0, 60.0),
+    FeeTier(10_000.0, 75.0),
+    FeeTier(15_000.0, 100.0),
+    FeeTier(20_000.0, 125.0),
+    FeeTier(30_000.0, 150.0),
+    FeeTier(Double.MAX_VALUE, 200.0),
+)
+
+private val DAILY_FEE_TIERS = listOf(
+    FeeTier(100.0, 2.0),
+    FeeTier(500.0, 5.0),
+    FeeTier(1_000.0, 10.0),
+    FeeTier(1_500.0, 15.0),
+    FeeTier(2_500.0, 20.0),
+    FeeTier(5_000.0, 30.0),
+    FeeTier(7_500.0, 45.0),
+    FeeTier(10_000.0, 55.0),
+    FeeTier(15_000.0, 60.0),
+    FeeTier(20_000.0, 65.0),
+    FeeTier(30_000.0, 70.0),
+    FeeTier(Double.MAX_VALUE, 75.0),
+)
+
+private fun lookupFee(tiers: List<FeeTier>, principal: Double): Double =
+    tiers.firstOrNull { principal <= it.maxAmount }?.fee ?: tiers.last().fee
+
+private fun accessFeeForAmount(principalKes: Double) = lookupFee(ACCESS_FEE_TIERS, principalKes)
+private fun dailyFeeForAmount(principalKes: Double) = lookupFee(DAILY_FEE_TIERS, principalKes)
+
+private data class FulizaProjectionResult(
+    val accessFeeKes: Double,
+    val dailyFeeKes: Double,
+    val totalOwedKes: Double,
+    val totalInterestKes: Double,
+    val daysElapsed: Int,
+    val estimatedDaysToPayoff: Int?,
+    val estimatedPayoffDate: LocalDate?,
+)
+
+/** Direct port of utils/fulizaProjection.ts projectFuliza(). */
+private fun projectFuliza(
+    principalKes: Double,
+    alreadyRepaidKes: Double,
+    drawDate: LocalDate,
+    asOf: LocalDate,
+    dailyRepaymentKes: Double,
+): FulizaProjectionResult {
+    val daysElapsed = (asOf.toEpochDay() - drawDate.toEpochDay()).toInt().coerceAtLeast(0)
+
+    val accessFeeKes = accessFeeForAmount(principalKes)
+    val dailyFeeKes = dailyFeeForAmount(principalKes)
+
+    val totalInterestKes = accessFeeKes + dailyFeeKes * daysElapsed
+    val totalOwedKes = (principalKes + totalInterestKes - alreadyRepaidKes).coerceAtLeast(0.0)
+
+    var outstanding = totalOwedKes
+    var estimatedDaysToPayoff: Int? = null
+
+    if (dailyRepaymentKes > dailyFeeKes && outstanding > 0) {
+        val netRepayment = dailyRepaymentKes - dailyFeeKes
+        val maxSimDays = minOf(365, ceil(outstanding / netRepayment).toInt() + 1)
+        for (d in 1..maxSimDays) {
+            outstanding = (outstanding + dailyFeeKes - dailyRepaymentKes).coerceAtLeast(0.0)
+            if (outstanding == 0.0) {
+                estimatedDaysToPayoff = d
+                break
             }
         }
     }
 
+    val estimatedPayoffDate = estimatedDaysToPayoff?.let { asOf.plusDays(it.toLong()) }
+
+    return FulizaProjectionResult(
+        accessFeeKes = accessFeeKes,
+        dailyFeeKes = dailyFeeKes,
+        totalOwedKes = totalOwedKes,
+        totalInterestKes = totalInterestKes,
+        daysElapsed = daysElapsed,
+        estimatedDaysToPayoff = estimatedDaysToPayoff,
+        estimatedPayoffDate = estimatedPayoffDate,
+    )
+}
+
+private fun formatKes(amount: Double): String = "Ksh " + String.format(Locale.US, "%,.2f", amount)
+
+@Composable
+fun FulizaSimulatorCard(
+    principalKes: Double,
+    totalRepaidKes: Double,
+    drawDateIso: String,
+    asOfDateIso: String? = null,
+    modifier: Modifier = Modifier,
+) {
+    val drawDate = remember(drawDateIso) {
+        runCatching { LocalDate.parse(drawDateIso.take(10)) }.getOrDefault(LocalDate.now())
+    }
+    val asOf = remember(asOfDateIso) {
+        asOfDateIso?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() } ?: LocalDate.now()
+    }
+
+    var dailyRepayment by remember(principalKes) {
+        // Default the slider to 2x the daily fee so the payoff projection is
+        // realistic immediately instead of showing "grows forever".
+        mutableIntStateOf(
+            MIN_DAILY.times(2).coerceAtLeast(ceil(principalKes / 30).toInt()).coerceIn(MIN_DAILY, MAX_DAILY),
+        )
+    }
+
+    val projection = remember(principalKes, totalRepaidKes, drawDate, asOf, dailyRepayment) {
+        projectFuliza(principalKes, totalRepaidKes, drawDate, asOf, dailyRepayment.toDouble())
+    }
+
+    val repaidFraction = if (principalKes > 0) {
+        (totalRepaidKes / (principalKes + projection.totalInterestKes)).coerceIn(0.0, 1.0)
+    } else {
+        0.0
+    }
+
+    val primary = MaterialTheme.colorScheme.primary
+    val error = MaterialTheme.colorScheme.error
+    val outlineVariant = MaterialTheme.colorScheme.outlineVariant
+    val accentColor = if (projection.totalOwedKes == 0.0) primary else error
+
     GlassCard(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(horizontal = Spacing.base, vertical = Spacing.sm)) {
-            // Header row
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Column {
-                    Text(
-                        text  = "Fuliza Simulator",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text  = "${formatCurrency(outstanding)} outstanding · ${activeLoans.size} loan${if (activeLoans.size != 1) "s" else ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(accentColor.copy(alpha = 0x20 / 255f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.TrendingUp, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("FULIZA SIMULATOR", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${formatKes(projection.totalOwedKes)} owed", style = MaterialTheme.typography.titleMedium, color = accentColor)
+                }
+                Text("Day ${projection.daysElapsed}", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // Repayment progress bar
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(6.dp)
+                        .background(accentColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(3.dp)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(repaidFraction.toFloat().coerceIn(0f, 1f))
+                            .height(6.dp)
+                            .background(primary, RoundedCornerShape(3.dp)),
                     )
                 }
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Repaid ${formatKes(totalRepaidKes)}", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${(repaidFraction * 100).roundToInt()}%", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
-            AnimatedVisibility(visible = expanded) {
-                Column {
-                    Spacer(Modifier.height(Spacing.sm))
+            // Fee breakdown
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, outlineVariant, RoundedCornerShape(8.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FeeCell("Access fee", formatKes(projection.accessFeeKes), Modifier.weight(1f))
+                Box(modifier = Modifier.width(1.dp).height(32.dp).background(outlineVariant))
+                FeeCell("Daily fee", "${formatKes(projection.dailyFeeKes)}/day", Modifier.weight(1f))
+                Box(modifier = Modifier.width(1.dp).height(32.dp).background(outlineVariant))
+                FeeCell("Interest so far", formatKes(projection.totalInterestKes), Modifier.weight(1f))
+            }
 
-                    // Daily fee info line (before repayment input)
-                    val currentDailyFee = FulizaProjection.project(
-                        FulizaProjection.Input(outstanding, 0.01)
-                    ).dailyMaintenanceFeeKes
-                    Text(
-                        text  = "Daily maintenance fee: ${formatCurrency(currentDailyFee)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    Spacer(Modifier.height(Spacing.sm))
-
-                    OutlinedTextField(
-                        value         = dailyRepaymentText,
-                        onValueChange = { dailyRepaymentText = it.filter { c -> c.isDigit() || c == '.' } },
-                        label         = { Text("Daily repayment (KES)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine    = true,
-                        modifier      = Modifier.fillMaxWidth(),
-                    )
-
-                    Spacer(Modifier.height(Spacing.sm))
-
-                    when {
-                        schedule == null -> {
-                            Text(
-                                text  = "Enter a daily repayment amount to see your payoff projection.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-
-                        schedule!!.willGrowForever -> {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Warning,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
-                                )
-                                Text(
-                                    text  = "Balance will grow — daily fee exceeds your repayment.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-
-                        else -> {
-                            val days     = schedule!!.estimatedDaysToPayoff
-                            val payoffDate = days?.let { LocalDate.now().plusDays(it.toLong()) }
-                            val totalFees = schedule!!.schedule.sumOf { it.dailyFeeKes }
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                                SimRow("Payoff in",     "${days ?: "?"} days")
-                                payoffDate?.let {
-                                    SimRow("Payoff date", it.toString())
-                                }
-                                SimRow("Total extra fees", formatCurrency(totalFees))
-                            }
-                        }
+            // Repayment rate control
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Daily repayment", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(formatKes(dailyRepayment.toDouble()), style = MaterialTheme.typography.labelMedium, color = primary)
+                }
+                Slider(
+                    value = dailyRepayment.toFloat(),
+                    onValueChange = { raw ->
+                        val stepped = (raw / STEP).roundToInt() * STEP
+                        dailyRepayment = stepped.coerceIn(MIN_DAILY, MAX_DAILY)
+                    },
+                    valueRange = MIN_DAILY.toFloat()..MAX_DAILY.toFloat(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = primary,
+                        activeTrackColor = primary,
+                        inactiveTrackColor = primary.copy(alpha = 0x30 / 255f),
+                    ),
+                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(formatKes(MIN_DAILY.toDouble()), style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatKes(MAX_DAILY.toDouble()), style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    IconButton(
+                        onClick = { dailyRepayment = (dailyRepayment - STEP).coerceAtLeast(MIN_DAILY) },
+                        enabled = dailyRepayment > MIN_DAILY,
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(Icons.Outlined.Remove, contentDescription = "Decrease", modifier = Modifier.size(16.dp))
                     }
+                    IconButton(
+                        onClick = { dailyRepayment = (dailyRepayment + STEP).coerceAtMost(MAX_DAILY) },
+                        enabled = dailyRepayment < MAX_DAILY,
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
 
-                    Spacer(Modifier.height(Spacing.xs))
+            // Payoff estimate
+            val days = projection.estimatedDaysToPayoff
+            if (days != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, primary.copy(alpha = 0x30 / 255f), RoundedCornerShape(8.dp))
+                        .background(primary.copy(alpha = 0x15 / 255f), RoundedCornerShape(8.dp))
+                        .padding(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = primary, modifier = Modifier.size(16.dp))
+                    Text(
+                        "Paid off in $days day${if (days != 1) "s" else ""} · ${
+                            projection.estimatedPayoffDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: ""
+                        }",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = primary,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, accentColor.copy(alpha = 0x25 / 255f), RoundedCornerShape(8.dp))
+                        .background(accentColor.copy(alpha = 0x10 / 255f), RoundedCornerShape(8.dp))
+                        .padding(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
+                    Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = accentColor, modifier = Modifier.size(16.dp))
+                    Text(
+                        if (dailyRepayment <= projection.dailyFeeKes) {
+                            "Repayment below daily fee — loan grows indefinitely"
+                        } else {
+                            "Increase daily repayment to see payoff estimate"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accentColor,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -171,21 +341,9 @@ fun FulizaSimulatorCard(
 }
 
 @Composable
-private fun SimRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text  = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text       = value,
-            style      = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium,
-            color      = Color(0xFF34D399),
-        )
+private fun FeeCell(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.padding(Spacing.xs), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
     }
 }
