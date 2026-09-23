@@ -29,6 +29,7 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.DayBar
 import com.belinze.lifeos.viewmodel.WeekReviewViewModel
+import kotlin.math.roundToInt
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WeekReviewScreen — 1:1 with WeekReviewScreen.tsx
@@ -136,12 +137,7 @@ fun WeekReviewScreen(
                     if (state.changeItems.isNotEmpty()) {
                         item {
                             GlassCard {
-                                Text(
-                                    text       = "What Changed?",
-                                    style      = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Spacer(Modifier.height(Spacing.sm))
+                                SectionEyebrow("What Changed?", modifier = Modifier.padding(bottom = Spacing.sm))
                                 state.changeItems.forEachIndexed { i, item ->
                                     if (i > 0) Spacer(Modifier.height(Spacing.sm))
                                     ChangeItemRow(item.icon, item.text, item.sentiment)
@@ -153,20 +149,33 @@ fun WeekReviewScreen(
                     // ─ Spending ─
                     item {
                         GlassCard {
-                            Text("Spending",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(Spacing.xs))
-                            Text(
-                                text  = formatCurrency(state.weekSpend),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                            )
+                            SectionEyebrow("Spending", modifier = Modifier.padding(bottom = Spacing.sm))
+                            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                                Text(
+                                    "KSh",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 2.dp),
+                                )
+                                Text(
+                                    text  = String.format(java.util.Locale.US, "%,d", state.weekSpend.roundToInt()),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
                             if (state.topCategory.isNotBlank()) {
                                 Text(
-                                    text  = "Top: ${state.topCategory.replaceFirstChar { it.uppercaseChar() }}",
+                                    text  = "Top category: ${state.topCategory.replaceFirstChar { it.uppercaseChar() }}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = Spacing.xs),
+                                )
+                            } else {
+                                Text(
+                                    text  = "No spend recorded yet",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.padding(top = Spacing.xs),
                                 )
                             }
                         }
@@ -175,10 +184,7 @@ fun WeekReviewScreen(
                     // ─ Tasks ─
                     item {
                         GlassCard {
-                            Text("Tasks",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(Spacing.sm))
+                            SectionEyebrow("Tasks", modifier = Modifier.padding(bottom = Spacing.base))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -186,7 +192,7 @@ fun WeekReviewScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
                                         text  = state.tasksCompleted.toString(),
-                                        style = MaterialTheme.typography.headlineMedium,
+                                        style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = COLOR_NORMAL,
                                     )
@@ -196,7 +202,7 @@ fun WeekReviewScreen(
                                 }
                                 VerticalDivider(
                                     modifier  = Modifier
-                                        .height(48.dp)
+                                        .height(32.dp)
                                         .align(Alignment.CenterVertically),
                                     thickness = 1.dp,
                                 )
@@ -204,7 +210,7 @@ fun WeekReviewScreen(
                                     val pendColor = if (state.tasksPending > 5) COLOR_HIGH else MaterialTheme.colorScheme.onSurface
                                     Text(
                                         text  = state.tasksPending.toString(),
-                                        style = MaterialTheme.typography.headlineMedium,
+                                        style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = pendColor,
                                     )
@@ -223,56 +229,59 @@ fun WeekReviewScreen(
     }
 }
 
+// ─── Section eyebrow label — matches the uppercase, letter-spaced labelMedium
+// section headers used throughout WeekReviewScreen.tsx ("7-DAY SPEND PATTERN",
+// "WHAT CHANGED?", "SPENDING", "TASKS"). ─────────────────────────────────────
+
+@Composable
+private fun SectionEyebrow(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text          = text.uppercase(),
+        style         = MaterialTheme.typography.labelMedium,
+        color         = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 0.5.sp,
+        modifier      = modifier,
+    )
+}
+
 // ─── Health Score Hero ────────────────────────────────────────────────────────
 
 @Composable
 private fun HealthScoreCard(score: Int, label: String, color: Color) {
     GlassCard {
         Column(
-            modifier              = Modifier.fillMaxWidth(),
+            modifier              = Modifier.fillMaxWidth().padding(vertical = Spacing.base),
             horizontalAlignment   = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text       = "Financial Health Score",
-                style      = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(Spacing.lg))
-
             Box(
                 modifier        = Modifier
-                    .size(100.dp)
-                    .border(4.dp, color, CircleShape),
+                    .size(80.dp)
+                    .border(3.dp, color, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text       = score.toString(),
-                        fontSize   = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = color,
-                        lineHeight = 40.sp,
-                    )
-                }
+                Text(
+                    text       = score.toString(),
+                    fontSize   = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = color,
+                    lineHeight = 34.sp,
+                )
             }
 
-            Spacer(Modifier.height(Spacing.sm))
             Text(
-                text  = label,
-                style = MaterialTheme.typography.titleSmall,
-                color = color,
-                fontWeight = FontWeight.SemiBold,
+                text       = label,
+                style      = MaterialTheme.typography.titleMedium,
+                color      = color,
+                fontWeight = FontWeight.Bold,
+                textAlign  = TextAlign.Center,
+                modifier   = Modifier.padding(top = Spacing.sm),
             )
             Text(
-                text  = when {
-                    score >= 80 -> "You're doing great this week!"
-                    score >= 60 -> "On track — keep it up"
-                    score >= 40 -> "Room to improve"
-                    else        -> "Let's turn things around"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text      = "Financial Health Score · spend, categorization & tasks",
+                style     = MaterialTheme.typography.bodySmall,
+                color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+                modifier  = Modifier.padding(top = Spacing.xs),
             )
         }
     }
@@ -286,12 +295,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
     val maxAmount = dayBars.maxOfOrNull { it.amount }.takeIf { it != null && it > 0.0 } ?: 1.0
 
     GlassCard {
-        Text(
-            text       = "7-Day Spend Pattern",
-            style      = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Spacer(Modifier.height(Spacing.base))
+        SectionEyebrow("7-Day Spend Pattern", modifier = Modifier.padding(bottom = Spacing.base))
 
         // Bars — each column has a fixed pill-tooltip slot above the bar track.
         // The slot height (28dp) is always reserved, so no bar shifts when selected.
@@ -317,6 +321,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication        = null,
+                            enabled           = bar.amount > 0.0,
                         ) { selectedBar = if (isSelected) null else bar },
                     horizontalAlignment   = Alignment.CenterHorizontally,
                 ) {
@@ -358,12 +363,14 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                                 .clip(RoundedCornerShape(3.dp))
                                 .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))
                         )
-                        // Bar fill
-                        if (fraction > 0f) {
+                        // Bar fill — matches React's Math.max(pct * 100dp, amount > 0 ? 2dp : 0)
+                        // so a very small nonzero spend day is never rendered invisibly thin.
+                        if (bar.amount > 0.0) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .fillMaxHeight(fraction)
+                                    .heightIn(min = 2.dp)
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(barColor)
                             )
@@ -398,6 +405,13 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                     }
                 }
             Spacer(Modifier.weight(1f))
+            Text(
+                text  = "Tap bar for details",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                fontSize = 9.sp,
+            )
         }
     }
 }
