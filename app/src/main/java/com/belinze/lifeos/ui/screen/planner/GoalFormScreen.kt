@@ -2,6 +2,8 @@ package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,7 +25,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,9 +39,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -54,6 +58,11 @@ import java.util.Calendar
 import java.util.TimeZone
 
 private val GOAL_STATUSES = listOf("active", "completed", "archived")
+private val GOAL_STATUS_COLOR = mapOf(
+    "active"    to androidx.compose.ui.graphics.Color(0xFF4ADE80),
+    "completed" to androidx.compose.ui.graphics.Color(0xFF4A9EFF),
+    "archived"  to androidx.compose.ui.graphics.Color(0xFF9E9E9E),
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,8 +136,8 @@ fun GoalFormScreen(
     if (showDeleteConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { androidx.compose.material3.Text("Delete goal?") },
-            text  = { androidx.compose.material3.Text("This goal will be permanently removed.") },
+            title = { androidx.compose.material3.Text("Delete goal") },
+            text  = { androidx.compose.material3.Text("Are you sure?") },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     showDeleteConfirm = false
@@ -226,45 +235,63 @@ fun GoalFormScreen(
                 )
             }
 
-            Text("Status", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                GOAL_STATUSES.forEach { status ->
-                    FilterChip(
-                        selected = form.status == status,
-                        onClick = { viewModel.updateGoalStatus(status) },
-                        label = { Text(status.replaceFirstChar { it.uppercase() }) },
-                    )
-                }
-            }
-
             if (form.error != null) {
                 Text(form.error!!, color = MaterialTheme.colorScheme.error)
             }
 
-            Button(
-                onClick = {
-                    // CC-3: success banner + delayed navigation
-                    viewModel.saveGoal {
-                        successMsg = if (isEdit) "Goal updated" else "Goal added"
-                        scope.launch {
-                            delay(1200)
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                enabled = !form.isSaving,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
+            // Matches GoalFormScreen.tsx statusRow: a single rotating status pill
+            // (cycles active -> completed -> archived on tap) next to the
+            // flex-width Save button.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Text(
-                    if (form.isSaving) {
-                        "Saving…"
-                    } else if (isEdit) {
-                        "Update Goal"
-                    } else {
-                        "Add Goal"
-                    }
-                )
+                val statusColor = GOAL_STATUS_COLOR[form.status] ?: MaterialTheme.colorScheme.primary
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, statusColor, RoundedCornerShape(12.dp))
+                        .background(statusColor.copy(alpha = 0x22 / 255f), RoundedCornerShape(12.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = androidx.compose.material3.ripple(),
+                        ) {
+                            val next = GOAL_STATUSES[(GOAL_STATUSES.indexOf(form.status).let { if (it < 0) 0 else it } + 1) % GOAL_STATUSES.size]
+                            viewModel.updateGoalStatus(next)
+                        }
+                        .padding(horizontal = Spacing.base, vertical = Spacing.sm),
+                ) {
+                    Text(
+                        form.status.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusColor,
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        // CC-3: success banner + delayed navigation
+                        viewModel.saveGoal {
+                            successMsg = if (isEdit) "Goal updated" else "Goal added"
+                            scope.launch {
+                                delay(1200)
+                                navController.popBackStack()
+                            }
+                        }
+                    },
+                    enabled = !form.isSaving,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        if (form.isSaving) {
+                            "Saving…"
+                        } else if (isEdit) {
+                            "Update Goal"
+                        } else {
+                            "Add Goal"
+                        },
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

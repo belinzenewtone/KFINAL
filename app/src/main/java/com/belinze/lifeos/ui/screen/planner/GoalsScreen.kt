@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,7 +56,8 @@ import com.belinze.lifeos.viewmodel.PlannerViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private val SUCCESS = Color(0xFF7BC47B)
+// Matches GoalsScreen.tsx's local SEMANTIC constant exactly.
+private val SUCCESS = Color(0xFF4ADE80)
 
 @Composable
 fun GoalsScreen(
@@ -66,16 +68,17 @@ fun GoalsScreen(
     var banner by remember { mutableStateOf<String?>(null) }
     var logGoalId by remember { mutableStateOf<String?>(null) }
     var logAmount by remember { mutableStateOf("") }
-    var goalToDelete by remember { mutableStateOf<String?>(null) }
+    var goalToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     if (goalToDelete != null) {
+        val (deleteId, deleteTitle) = goalToDelete!!
         AlertDialog(
             onDismissRequest = { goalToDelete = null },
-            title = { Text("Delete goal?") },
-            text  = { Text("This goal will be permanently removed.") },
+            title = { Text("Delete goal") },
+            text  = { Text("Remove $deleteTitle?") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.deleteGoal(goalToDelete!!)
+                    viewModel.deleteGoal(deleteId)
                     goalToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
@@ -121,7 +124,7 @@ fun GoalsScreen(
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
                 Spacer(Modifier.height(Spacing.base))
-                Text("No goals yet", style = MaterialTheme.typography.titleLarge,
+                Text("No goals yet", style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(Spacing.xs))
                 Text("Set a goal to start tracking your progress.",
@@ -143,7 +146,7 @@ fun GoalsScreen(
                                 viewModel.markGoalComplete(goal.id)
                                 banner = "${goal.title} marked as complete"
                             },
-                            onDelete = { goalToDelete = goal.id },
+                            onDelete = { goalToDelete = goal.id to goal.title },
                         )
                     }
                 }
@@ -174,8 +177,17 @@ fun GoalsScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        viewModel.logGoalProgress(goal.id, logAmount.toDoubleOrNull() ?: 0.0)
-                        banner = "Progress logged"
+                        val delta = logAmount.toDoubleOrNull() ?: 0.0
+                        if (delta > 0) {
+                            val next = (goal.currentValue + delta).coerceAtMost(goal.targetValue)
+                            val reached = next >= goal.targetValue
+                            viewModel.logGoalProgress(goal.id, delta)
+                            banner = if (reached) {
+                                "Goal reached: ${goal.title} 🎉"
+                            } else {
+                                "Logged ${formatCurrency(delta)} · ${goal.title}"
+                            }
+                        }
                         logGoalId = null
                         logAmount = ""
                     }) { Text("Log") }
@@ -197,77 +209,79 @@ private fun GoalCard(
     onDelete: () -> Unit,
 ) {
     val percent = if (goal.targetValue > 0) {
-        (goal.currentValue / goal.targetValue * 100).toInt().coerceIn(0, 100)
+        (goal.currentValue / goal.targetValue * 100).coerceIn(0.0, 100.0)
     } else {
-        0
+        0.0
     }
     val isCompleted = goal.status == "completed"
+    val accentColor = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else SUCCESS
 
-    GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base)) {
+    GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
+        // Row 1: title
+        Text(
+            goal.title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            modifier = Modifier.padding(bottom = Spacing.xs),
+        )
+
+        // Row 2: current / target | percent%
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
-                Text(goal.title, style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                goal.category?.let {
-                    Text(it.replaceFirstChar { c -> c.uppercase() }, style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary)
-                }
-                Text("${formatCurrency(goal.currentValue)} / ${formatCurrency(goal.targetValue)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                goal.description?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-                }
-                goal.deadline?.let {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = Spacing.xs)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(9999.dp))
-                            .padding(horizontal = Spacing.sm, vertical = 2.dp),
-                    ) {
-                        Text("Due ${formatDate(it)}", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+            Text(
+                "${formatCurrency(goal.currentValue)} / ${formatCurrency(goal.targetValue)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text("${percent.toInt()}%", style = MaterialTheme.typography.titleSmall, color = accentColor)
+        }
+
+        // Row 3: deadline chip | actions
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (goal.deadline != null) {
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(9999.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(9999.dp))
+                        .padding(horizontal = Spacing.sm, vertical = 2.dp),
+                ) {
+                    Text("Due ${formatDate(goal.deadline!!)}", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Text("$percent%", style = MaterialTheme.typography.titleMedium, color = SUCCESS)
+            Spacer(Modifier.weight(1f))
+            if (!isCompleted) {
+                IconButton(onClick = onLogProgress, modifier = Modifier.size(30.dp)) {
+                    Icon(Icons.Outlined.AddCircleOutline, contentDescription = "Log progress",
+                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                }
+                IconButton(onClick = onComplete, modifier = Modifier.size(30.dp)) {
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = "Mark complete",
+                        tint = SUCCESS, modifier = Modifier.size(22.dp))
+                }
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
+                Icon(Icons.Outlined.Delete, contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+            }
         }
-        Spacer(Modifier.height(Spacing.sm))
+
+        // Row 5: progress bar
         Box(
             modifier = Modifier.fillMaxWidth().height(6.dp)
                 .background(MaterialTheme.colorScheme.outlineVariant, CircleShape),
         ) {
             Box(
-                modifier = Modifier.fillMaxWidth(percent / 100f).height(6.dp)
-                    .background(SUCCESS, CircleShape),
+                modifier = Modifier.fillMaxWidth((percent / 100.0).toFloat()).height(6.dp)
+                    .background(accentColor, CircleShape),
             )
-        }
-        Spacer(Modifier.height(Spacing.base))
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            if (!isCompleted) {
-                TextButton(onClick = onLogProgress) {
-                    Icon(Icons.Outlined.AddCircleOutline, contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.size(4.dp))
-                    Text("Log Progress", color = MaterialTheme.colorScheme.primary)
-                }
-                TextButton(onClick = onComplete) {
-                    Icon(Icons.Outlined.CheckCircle, contentDescription = null,
-                        tint = SUCCESS, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.size(4.dp))
-                    Text("Mark Complete", color = SUCCESS)
-                }
-            }
-            TextButton(onClick = onDelete) {
-                Icon(Icons.Outlined.Delete, contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.size(4.dp))
-                Text("Delete", color = MaterialTheme.colorScheme.error)
-            }
         }
     }
 }
