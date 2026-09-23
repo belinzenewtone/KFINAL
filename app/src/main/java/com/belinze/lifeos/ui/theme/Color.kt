@@ -79,12 +79,57 @@ val CategoryColors: Map<String, Color> = mapOf(
     "shopping"      to Color(0xFFD946EF),
     "savings"       to Color(0xFF22C55E),
     "investment"    to Color(0xFF14B8A6),
+    "housing"       to Color(0xFFF43F5E),
+    "personal_care" to Color(0xFFF472B6),
+    "subscriptions" to Color(0xFFA78BFA),
+    "fuel"          to Color(0xFFF97316),
+    "loans"         to Color(0xFFEF4444),
+    "insurance"     to Color(0xFF7C3AED),
+    "miscellaneous" to Color(0xFF94A3B8),
     "income"        to Color(0xFF34D399),
+    "expense"       to Color(0xFFEF4444),
+    "transfer"      to Color(0xFF60A5FA),
+    "fuliza"        to Color(0xFFFB923C),
+    "withdrawal"    to Color(0xFFF87171),
     "uncategorized" to Color(0xFF6B7280),
 )
 
 fun categoryColor(category: String): Color =
     CategoryColors[category.lowercase()] ?: Color(0xFF6B7280)
+
+/** Icon per category — mirrors src/constants/index.ts CATEGORY_ICONS. */
+private val CategoryIcons: Map<String, androidx.compose.ui.graphics.vector.ImageVector> by lazy {
+    mapOf(
+        "food"          to androidx.compose.material.icons.outlined.Restaurant,
+        "transport"     to androidx.compose.material.icons.outlined.DirectionsCar,
+        "utilities"     to androidx.compose.material.icons.outlined.Bolt,
+        "groceries"     to androidx.compose.material.icons.outlined.ShoppingCart,
+        "rent"          to androidx.compose.material.icons.outlined.Home,
+        "airtime"       to androidx.compose.material.icons.outlined.PhoneAndroid,
+        "entertainment" to androidx.compose.material.icons.outlined.Movie,
+        "health"        to androidx.compose.material.icons.outlined.MedicalServices,
+        "education"     to androidx.compose.material.icons.outlined.School,
+        "shopping"      to androidx.compose.material.icons.outlined.ShoppingBag,
+        "savings"       to androidx.compose.material.icons.outlined.Savings,
+        "investment"    to androidx.compose.material.icons.outlined.TrendingUp,
+        "housing"       to androidx.compose.material.icons.outlined.Business,
+        "personal_care" to androidx.compose.material.icons.outlined.AutoAwesome,
+        "subscriptions" to androidx.compose.material.icons.outlined.Repeat,
+        "fuel"          to androidx.compose.material.icons.outlined.LocalFireDepartment,
+        "loans"         to androidx.compose.material.icons.outlined.Payments,
+        "insurance"     to androidx.compose.material.icons.outlined.VerifiedUser,
+        "miscellaneous" to androidx.compose.material.icons.outlined.MoreHoriz,
+        "uncategorized" to androidx.compose.material.icons.outlined.HelpOutline,
+        "income"        to androidx.compose.material.icons.outlined.ArrowDownward,
+        "expense"       to androidx.compose.material.icons.outlined.ArrowUpward,
+        "transfer"      to androidx.compose.material.icons.outlined.SwapHoriz,
+        "fuliza"        to androidx.compose.material.icons.outlined.Payments,
+        "withdrawal"    to androidx.compose.material.icons.outlined.ArrowUpward,
+    )
+}
+
+fun categoryIcon(category: String): androidx.compose.ui.graphics.vector.ImageVector =
+    CategoryIcons[category.lowercase()] ?: androidx.compose.material.icons.outlined.HelpOutline
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Priority colours

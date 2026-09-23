@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Loop
@@ -44,10 +45,11 @@ private data class HubEntry(
 @Composable
 fun PlannerHubScreen(navController: NavHostController) {
     val entries = listOf(
+        HubEntry(Icons.AutoMirrored.Outlined.MenuBook, "Learning",       Color(0xFF6366F1), Route.LEARNING),
         HubEntry(Icons.Outlined.Wallet,       "Budgets",        Color(0xFF34D399), Route.BUDGETS),
         HubEntry(Icons.Outlined.Payments,     "Income",         Color(0xFF4DB8FF), Route.INCOME),
         HubEntry(Icons.Outlined.Loop,         "Recurring",      Color(0xFF8B5CF6), Route.RECURRING),
-        HubEntry(Icons.Outlined.TrendingDown, "Loans & Fuliza", Color(0xFFFF6B6B), Route.LOANS),
+        HubEntry(Icons.Outlined.TrendingDown, "Loans & Fuliza", Color(0xFFF87171), Route.LOANS),
         HubEntry(Icons.Outlined.Receipt,      "Bills",          Color(0xFFF59E0B), Route.BILLS),
         HubEntry(Icons.Outlined.Flag,         "Goals",          Color(0xFFEC4899), Route.GOALS),
         HubEntry(Icons.Outlined.Search,       "Search Finance", Color(0xFFA78BFA), Route.SEARCH),
@@ -77,15 +79,15 @@ private fun HubCard(entry: HubEntry, onClick: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(34.dp)
                     .background(entry.color.copy(alpha = 0x20 / 255f), androidx.compose.foundation.shape.CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(entry.icon, contentDescription = entry.label, tint = entry.color, modifier = Modifier.size(22.dp))
+                Icon(entry.icon, contentDescription = entry.label, tint = entry.color, modifier = Modifier.size(18.dp))
             }
             Text(
                 entry.label,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 modifier = Modifier.weight(1f),

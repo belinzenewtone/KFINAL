@@ -5,12 +5,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
@@ -52,10 +56,12 @@ import com.belinze.lifeos.viewmodel.BudgetViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+// Mirrors BudgetFormScreen.tsx: every CATEGORY_COLORS key except income/uncategorized.
 private val CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
     "entertainment", "health", "education", "shopping", "savings", "investment",
-    "housing", "personal_care", "subscriptions", "miscellaneous",
+    "housing", "personal_care", "subscriptions", "fuel", "loans", "insurance",
+    "miscellaneous", "expense", "transfer", "fuliza", "withdrawal",
 )
 private val PERIODS = listOf("daily", "weekly", "monthly", "yearly")
 
@@ -187,39 +193,70 @@ fun BudgetFormScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                OutlinedButton(
-                    onClick = { viewModel.updateActive(!form.isActive) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Active: ${if (form.isActive) "Yes" else "No"}")
-                }
-
                 if (form.error != null) {
                     Text(form.error!!, color = MaterialTheme.colorScheme.error)
                 }
 
-                // CC-3: show banner then navigate
-                Button(
-                    onClick = {
-                        viewModel.saveForm {
-                            scope.launch {
-                                successMsg = if (isEdit) "Budget updated" else "Budget added"
-                                delay(1200)
-                                navController.popBackStack()
-                            }
-                        }
-                    },
-                    enabled  = !form.isSaving,
-                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
+                // Matches BudgetFormScreen.tsx actionRow: a compact STATUS toggle
+                // column next to the flex-width Save button, bottom-aligned.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.xl),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
-                    if (form.isSaving) {
-                        CircularProgressIndicator(
-                            modifier    = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color       = MaterialTheme.colorScheme.onPrimary,
+                    Column(
+                        modifier = Modifier.widthIn(min = 90.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "STATUS",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = Spacing.xs),
                         )
-                    } else {
-                        Text(if (isEdit) "Update Budget" else "Add Budget")
+                        OutlinedButton(
+                            onClick = { viewModel.updateActive(!form.isActive) },
+                            modifier = Modifier.widthIn(min = 90.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (form.isActive) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                contentColor = if (form.isActive) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            ),
+                        ) {
+                            Text(if (form.isActive) "Active" else "Paused")
+                        }
+                    }
+
+                    // CC-3: show banner then navigate
+                    Button(
+                        onClick = {
+                            viewModel.saveForm {
+                                scope.launch {
+                                    successMsg = if (isEdit) "Budget updated" else "Budget added"
+                                    delay(1200)
+                                    navController.popBackStack()
+                                }
+                            }
+                        },
+                        enabled  = !form.isSaving,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        if (form.isSaving) {
+                            CircularProgressIndicator(
+                                modifier    = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color       = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text(if (isEdit) "Update Budget" else "Save Budget")
+                        }
                     }
                 }
 
@@ -240,8 +277,8 @@ fun BudgetFormScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title            = { Text("Delete budget?") },
-            text             = { Text("This budget will be permanently removed.") },
+            title            = { Text("Delete budget") },
+            text             = { Text("Are you sure?") },
             confirmButton    = {
                 TextButton(onClick = {
                     showDeleteConfirm = false

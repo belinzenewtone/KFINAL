@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,8 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -49,14 +54,16 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
+import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.BudgetViewModel
 import com.belinze.lifeos.viewmodel.BudgetWithSpend
 import kotlin.math.roundToInt
 
-private val SUCCESS = Color(0xFF7BC47B)
-private val WARNING = Color(0xFFF5CB5C)
-private val DANGER = Color(0xFFFF6B6B)
+// Matches BudgetsScreen.tsx's local SEMANTIC constant exactly.
+private val SUCCESS = Color(0xFF4ADE80)
+private val WARNING = Color(0xFFFBBF24)
+private val DANGER = Color(0xFFF87171)
 
 @Composable
 fun BudgetsScreen(
@@ -73,16 +80,17 @@ fun BudgetsScreen(
     }
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var budgetToDelete by remember { mutableStateOf<String?>(null) }
+    var budgetToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     if (budgetToDelete != null) {
+        val (deleteId, deleteCategory) = budgetToDelete!!
         AlertDialog(
             onDismissRequest = { budgetToDelete = null },
-            title = { Text("Delete budget?") },
-            text  = { Text("This budget will be permanently removed.") },
+            title = { Text("Delete budget") },
+            text  = { Text("Remove $deleteCategory budget?") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.softDelete(budgetToDelete!!)
+                    viewModel.softDelete(deleteId)
                     budgetToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
@@ -102,6 +110,7 @@ fun BudgetsScreen(
     val summaryColor = if (summaryPct > 100) DANGER else if (summaryPct > 80) WARNING else SUCCESS
 
     PageScaffold(
+        eyebrow = "Spending guardrails",
         title = "Budgets",
         onBack = { navController.popBackStack() },
         scrollable = false, // LazyColumn below provides its own scrolling
@@ -160,9 +169,20 @@ fun BudgetsScreen(
                         }
                         Spacer(Modifier.height(Spacing.sm))
                         Text(
-                            "${formatCurrency(totalSpend)} / ${formatCurrency(totalLimit)}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            buildAnnotatedString {
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
+                                    append(formatCurrency(totalSpend))
+                                }
+                                withStyle(
+                                    SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                    ),
+                                ) {
+                                    append(" / ${formatCurrency(totalLimit)}")
+                                }
+                            },
+                            style = MaterialTheme.typography.titleLarge,
                             maxLines = 1,
                         )
                     }
@@ -187,10 +207,42 @@ fun BudgetsScreen(
                 item {
                     Text(
                         "Categories",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = Spacing.base),
+                        modifier = Modifier.padding(bottom = Spacing.sm),
                     )
+                }
+            }
+
+            if (state.budgets.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.x3l),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Outlined.Wallet,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(Spacing.sm))
+                        Text("No budgets yet", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "Tap + to create a spending guardrail for a category.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(top = Spacing.xs),
+                        )
+                    }
                 }
             }
 
@@ -200,7 +252,7 @@ fun BudgetsScreen(
                         bws = bws,
                         onToggle = { viewModel.toggleActive(bws.budget.id, it) },
                         onEdit = { navController.navigate(NavTo.budgetForm(bws.budget.id)) },
-                        onDelete = { budgetToDelete = bws.budget.id },
+                        onDelete = { budgetToDelete = bws.budget.id to bws.budget.category },
                     )
                 }
             }
@@ -218,6 +270,7 @@ private fun BudgetCard(
 ) {
     val category = bws.budget.category
     val color = categoryColor(category)
+    val isActive = bws.budget.isActive != 0
     val percent = bws.pct.coerceIn(0f, 100f)
     val isOver = bws.spend > bws.budget.limitAmount
     val isWarning = !isOver && bws.pct > 0.80f
@@ -227,54 +280,32 @@ private fun BudgetCard(
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = Spacing.base),
+            .padding(bottom = Spacing.sm)
+            .alpha(if (isActive) 1f else 0.7f),
     ) {
+        // Row 1: icon + title | switch | edit | delete
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(30.dp)
                     .background(color.copy(alpha = 0x20 / 255f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(category.replaceFirstChar { it.uppercase() }.take(1), color = color, fontWeight = FontWeight.Bold)
+                Icon(categoryIcon(category), contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                ) {
-                    Box(
-                        modifier = Modifier.size(8.dp).background(statusColor, CircleShape),
-                    )
-                    Text(
-                        category,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                }
-                Text(
-                    "${bws.budget.period.replaceFirstChar { it.uppercase() }} · Limit ${formatCurrency(bws.budget.limitAmount)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .background(statusColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
-                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
-            ) {
-                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor,
-                    maxLines = 1, softWrap = false)
-            }
+            Text(
+                category,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(start = Spacing.sm),
+            )
             Switch(
-                checked = bws.budget.isActive != 0,
+                checked = isActive,
                 onCheckedChange = onToggle,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
@@ -284,19 +315,48 @@ private fun BudgetCard(
                     uncheckedBorderColor = MaterialTheme.colorScheme.outline,
                 ),
             )
+            IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Outlined.Delete, contentDescription = "Delete", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+            }
         }
 
-        Spacer(Modifier.height(Spacing.sm))
-        BudgetProgressBar(pct = percent.coerceIn(0f, 100f) / 100f, color = statusColor)
-        Spacer(Modifier.height(Spacing.sm))
-
+        // Row 2: period · limit | status badge
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            Text(
+                "${bws.budget.period.replaceFirstChar { it.uppercase() }} · ${formatCurrency(bws.budget.limitAmount)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .background(statusColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
+                    .padding(horizontal = Spacing.sm, vertical = 2.dp),
+            ) {
+                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor,
+                    maxLines = 1, softWrap = false)
+            }
+        }
+
+        // Row 3: progress bar
+        BudgetProgressBar(pct = percent.coerceIn(0f, 100f) / 100f, color = statusColor)
+
+        // Row 4: spent | left/over
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 "${formatCurrency(bws.spend)} spent (${bws.pct.roundToInt()}%)",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
@@ -305,27 +365,10 @@ private fun BudgetCard(
                 } else {
                     "${formatCurrency(bws.budget.limitAmount - bws.spend)} left"
                 },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = if (isOver) DANGER else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
             )
-        }
-
-        Spacer(Modifier.height(Spacing.base))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            TextButton(onClick = onEdit) {
-                Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.size(4.dp))
-                Text("Edit", color = MaterialTheme.colorScheme.primary)
-            }
-            TextButton(onClick = onDelete) {
-                Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
-                Spacer(Modifier.size(4.dp))
-                Text("Delete", color = MaterialTheme.colorScheme.error)
-            }
         }
     }
 }
