@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ElectricBolt
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Layers
@@ -92,7 +93,8 @@ import kotlinx.coroutines.launch
 
 private val GOOD    = Color(0xFF22C55E)
 private val BAD     = Color(0xFFEF4444)
-private val SUCCESS = Color(0xFF7BC47B)
+// Matches AnalyticsSummaryCards.tsx / InsightsTab.tsx SUCCESS constant.
+private val SUCCESS = Color(0xFF4ADE80)
 
 @Composable
 fun InsightsScreen(
@@ -102,12 +104,10 @@ fun InsightsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // Accordion state lives in the screen (pure UI state)
     var expandedMonthKey    by remember { mutableStateOf<String?>(null) }
-    // Show-more toggles for category sparklines and month history
-    var showAllCategories   by remember { mutableStateOf(false) }
+    // Show-more toggle for month history (React's History accordion has one)
     var showAllMonths       by remember { mutableStateOf(false) }
 
     PageScaffold(
-        eyebrow  = "Analytics",
         title    = "Analytics",
         subtitle = "Productivity and finance trends in one place",
         onBack   = { navController.popBackStack() },
@@ -187,7 +187,7 @@ fun InsightsScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.TrendingFlat,
+                                Icons.Outlined.ErrorOutline,
                                 contentDescription = null,
                                 tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp),
@@ -218,18 +218,17 @@ fun InsightsScreen(
                         prevMonthSpend    = state.prevMonthSpend,
                     )
 
-                    // Summary 2x2 grid
-                    if (state.totalSpend > 0 || state.totalIncome > 0) {
-                        Spacer(Modifier.height(Spacing.base))
-                        AnalyticsSummaryCards(
-                            spend   = state.totalSpend,
-                            income  = state.totalIncome,
-                            net     = state.net,
-                            average = state.averageTransaction,
-                        )
-                    }
+                    // Summary 2x2 grid — always shown, matching AnalyticsScreen.tsx
+                    Spacer(Modifier.height(Spacing.base))
+                    AnalyticsSummaryCards(
+                        spend   = state.totalSpend,
+                        income  = state.totalIncome,
+                        net     = state.net,
+                        average = state.averageTransaction,
+                    )
 
-                    // Category spend cards — first 5, expand via Show more
+                    // Category spend cards — all of them (ViewModel already caps at 8),
+                    // matching CategorySpendCards.tsx which has no show-more toggle.
                     if (state.categorySparklines.isNotEmpty()) {
                         Spacer(Modifier.height(Spacing.base))
                         Text(
@@ -240,28 +239,9 @@ fun InsightsScreen(
                             letterSpacing = 0.5.sp,
                             modifier      = Modifier.padding(vertical = Spacing.sm),
                         )
-                        val visibleCategories = if (showAllCategories) {
-                            state.categorySparklines
-                        } else {
-                            state.categorySparklines.take(5)
-                        }
-                        visibleCategories.forEach { item ->
+                        state.categorySparklines.forEach { item ->
                             CategorySpendCard(item = item)
                             Spacer(Modifier.height(Spacing.sm))
-                        }
-                        if (state.categorySparklines.size > 5) {
-                            TextButton(
-                                onClick  = { showAllCategories = !showAllCategories },
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                            ) {
-                                Text(
-                                    if (showAllCategories) {
-                                        "Show less"
-                                    } else {
-                                        "Show ${state.categorySparklines.size - 5} more"
-                                    },
-                                )
-                            }
                         }
                     }
 
@@ -927,7 +907,9 @@ private fun MiniSparkline(amounts: List<Double>, color: Color) {
                     .width(8.dp)
                     .height(h.dp)
                     .background(
-                        if (amt > 0) color else color.copy(alpha = 0.3f),
+                        // React uses a fixed dark-gray "#33333330" for zero-amount bars
+                        // regardless of the category's own color, not a faded item color.
+                        if (amt > 0) color else Color(0xFF333333).copy(alpha = 0x30 / 255f),
                         RoundedCornerShape(2.dp),
                     ),
             )
@@ -974,7 +956,7 @@ private fun FeesCard(fees: AnalyticsFeesData) {
             Column(horizontalAlignment = Alignment.End) {
                 Text("Avg fee", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${formatCurrency(fees.avgFee, decimals = 0)} · ${fees.txCount} tx",
+                Text("${formatCurrency(fees.avgFee)} · ${fees.txCount} tx",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface)
             }
@@ -997,13 +979,14 @@ private fun InsightsBarChart(
     val anims = remember(months.size) { months.map { Animatable(0f) } }
     LaunchedEffect(months) {
         anims.forEach { it.snapTo(0f) }
-        // All bars animate simultaneously — mirrors RN's parallel Animated.timing calls
+        // Staggered 60ms per bar (400, 460, 520...ms), matching InsightsTab.tsx's
+        // Animated.timing duration: 400 + i*60.
         kotlinx.coroutines.coroutineScope {
             months.forEachIndexed { i, m ->
                 launch {
                     anims[i].animateTo(
                         targetValue   = (m.expense / maxVal).toFloat().coerceIn(0f, 1f),
-                        animationSpec = tween(durationMillis = 400),
+                        animationSpec = tween(durationMillis = 400 + i * 60),
                     )
                 }
             }

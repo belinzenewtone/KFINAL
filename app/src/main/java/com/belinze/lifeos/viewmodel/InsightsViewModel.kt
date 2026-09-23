@@ -440,23 +440,41 @@ class InsightsViewModel
         if (endOfDay) "${date}T23:59:59" else "${date}T00:00:00"
 
     companion object {
+        // Mirrors src/constants/index.ts CATEGORY_COLORS + InsightsTab.tsx's
+        // EXTRA_CAT_COLORS fallback (restaurants/snacks/loan repayments), used for
+        // both the Analytics tab's category sparklines and the Insights tab's
+        // top-category/history colors — the app's own analyticsService.ts map is a
+        // strict subset of this with identical hex values for every shared key.
         fun categoryColor(category: String): String = when (category.lowercase()) {
-            "food"          -> "#F59E0B"
-            "transport"     -> "#3B82F6"
-            "utilities"     -> "#8B5CF6"
-            "groceries"     -> "#10B981"
-            "rent"          -> "#EF4444"
-            "airtime"       -> "#06B6D4"
-            "entertainment" -> "#EC4899"
-            "health"        -> "#F97316"
-            "education"     -> "#6366F1"
-            "shopping"      -> "#D946EF"
-            "savings"       -> "#22C55E"
-            "investment"    -> "#14B8A6"
-            "income"        -> "#34D399"
-            "restaurants"   -> "#F59E0B"
-            "snacks"        -> "#F97316"
-            else            -> "#6B7280"
+            "food"           -> "#F59E0B"
+            "transport"      -> "#3B82F6"
+            "utilities"      -> "#8B5CF6"
+            "groceries"      -> "#10B981"
+            "rent"           -> "#EF4444"
+            "airtime"        -> "#06B6D4"
+            "entertainment"  -> "#EC4899"
+            "health"         -> "#F97316"
+            "education"      -> "#6366F1"
+            "shopping"       -> "#D946EF"
+            "savings"        -> "#22C55E"
+            "investment"     -> "#14B8A6"
+            "housing"        -> "#F43F5E"
+            "personal_care"  -> "#F472B6"
+            "subscriptions"  -> "#A78BFA"
+            "fuel"           -> "#F97316"
+            "loans"          -> "#EF4444"
+            "insurance"      -> "#7C3AED"
+            "miscellaneous"  -> "#94A3B8"
+            "uncategorized"  -> "#6B7280"
+            "income"         -> "#34D399"
+            "expense"        -> "#EF4444"
+            "transfer"       -> "#60A5FA"
+            "fuliza"         -> "#FB923C"
+            "withdrawal"     -> "#F87171"
+            "restaurants"    -> "#F59E0B"
+            "snacks"         -> "#F97316"
+            "loan repayments" -> "#EF4444"
+            else             -> "#6B7280"
         }
     }
 }

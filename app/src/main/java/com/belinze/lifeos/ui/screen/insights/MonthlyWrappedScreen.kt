@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -39,7 +40,6 @@ private val RANK_COLORS = listOf(
     Color(0xFF9CA3AF), // 2nd — silver
     Color(0xFFB45309), // 3rd — bronze
 )
-private val COLOR_FULIZA  = Color(0xFFF97316)
 private val COLOR_SUCCESS = Color(0xFF22C55E)
 private val COLOR_DANGER  = Color(0xFFEF4444)
 
@@ -160,11 +160,21 @@ fun MonthlyWrappedScreen(
                     Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        state.error!!,
-                        color     = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Outlined.CloudOff,
+                            contentDescription = null,
+                            tint     = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Text(
+                            "Could not load your data. Pull down to retry.",
+                            style     = MaterialTheme.typography.bodyLarge,
+                            color     = MaterialTheme.colorScheme.outline,
+                            textAlign = TextAlign.Center,
+                            modifier  = Modifier.padding(top = Spacing.base),
+                        )
+                    }
                 }
             }
             !state.hasData -> {
@@ -205,7 +215,7 @@ fun MonthlyWrappedScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
-                                    text       = formatCurrency(state.totalSpend),
+                                    text       = formatCurrency(state.totalSpend, decimals = 0),
                                     fontSize   = 36.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     lineHeight = 44.sp,
@@ -266,7 +276,7 @@ fun MonthlyWrappedScreen(
                                     maxLines   = 1,
                                 )
                                 Text(
-                                    text  = formatCurrency(state.topMerchantSpend),
+                                    text  = formatCurrency(state.topMerchantSpend, decimals = 0),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -280,7 +290,7 @@ fun MonthlyWrappedScreen(
                                     modifier = Modifier.padding(bottom = Spacing.sm),
                                 )
                                 Text(
-                                    text       = formatCurrency(state.biggestAmount),
+                                    text       = formatCurrency(state.biggestAmount, decimals = 0),
                                     style      = MaterialTheme.typography.titleMedium,
                                     color      = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.SemiBold,
@@ -338,7 +348,7 @@ fun MonthlyWrappedScreen(
                                         modifier = Modifier.padding(bottom = Spacing.sm),
                                     )
                                     Text(
-                                        text       = formatCurrency(state.feesTotal),
+                                        text       = formatCurrency(state.feesTotal, decimals = 0),
                                         style      = MaterialTheme.typography.headlineSmall,
                                         color      = MaterialTheme.colorScheme.onSurface,
                                     )
@@ -365,10 +375,10 @@ fun MonthlyWrappedScreen(
                                     modifier = Modifier.padding(bottom = Spacing.sm),
                                 )
                                 Text(
-                                    text       = "${state.fulizaCount} time${if (state.fulizaCount != 1) "s" else ""} · ${formatCurrency(state.fulizaTotal)}",
-                                    style      = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color      = COLOR_FULIZA,
+                                    text  = "${state.fulizaCount} time${if (state.fulizaCount != 1) "s" else ""} · " +
+                                        "${formatCurrency(state.fulizaTotal, decimals = 0)} total",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
                                     text  = "Try to keep this below 3 times per month",
@@ -392,41 +402,18 @@ fun MonthlyWrappedScreen(
                                     modifier = Modifier.padding(bottom = Spacing.sm),
                                 )
                                 Text(
-                                    text       = formatCurrency(kotlin.math.abs(saved)),
+                                    text       = formatCurrency(kotlin.math.abs(saved), decimals = 0),
                                     style      = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color      = if (isSaving) COLOR_SUCCESS else COLOR_DANGER,
                                 )
-                                Row(
-                                    modifier              = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        text  = "Income",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Text(
-                                        text  = formatCurrency(state.totalIncome),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Row(
-                                    modifier              = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        text  = "Spend",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Text(
-                                        text  = formatCurrency(state.totalSpend),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
+                                Text(
+                                    text     = "Income ${formatCurrency(state.totalIncome, decimals = 0)} · " +
+                                        "Spend ${formatCurrency(state.totalSpend, decimals = 0)}",
+                                    style    = MaterialTheme.typography.bodySmall,
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = Spacing.xs),
+                                )
                             }
                         }
                     }
@@ -467,7 +454,7 @@ private fun CategoryRow(row: TopCategoryRow) {
             )
         }
         Text(
-            text       = formatCurrency(row.total),
+            text       = formatCurrency(row.total, decimals = 0),
             style      = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color      = MaterialTheme.colorScheme.onSurface,
