@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -259,7 +260,22 @@ fun InsightsScreen(
                     val hasData     = months.any { it.expense > 0 }
                     val avgExpense  = state.avgExpense
 
-                    if (!hasData && !state.isLoading) {
+                    if (state.isLoading) {
+                        // AN-SPINNER: centred spinner while the first load is in flight
+                        // (React InsightsTab returns an ActivityIndicator before the chart).
+                        Box(
+                            modifier         = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 80.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                color       = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 2.dp,
+                                modifier    = Modifier.size(24.dp),
+                            )
+                        }
+                    } else if (!hasData) {
                         Box(
                             modifier         = Modifier
                                 .fillMaxWidth()

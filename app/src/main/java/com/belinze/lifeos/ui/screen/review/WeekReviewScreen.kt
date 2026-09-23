@@ -326,55 +326,58 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                         ) { selectedBar = if (isSelected) null else bar },
                     horizontalAlignment   = Alignment.CenterHorizontally,
                 ) {
-                    // Pill tooltip slot — fixed 28dp, bottom-aligned pill appears here
-                    Box(
-                        modifier         = Modifier.fillMaxWidth().height(28.dp),
-                        contentAlignment = Alignment.BottomCenter,
-                    ) {
-                        if (isSelected && bar.amount > 0.0) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(barColor)
-                                    .padding(horizontal = 5.dp, vertical = 2.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text       = formatCurrency(bar.amount),
-                                    fontSize   = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color      = Color.White,
-                                    maxLines   = 1,
-                                )
-                            }
-                        }
-                    }
-
-                    // Bar track — fixed 100dp, fills from bottom
+                    // Bar area — 100dp track plus a headroom row so the amount badge
+                    // can float immediately above the bar without clipping (mirrors
+                    // React's chartRow = BAR_MAX_HEIGHT + 48).
                     Box(
                         modifier         = Modifier
                             .fillMaxWidth(0.85f)
-                            .height(100.dp),
+                            .height(128.dp),
                         contentAlignment = Alignment.BottomCenter,
                     ) {
                         // Track background
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(100.dp)
                                 .clip(RoundedCornerShape(3.dp))
                                 .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))
                         )
                         // Bar fill — matches React's Math.max(pct * 100dp, amount > 0 ? 2dp : 0)
                         // so a very small nonzero spend day is never rendered invisibly thin.
                         if (bar.amount > 0.0) {
+                            val barHeight = (100.dp * fraction).coerceAtLeast(2.dp)
                             Box(
                                 modifier = Modifier
+                                    .align(Alignment.BottomCenter)
                                     .fillMaxWidth()
-                                    .fillMaxHeight(fraction)
-                                    .heightIn(min = 2.dp)
+                                    .height(barHeight)
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(barColor)
                             )
+                            // Amount badge floats immediately above the bar top
+                            // (React: position absolute, bottom = barH + 4).
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .offset(y = -(barHeight + 4.dp))
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(barColor)
+                                        .padding(horizontal = 5.dp, vertical = 2.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text       = formatCurrency(bar.amount, decimals = 0),
+                                        fontSize   = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color      = Color.White,
+                                        maxLines   = 1,
+                                        softWrap   = false,
+                                    )
+                                }
+                            }
                         }
                     }
 

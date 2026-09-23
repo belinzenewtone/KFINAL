@@ -1,17 +1,12 @@
 package com.belinze.lifeos.ui.screen.assistant
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -200,16 +194,18 @@ fun AssistantScreen(
         ) {
             if (state.messages.isEmpty()) {
                 item {
-                    // Empty state
+                    // Empty state — centred in the message area, 60dp badge (React parity)
                     Column(
                         modifier = Modifier
+                            .fillParentMaxHeight()
                             .fillMaxWidth()
-                            .padding(top = Spacing.x3l, bottom = Spacing.lg),
+                            .padding(horizontal = Spacing.xl),
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(80.dp)
+                                .size(60.dp)
                                 .background(
                                     MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f),
                                     CircleShape,
@@ -220,20 +216,20 @@ fun AssistantScreen(
                                 Icons.Outlined.AutoAwesome,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.size(26.dp),
                             )
                         }
-                        Spacer(Modifier.height(Spacing.base))
+                        Spacer(Modifier.height(Spacing.sm))
                         Text(
                             "Ask me anything",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(Spacing.sm))
                         Text(
                             "I can check your spending, income, budgets, tasks, and transactions.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
@@ -245,41 +241,6 @@ fun AssistantScreen(
                 }
             }
 
-            // AS-3: show quick suggestions until the conversation has more than 1 message.
-            // Matches React SuggestedPrompts — only the first 3 of the default list are shown.
-            if (quickSuggestionsEnabled && state.messages.size <= 1) {
-                item {
-                    val prompts = listOf(
-                        "How much did I spend this week?",
-                        "What is my balance?",
-                        "Show my budgets",
-                        "What tasks are due today?",
-                        "Recent transactions",
-                        "Summarize my spending",
-                    ).take(3)
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            "Try asking:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = Spacing.xs),
-                        )
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            items(prompts, key = { it }) { prompt ->
-                                AssistChip(
-                                    onClick = { send(prompt) },
-                                    label = { Text(prompt, maxLines = 1) },
-                                    modifier = Modifier.wrapContentWidth(),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             // Typing indicator
             if (state.isLoading) {
                 item {
@@ -288,6 +249,45 @@ fun AssistantScreen(
             }
 
             item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
+        }
+
+        // ── Suggested prompts — pinned below the list, above the input. Matches
+        //    React SuggestedPrompts: only the first 3 prompts, shown until the
+        //    conversation has more than 1 message (AS-3). ──
+        if (quickSuggestionsEnabled && state.messages.size <= 1) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.screenHorizontal)
+                    .padding(bottom = Spacing.sm),
+            ) {
+                Text(
+                    "Try asking:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = Spacing.xs),
+                )
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    val prompts = listOf(
+                        "How much did I spend this week?",
+                        "What is my balance?",
+                        "Show my budgets",
+                        "What tasks are due today?",
+                        "Recent transactions",
+                        "Summarize my spending",
+                    ).take(3)
+                    items(prompts, key = { it }) { prompt ->
+                        AssistChip(
+                            onClick = { send(prompt) },
+                            label = { Text(prompt, maxLines = 1) },
+                            modifier = Modifier.wrapContentWidth(),
+                        )
+                    }
+                }
+            }
         }
 
         // ── Input bar — single pill control with a trailing send/spinner adornment ──
@@ -402,35 +402,37 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
                             style      = MaterialTheme.typography.bodyMedium,
                             fontWeight = if (isUser) FontWeight.SemiBold else FontWeight.Normal,
                         )
+                        // AS-1: interactive action chips for assistant messages, rendered
+                        // INSIDE the bubble (React parity). Tapping sends the chip text
+                        // through the same pipeline as manual input.
+                        if (!isUser && message.actions.isNotEmpty()) {
+                            Spacer(Modifier.height(Spacing.base))
+                            FlowRow(
+                                modifier              = Modifier.wrapContentWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                verticalArrangement   = Arrangement.spacedBy(Spacing.sm),
+                            ) {
+                                message.actions.forEach { action ->
+                                    AssistChip(
+                                        onClick = { onActionPress(action) },
+                                        label   = { Text(action, style = MaterialTheme.typography.bodySmall) },
+                                        colors  = AssistChipDefaults.assistChipColors(
+                                            containerColor = MaterialTheme.colorScheme.surface,
+                                            labelColor     = MaterialTheme.colorScheme.primary,
+                                        ),
+                                        border  = AssistChipDefaults.assistChipBorder(
+                                            enabled     = true,
+                                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
                         if (timeLabel.isNotEmpty()) {
                             Spacer(Modifier.height(8.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 Text(timeLabel, style = MaterialTheme.typography.bodySmall, color = timeColor)
                             }
-                        }
-                    }
-                }
-                // AS-1: interactive action chips for assistant messages — tapping one
-                // sends its text through the same pipeline as manual input.
-                if (!isUser && message.actions.isNotEmpty()) {
-                    Spacer(Modifier.height(Spacing.sm))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        modifier = Modifier.wrapContentWidth(),
-                    ) {
-                        message.actions.forEach { action ->
-                            AssistChip(
-                                onClick = { onActionPress(action) },
-                                label   = { Text(action, style = MaterialTheme.typography.bodySmall) },
-                                colors  = AssistChipDefaults.assistChipColors(
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    labelColor     = MaterialTheme.colorScheme.primary,
-                                ),
-                                border  = AssistChipDefaults.assistChipBorder(
-                                    enabled     = true,
-                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
-                                ),
-                            )
                         }
                     }
                 }
@@ -443,52 +445,35 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
 
 @Composable
 private fun TypingIndicator() {
-    val infinite = rememberInfiniteTransition(label = "typing")
-    // Stagger three dots: 0ms, 160ms, 320ms
-    val offsets = (0..2).map { i ->
-        infinite.animateFloat(
-            initialValue = 0f,
-            targetValue  = -6f,
-            animationSpec = infiniteRepeatable(
-                animation  = tween(400, delayMillis = i * 160, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "dot$i",
-        )
-    }
-
-    // AS-4: wrap dots + "Thinking…" label in a bordered pill, matching React's TypingIndicator
+    // Static three-dot cluster with decreasing opacity — 1:1 with React's
+    // TypingIndicator (dots do not bounce; opacity 1 / 0.6 / 0.3).
     Row(horizontalArrangement = Arrangement.Start) {
-        Box(
-            modifier         = Modifier
+        Row(
+            modifier             = Modifier
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(20.dp),
                 )
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center,
+                .padding(horizontal = Spacing.base, vertical = Spacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalAlignment     = Alignment.CenterVertically,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                    offsets.forEach { anim ->
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape,
-                                )
-                                .then(Modifier.offset(y = anim.value.dp)),
-                        )
-                    }
-                }
-                Text(
-                    text  = "Thinking…",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            listOf(1f, 0.6f, 0.3f).forEach { opacity ->
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = opacity),
+                            shape = CircleShape,
+                        ),
                 )
             }
+            Text(
+                text  = "Thinking…",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

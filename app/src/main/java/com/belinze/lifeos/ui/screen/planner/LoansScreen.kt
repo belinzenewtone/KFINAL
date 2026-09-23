@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +39,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
 import com.belinze.lifeos.ui.components.BannerTone
@@ -74,6 +78,17 @@ fun LoansScreen(
     viewModel:     PlannerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Reload whenever the screen resumes so status/repayment changes made in the
+    // loan form (or by the Fuliza SMS pipeline) are reflected on return, instead
+    // of showing the stale snapshot captured on first composition.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.loadAll()
+        }
+    }
+
     var payLoanId by remember { mutableStateOf<String?>(null) }
     var payAmount by remember { mutableStateOf("") }
     var banner by remember { mutableStateOf<String?>(null) }

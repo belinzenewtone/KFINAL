@@ -610,12 +610,14 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
                 """UPDATE fuliza_loans
                    SET total_repaid_kes = total_repaid_kes + ?,
                        last_repayment_date = ?,
+                       status = CASE WHEN total_repaid_kes + ? >= draw_amount_kes - 0.005 THEN 'repaid' ELSE status END,
                        updated_at = ?
                    WHERE status = 'active'"""
             ).use { stmt ->
                 stmt.bindDouble(1, amountKes)
                 stmt.bindString(2, now)
-                stmt.bindString(3, now)
+                stmt.bindDouble(3, amountKes)
+                stmt.bindString(4, now)
                 stmt.executeUpdateDelete()
             }
             if (rows == 0) {
