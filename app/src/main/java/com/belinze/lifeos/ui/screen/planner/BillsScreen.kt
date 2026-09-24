@@ -26,9 +26,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,10 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
-import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
@@ -85,7 +86,15 @@ fun BillsScreen(
     }
 
     val activeBills = remember(state.bills) { state.bills.filter { it.isActive != 0 } }
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(banner) {
+        banner?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            banner = null
+        }
+    }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Recurring Obligations",
         title = "Bills",
@@ -96,15 +105,6 @@ fun BillsScreen(
             IconButton(onClick = { navController.navigate(NavTo.billForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add bill", tint = MaterialTheme.colorScheme.primary)
             }
-        },
-        topBanner = {
-            TopBanner(
-                visible = banner != null,
-                message = banner ?: "",
-                tone = BannerTone.Success,
-                onDismiss = { banner = null },
-                autoDismissMs = 2500,
-            )
         },
     ) {
         if (state.bills.isEmpty()) {
@@ -144,6 +144,11 @@ fun BillsScreen(
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
+    )
+    } // Box
 }
 
 @Composable

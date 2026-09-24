@@ -52,6 +52,7 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.CategorizeViewModel
+import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.MerchantGroup
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -165,29 +166,44 @@ private fun MerchantGroupCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(
-                    group.merchant,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                AssistChip(
-                    onClick = {},
-                    label = {
+                Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
+                    Text(
+                        group.merchant,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    group.latestDate?.let { date ->
                         Text(
-                            "${group.count} transaction${if (group.count == 1) "" else "s"}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            "Latest: ${date.take(10)}",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    ),
-                    border = AssistChipDefaults.assistChipBorder(
-                        enabled     = true,
-                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    ),
-                )
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        formatCurrency(group.totalAmount),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                "${group.count} transaction${if (group.count == 1) "" else "s"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(
+                            enabled     = true,
+                            borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        ),
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.sm))

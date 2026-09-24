@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,10 +23,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,10 +44,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
-import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -102,6 +104,15 @@ fun RecurringScreen(
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(banner) {
+        banner?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            banner = null
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Automation",
         title = "Recurring",
@@ -112,15 +123,6 @@ fun RecurringScreen(
             IconButton(onClick = { navController.navigate(NavTo.recurringForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add rule", tint = MaterialTheme.colorScheme.primary)
             }
-        },
-        topBanner = {
-            TopBanner(
-                visible = banner != null,
-                message = banner ?: "",
-                tone = BannerTone.Success,
-                onDismiss = { banner = null },
-                autoDismissMs = 2000,
-            )
         },
     ) {
         if (state.recurringRules.isEmpty()) {
@@ -225,6 +227,11 @@ fun RecurringScreen(
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
+    )
+    } // Box
 }
 
 private fun formatDate(iso: String?): String = try {

@@ -20,12 +20,17 @@ import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,10 +50,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
-import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -72,6 +75,7 @@ private val LOAN_STATUS_LABEL = mapOf(
     "defaulted" to "Defaulted",
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoansScreen(
     navController: NavHostController,
@@ -92,11 +96,19 @@ fun LoansScreen(
     var payLoanId by remember { mutableStateOf<String?>(null) }
     var payAmount by remember { mutableStateOf("") }
     var banner by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(banner) {
+        banner?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            banner = null
+        }
+    }
 
     val openLoans      = remember(state.loans) { state.loans.filter { it.status == "active" } }
     val closedLoans    = remember(state.loans) { state.loans.filter { it.status != "active" }.take(10) }
     val netOutstanding = remember(openLoans)   { openLoans.sumOf { it.drawAmountKes - it.totalRepaidKes } }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Finance Tools",
         title = "Loans & Fuliza",
@@ -107,15 +119,6 @@ fun LoansScreen(
             IconButton(onClick = { navController.navigate(NavTo.loanForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add loan", tint = MaterialTheme.colorScheme.primary)
             }
-        },
-        topBanner = {
-            TopBanner(
-                visible = banner != null,
-                message = banner ?: "",
-                tone = BannerTone.Success,
-                onDismiss = { banner = null },
-                autoDismissMs = 2500,
-            )
         },
     ) {
         if (state.loans.isEmpty()) {
@@ -194,61 +197,72 @@ fun LoansScreen(
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
+    )
+    } // Box
 
     if (payLoanId != null) {
         val loan = state.loans.firstOrNull { it.id == payLoanId }
         if (loan != null) {
-            AlertDialog(
+            ModalBottomSheet(
                 onDismissRequest = { payLoanId = null },
-                title = { Text("Log repayment") },
-                text = {
-                    Column {
-                        Text(
-                            "Outstanding: ${formatCurrency(loan.drawAmountKes - loan.totalRepaidKes)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(Spacing.sm))
-                        OutlinedTextField(
-                            value = payAmount,
-                            onValueChange = { payAmount = it },
-                            placeholder = { Text("Amount repaid") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true,
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val delta = payAmount.toDoubleOrNull() ?: 0.0
-                        if (delta > 0) {
-                            val outstanding = (loan.drawAmountKes - loan.totalRepaidKes).coerceAtLeast(0.0)
-                            val applied = delta.coerceAtMost(outstanding)
-                            val fullyPaid = (loan.totalRepaidKes + applied) >= loan.drawAmountKes - 0.005
-                            viewModel.logRepayment(loan.id, delta) { ok ->
-                                if (ok) {
-                                    banner = if (fullyPaid) {
-                                        "Loan fully repaid 🎉"
-                                    } else {
-                                        "Logged ${formatCurrency(applied)} repayment"
+                sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Spacing.lg),
+                ) {
+                    Text("Log repayment", style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(Spacing.xs))
+                    Text(
+                        "Outstanding: ${formatCurrency(loan.drawAmountKes - loan.totalRepaidKes)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    OutlinedTextField(
+                        value           = payAmount,
+                        onValueChange   = { payAmount = it },
+                        placeholder     = { Text("Amount repaid") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine      = true,
+                        modifier        = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Spacer(Modifier.weight(1f))
+                        TextButton(onClick = { payLoanId = null }) { Text("Cancel") }
+                        TextButton(onClick = {
+                            val delta = payAmount.toDoubleOrNull() ?: 0.0
+                            if (delta > 0) {
+                                val outstanding = (loan.drawAmountKes - loan.totalRepaidKes).coerceAtLeast(0.0)
+                                val applied = delta.coerceAtMost(outstanding)
+                                val fullyPaid = (loan.totalRepaidKes + applied) >= loan.drawAmountKes - 0.005
+                                viewModel.logRepayment(loan.id, delta) { ok ->
+                                    if (ok) {
+                                        banner = if (fullyPaid) {
+                                            "Loan fully repaid 🎉"
+                                        } else {
+                                            "Logged ${formatCurrency(applied)} repayment"
+                                        }
                                     }
+                                    payLoanId = null
+                                    payAmount = ""
                                 }
+                            } else {
+                                banner = "Enter a positive repayment amount"
                                 payLoanId = null
                                 payAmount = ""
                             }
-                        } else {
-                            banner = "Enter a positive repayment amount"
-                            payLoanId = null
-                            payAmount = ""
-                        }
-                    }) {
-                        Text("Log")
+                        }) { Text("Log") }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { payLoanId = null }) { Text("Cancel") }
-                },
-            )
+                    Spacer(Modifier.height(Spacing.xl))
+                }
+            }
         }
     }
 }

@@ -24,6 +24,8 @@ data class MerchantGroup(
     val transactions: ImmutableList<TransactionEntity>,
 ) {
     val count: Int get() = transactions.size
+    val totalAmount: Double get() = transactions.sumOf { it.amount }
+    val latestDate: String? get() = transactions.mapNotNull { it.date }.maxOrNull()
 }
 
 /**

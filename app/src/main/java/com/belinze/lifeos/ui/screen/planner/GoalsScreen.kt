@@ -24,12 +24,17 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,10 +49,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.GoalEntity
-import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
-import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -58,6 +61,7 @@ import java.time.format.DateTimeFormatter
 // Matches GoalsScreen.tsx's local SEMANTIC constant exactly.
 private val SUCCESS = Color(0xFF4ADE80)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalsScreen(
     navController: NavHostController,
@@ -68,6 +72,13 @@ fun GoalsScreen(
     var logGoalId by remember { mutableStateOf<String?>(null) }
     var logAmount by remember { mutableStateOf("") }
     var goalToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(banner) {
+        banner?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            banner = null
+        }
+    }
 
     if (goalToDelete != null) {
         val (deleteId, deleteTitle) = goalToDelete!!
@@ -89,6 +100,7 @@ fun GoalsScreen(
 
     val activeGoals = remember(state.goals) { state.goals.filter { it.status == "active" } }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Personal Growth",
         title = "Goals",
@@ -99,15 +111,6 @@ fun GoalsScreen(
             IconButton(onClick = { navController.navigate(NavTo.goalForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add goal", tint = MaterialTheme.colorScheme.primary)
             }
-        },
-        topBanner = {
-            TopBanner(
-                visible = banner != null,
-                message = banner ?: "",
-                tone = BannerTone.Success,
-                onDismiss = { banner = null },
-                autoDismissMs = 2500,
-            )
         },
     ) {
         if (state.goals.isEmpty()) {
@@ -152,50 +155,63 @@ fun GoalsScreen(
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
+    )
+    } // Box
 
     if (logGoalId != null) {
         val goal = state.goals.firstOrNull { it.id == logGoalId }
         if (goal != null) {
-            AlertDialog(
+            ModalBottomSheet(
                 onDismissRequest = { logGoalId = null },
-                title = { Text("Log progress") },
-                text = {
-                    Column {
-                        Text("Add to ${goal.title}", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(Spacing.sm))
-                        OutlinedTextField(
-                            value = logAmount,
-                            onValueChange = { logAmount = it },
-                            placeholder = { Text("Amount") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true,
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val delta = logAmount.toDoubleOrNull() ?: 0.0
-                        if (delta > 0) {
-                            val next = (goal.currentValue + delta).coerceAtMost(goal.targetValue)
-                            val reached = next >= goal.targetValue
-                            viewModel.logGoalProgress(goal.id, delta)
-                            banner = if (reached) {
-                                "Goal reached: ${goal.title} 🎉"
+                sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Spacing.lg),
+                ) {
+                    Text("Log progress", style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(Spacing.xs))
+                    Text("Add to ${goal.title}", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(Spacing.sm))
+                    OutlinedTextField(
+                        value           = logAmount,
+                        onValueChange   = { logAmount = it },
+                        placeholder     = { Text("Amount") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine      = true,
+                        modifier        = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Spacer(Modifier.weight(1f))
+                        TextButton(onClick = { logGoalId = null; logAmount = "" }) { Text("Cancel") }
+                        TextButton(onClick = {
+                            val delta = logAmount.toDoubleOrNull() ?: 0.0
+                            if (delta > 0) {
+                                val next = (goal.currentValue + delta).coerceAtMost(goal.targetValue)
+                                val reached = next >= goal.targetValue
+                                viewModel.logGoalProgress(goal.id, delta)
+                                banner = if (reached) {
+                                    "Goal reached: ${goal.title} 🎉"
+                                } else {
+                                    "Logged ${formatCurrency(delta)} · ${goal.title}"
+                                }
                             } else {
-                                "Logged ${formatCurrency(delta)} · ${goal.title}"
+                                banner = "Enter a positive amount"
                             }
-                        } else {
-                            banner = "Enter a positive amount"
-                        }
-                        logGoalId = null
-                        logAmount = ""
-                    }) { Text("Log") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { logGoalId = null }) { Text("Cancel") }
-                },
-            )
+                            logGoalId = null
+                            logAmount = ""
+                        }) { Text("Log") }
+                    }
+                    Spacer(Modifier.height(Spacing.xl))
+                }
+            }
         }
     }
 }
