@@ -20,12 +20,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +62,10 @@ fun CsvImportScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    LaunchedEffect(state.done) {
+        if (state.done) navController.popBackStack()
+    }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -183,10 +189,10 @@ fun CsvImportScreen(
                     ) {
                         Column {
                             Text(row.errors.joinToString(", "), style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer)
+                                color = MaterialTheme.colorScheme.error)
                             Text("${row.merchant.ifBlank { "(no merchant)" }} · ${row.amount}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(top = 2.dp))
                         }
                     }
@@ -195,6 +201,9 @@ fun CsvImportScreen(
                 Button(
                     onClick = { viewModel.importValid() },
                     enabled = state.valid.isNotEmpty() && !state.isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (state.valid.isNotEmpty()) Color(0xFF34D399) else MaterialTheme.colorScheme.primary,
+                    ),
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                 ) {
                     if (state.isLoading) {

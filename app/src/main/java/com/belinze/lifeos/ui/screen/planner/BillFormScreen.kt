@@ -273,7 +273,7 @@ fun BillFormScreen(
                     }
                 },
                 enabled = !form.isSaving,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
             ) {
                 if (form.isSaving) {
                     CircularProgressIndicator(

@@ -296,7 +296,7 @@ fun IncomeFormScreen(
                         viewModel.saveIncome {
                             successMsg = if (isEdit) "Income updated" else "Income added"
                             scope.launch {
-                                delay(1200)
+                                delay(400)
                                 navController.popBackStack()
                             }
                         }

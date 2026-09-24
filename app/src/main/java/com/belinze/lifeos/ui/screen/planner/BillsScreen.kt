@@ -141,7 +141,6 @@ fun BillsScreen(
                         )
                     }
                 }
-                item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
         }
     }

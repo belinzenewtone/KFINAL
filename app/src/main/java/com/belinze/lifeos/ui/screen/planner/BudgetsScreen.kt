@@ -134,57 +134,54 @@ fun BudgetsScreen(
                     variant = com.belinze.lifeos.ui.components.GlassCardVariant.Elevated,
                     modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        // Chip sits on its own top row next to the short label so a
-                        // long "$X / $Y" amount below can never push or hide it.
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                             Text(
                                 "This Month",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Box(
-                                modifier = Modifier
-                                    .background(summaryColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
-                                    .padding(horizontal = Spacing.base, vertical = Spacing.xs),
-                            ) {
-                                Text(
-                                    if (summaryPct > 100) {
-                                        "Over budget"
-                                    } else if (summaryPct > 80) {
-                                        "Nearing limit"
-                                    } else {
-                                        "On track"
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = summaryColor,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
+                            Text(
+                                buildAnnotatedString {
+                                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
+                                        append(formatCurrency(totalSpend))
+                                    }
+                                    withStyle(
+                                        SpanStyle(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                        ),
+                                    ) {
+                                        append(" / ${formatCurrency(totalLimit)}")
+                                    }
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1,
+                            )
                         }
-                        Spacer(Modifier.height(Spacing.sm))
-                        Text(
-                            buildAnnotatedString {
-                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
-                                    append(formatCurrency(totalSpend))
-                                }
-                                withStyle(
-                                    SpanStyle(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                                    ),
-                                ) {
-                                    append(" / ${formatCurrency(totalLimit)}")
-                                }
-                            },
-                            style = MaterialTheme.typography.titleLarge,
-                            maxLines = 1,
-                        )
+                        Box(
+                            modifier = Modifier
+                                .background(summaryColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
+                                .padding(horizontal = Spacing.base, vertical = Spacing.xs),
+                        ) {
+                            Text(
+                                if (summaryPct > 100) {
+                                    "Over budget"
+                                } else if (summaryPct > 80) {
+                                    "Nearing limit"
+                                } else {
+                                    "On track"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = summaryColor,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
                     }
                     Spacer(Modifier.height(Spacing.base))
                     BudgetProgressBar(pct = (summaryPct.coerceIn(0, 100)).toFloat() / 100f, color = summaryColor)

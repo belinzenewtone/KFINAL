@@ -141,9 +141,9 @@ fun LoansScreen(
                 item {
                     GlassCard(
                         variant = com.belinze.lifeos.ui.components.GlassCardVariant.Elevated,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.lg),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
                     ) {
-                        Text("Net Outstanding", style = MaterialTheme.typography.bodyLarge,
+                        Text("Net Outstanding", style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                         Text(formatCurrency(netOutstanding),
                             style = MaterialTheme.typography.titleLarge,
@@ -191,7 +191,6 @@ fun LoansScreen(
                     }
                 }
 
-                item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
         }
     }

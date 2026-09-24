@@ -64,7 +64,6 @@ fun PlannerHubScreen(navController: NavHostController) {
             entries.forEach { entry ->
                 HubCard(entry = entry, onClick = { navController.navigate(entry.route) })
             }
-            Spacer(Modifier.height(Spacing.bottomNavSafeArea))
         }
     }
 }
@@ -75,7 +74,7 @@ private fun HubCard(entry: HubEntry, onClick: () -> Unit) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.base),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Box(
                 modifier = Modifier

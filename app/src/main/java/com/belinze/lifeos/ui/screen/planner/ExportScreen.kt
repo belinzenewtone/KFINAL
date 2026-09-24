@@ -79,7 +79,7 @@ private val PREVIEW_DOMAINS = listOf(
 )
 
 private val DATE_WINDOWS =
-    listOf("all" to "All Time", "last30" to "Last 30 Days", "month" to "This Month", "week" to "This Week", "custom" to "Custom Range")
+    listOf("week" to "This Week", "month" to "This Month", "last30" to "Last 30 Days", "custom" to "Custom Range", "all" to "All Time")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -306,6 +306,14 @@ fun ExportScreen(
                                     tint = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(16.dp))
                             }
+                            // EX-2: item count — shown before label (RFINAL: icon → count → label)
+                            val count = state.domainCounts[domain.key]
+                            Text(
+                                count?.toString() ?: "—",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Bold,
+                            )
                             Text(domain.label, style = MaterialTheme.typography.bodySmall,
                                 color = if (active) {
                                     MaterialTheme.colorScheme.onSurface
@@ -313,14 +321,6 @@ fun ExportScreen(
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                                 maxLines = 1)
-                            // EX-2: item count
-                            val count = state.domainCounts[domain.key]
-                            Text(
-                                count?.toString() ?: "—",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold,
-                            )
                         }
                     }
                 }
@@ -381,19 +381,32 @@ fun ExportScreen(
                 }
             }
 
-            if (state.history.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Export History", style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface)
-                    // EX-3: clear history button
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Export History", style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface)
+                if (state.history.isNotEmpty()) {
                     TextButton(onClick = { viewModel.clearHistory() }) {
                         Text("Clear", color = MaterialTheme.colorScheme.error)
                     }
                 }
+            }
+
+            if (state.history.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.x2l),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(Icons.Outlined.Description, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
+                    Spacer(Modifier.height(Spacing.sm))
+                    Text("No exports yet", style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else {
                 state.history.take(10).forEach { exp ->
                     GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
                         Row(
