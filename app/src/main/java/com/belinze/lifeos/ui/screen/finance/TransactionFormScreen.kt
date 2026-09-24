@@ -168,10 +168,11 @@ fun TransactionFormScreen(
 
             OutlinedTextField(
                 value = formState.mpesaCode,
-                onValueChange = { viewModel.updateFormMpesaCode(it) },
+                onValueChange = { viewModel.updateFormMpesaCode(it.uppercase()) },
                 label = { Text("M-Pesa code (optional)") },
                 placeholder = { Text("e.g. TAB5CDE12F") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters),
                 modifier = Modifier.fillMaxWidth(),
             )
 

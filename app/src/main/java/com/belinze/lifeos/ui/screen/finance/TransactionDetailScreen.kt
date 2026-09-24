@@ -20,12 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDownward
-import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -142,11 +139,7 @@ fun TransactionDetailScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            when (tx.transactionType) {
-                                "income"   -> Icons.Outlined.ArrowDownward
-                                "transfer" -> Icons.Outlined.SwapHoriz
-                                else       -> Icons.Outlined.ArrowUpward
-                            },
+                            categoryIcon(tx.category ?: tx.transactionType ?: "expense"),
                             contentDescription = null,
                             tint = categoryColor,
                             modifier = Modifier.size(32.dp),
@@ -176,7 +169,6 @@ fun TransactionDetailScreen(
             // Details card
             GlassCard(modifier = Modifier.padding(bottom = Spacing.base)) {
                 DetailRow("Date", tx.date?.let { formatDetailDate(it) } ?: "")
-                DetailRow("Status", tx.status)
                 tx.mpesaCode?.let { DetailRow("M-Pesa Code", it) }
                 if (tx.mpesaCode == null) tx.externalRef?.let { DetailRow("Reference", it) }
                 tx.description?.let { DetailRow("Description", it) }
@@ -365,16 +357,14 @@ fun TransactionDetailDialog(
                                 color    = MaterialTheme.colorScheme.outlineVariant,
                             )
 
-                            // Details
-                            GlassCard(modifier = Modifier.padding(bottom = 12.dp)) {
-                                DetailRow("Date", tx.date?.let { formatDetailDate(it) } ?: "")
-                                tx.mpesaCode?.let { DetailRow("M-Pesa Code", it) }
-                                if (tx.mpesaCode == null) tx.externalRef?.let { DetailRow("Reference", it) }
-                                tx.description?.let { DetailRow("Description", it) }
-                                tx.notes?.let { DetailRow("Notes", it) }
-                                tx.balanceAfter?.let { DetailRow("Balance After", formatCurrency(it)) }
-                                tx.fee?.let { DetailRow("Fee", formatCurrency(it)) }
-                            }
+                            // Details — bare rows after divider, matching RFINAL's modal layout
+                            DetailRow("Date", tx.date?.let { formatDetailDate(it) } ?: "")
+                            tx.mpesaCode?.let { DetailRow("M-Pesa Code", it) }
+                            if (tx.mpesaCode == null) tx.externalRef?.let { DetailRow("Reference", it) }
+                            tx.description?.let { DetailRow("Description", it) }
+                            tx.notes?.let { DetailRow("Notes", it) }
+                            tx.balanceAfter?.let { DetailRow("Balance After", formatCurrency(it)) }
+                            tx.fee?.let { DetailRow("Fee", formatCurrency(it)) }
 
                             if (isEditing) {
                                 InlineEditPanel(
@@ -578,8 +568,8 @@ private val STATUSES_DETAIL   = listOf("completed", "pending", "failed", "revers
 private val CATEGORIES_DETAIL = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
     "entertainment", "health", "education", "shopping", "savings", "investment",
-    "housing", "personal_care", "subscriptions", "miscellaneous",
-    "income", "uncategorized",
+    "housing", "personal_care", "subscriptions", "fuel", "loans", "insurance",
+    "miscellaneous", "income", "uncategorized",
 )
 
 private fun formatDetailDate(iso: String): String = try {

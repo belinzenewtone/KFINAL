@@ -290,40 +290,6 @@ fun FinanceScreen(
                 modifier            = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                // ── FI-1: SMS permission banner ───────────────────────────────
-                if (!smsGranted) {
-                    item {
-                        val WARNING = Color(0xFFF5CB5C)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs)
-                                .clip(MaterialTheme.shapes.medium)
-                                .border(1.dp, WARNING, MaterialTheme.shapes.medium)
-                                .background(WARNING.copy(alpha = 0.10f))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(color = WARNING.copy(0.2f)),
-                                ) {
-                                    smsPermLauncher.launch(
-                                        arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
-                                    )
-                                }
-                                .padding(Spacing.sm),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            Icon(Icons.Outlined.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(16.dp))
-                            Text(
-                                "SMS permissions not granted — tap to allow",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = WARNING,
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                }
-
                 // ── Action chips ──────────────────────────────────────────────
                 item {
                     Row(
@@ -400,12 +366,12 @@ fun FinanceScreen(
                         val bgColor     = if (isOver) {
                             MaterialTheme.colorScheme.errorContainer
                         } else {
-                            MaterialTheme.colorScheme.primaryContainer
+                            Color(0xFFFEF9C3)
                         }
                         val accentColor = if (isOver) {
                             MaterialTheme.colorScheme.error
                         } else {
-                            MaterialTheme.colorScheme.primary
+                            Color(0xFFF5CB5C)
                         }
                         Row(
                             modifier = Modifier
@@ -504,7 +470,6 @@ fun FinanceScreen(
                                 label    = "Charges",
                                 amount   = feeTotal,
                                 sub      = "Airtime, Fuliza & subs",
-                                onClick  = { navController.navigate(Route.FEE_ANALYTICS) },
                             )
                         }
                     }
@@ -540,6 +505,40 @@ fun FinanceScreen(
                             .padding(horizontal = Spacing.screenHorizontal)
                             .padding(bottom = 14.dp),
                     )
+                }
+
+                // ── FI-1: SMS permission banner — between search and list ────────
+                if (!smsGranted) {
+                    item {
+                        val SMS_WARNING = Color(0xFFF5CB5C)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs)
+                                .clip(MaterialTheme.shapes.medium)
+                                .border(1.dp, SMS_WARNING, MaterialTheme.shapes.medium)
+                                .background(SMS_WARNING.copy(alpha = 0.10f))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(color = SMS_WARNING.copy(0.2f)),
+                                ) {
+                                    smsPermLauncher.launch(
+                                        arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
+                                    )
+                                }
+                                .padding(Spacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            Icon(Icons.Outlined.Warning, contentDescription = null, tint = SMS_WARNING, modifier = Modifier.size(16.dp))
+                            Text(
+                                "SMS permissions not granted — tap to allow",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SMS_WARNING,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
                 }
 
                 // ── Transactions header ───────────────────────────────────────
@@ -644,7 +643,7 @@ fun FinanceScreen(
             onClick        = { navController.navigate(Route.TRANSACTION_FORM) },
             modifier       = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = Spacing.lg, bottom = 72.dp),
+                .padding(end = Spacing.lg, bottom = Spacing.bottomNavSafeArea),
             containerColor = MaterialTheme.colorScheme.primary,
         ) {
             Icon(
