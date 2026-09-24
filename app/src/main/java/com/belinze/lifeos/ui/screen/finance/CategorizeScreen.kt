@@ -29,6 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
@@ -67,9 +69,18 @@ fun CategorizeScreen(
     viewModel:     CategorizeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
 
+    LaunchedEffect(state.message) {
+        if (state.message != null) {
+            snackbarHostState.showSnackbar(state.message!!)
+            viewModel.clearMessage()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Finance",
         title = "Categorize",
@@ -132,6 +143,11 @@ fun CategorizeScreen(
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
+    )
+    } // Box
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

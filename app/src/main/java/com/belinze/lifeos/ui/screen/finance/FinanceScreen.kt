@@ -44,13 +44,16 @@ import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -268,9 +271,9 @@ fun FinanceScreen(
             }
 
             // Hoist scroll states so they are never recreated inside LazyColumn item lambdas
-            val actionChipsScrollState    = rememberScrollState()
-            val periodSelectorScrollState = rememberScrollState()
-            val listState                 = rememberLazyListState()
+            val actionChipsScrollState = rememberScrollState()
+            val listState              = rememberLazyListState()
+            var periodExpanded by remember { mutableStateOf(false) }
 
             var pullRefreshing by remember { mutableStateOf(false) }
             val pullToRefreshState = rememberPullToRefreshState()
@@ -478,20 +481,37 @@ fun FinanceScreen(
 
                 // ── Period selector + search ──────────────────────────────────
                 item {
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(periodSelectorScrollState)
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
-                        listOf("all", "today", "week", "month").forEach { period ->
-                            val selected = activeFilters.period == period
-                            PeriodChip(
-                                label    = period.replaceFirstChar { it.uppercase() },
-                                selected = selected,
-                                onClick  = { viewModel.setPeriod(period) },
+                        ExposedDropdownMenuBox(
+                            expanded          = periodExpanded,
+                            onExpandedChange  = { periodExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value         = activeFilters.period.replaceFirstChar { it.uppercase() },
+                                onValueChange = {},
+                                readOnly      = true,
+                                label         = { Text("Period") },
+                                trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(periodExpanded) },
+                                modifier      = Modifier.fillMaxWidth().menuAnchor(),
                             )
+                            ExposedDropdownMenu(
+                                expanded          = periodExpanded,
+                                onDismissRequest  = { periodExpanded = false },
+                            ) {
+                                listOf("all", "today", "week", "month").forEach { period ->
+                                    DropdownMenuItem(
+                                        text    = { Text(period.replaceFirstChar { it.uppercase() }) },
+                                        onClick = {
+                                            viewModel.setPeriod(period)
+                                            periodExpanded = false
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -805,21 +825,6 @@ private fun androidx.compose.foundation.layout.RowScope.HeroSubMetric(
             color = if (isCredit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
     }
-}
-
-// ─── Period chip ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun PeriodChip(
-    label:    String,
-    selected: Boolean,
-    onClick:  () -> Unit,
-) {
-    FilterChip(
-        selected = selected,
-        onClick  = onClick,
-        label    = { Text(label) },
-    )
 }
 
 // ─── Insight card (Budget / Fuliza / Fees row) ───────────────────────────────

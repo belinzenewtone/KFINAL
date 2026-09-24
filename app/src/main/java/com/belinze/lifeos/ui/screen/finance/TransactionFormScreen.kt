@@ -16,6 +16,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -28,6 +30,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,6 +43,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -75,6 +80,7 @@ fun TransactionFormScreen(
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !transactionId.isNullOrEmpty()
     val scope  = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -100,6 +106,7 @@ fun TransactionFormScreen(
         viewModel.openForm(transactionId?.ifEmpty { null })
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         title = if (isEdit) "Edit Transaction" else "Add Transaction",
         onBack = { navController.popBackStack() },
@@ -253,7 +260,14 @@ fun TransactionFormScreen(
             }
 
             Button(
-                onClick  = { viewModel.saveForm { scope.launch { delay(400); navController.popBackStack() } } },
+                onClick  = {
+                    viewModel.saveForm {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(if (isEdit) "Transaction updated" else "Transaction saved")
+                            navController.popBackStack()
+                        }
+                    }
+                },
                 enabled  = !formState.isSaving,
                 shape    = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
@@ -274,4 +288,9 @@ fun TransactionFormScreen(
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
+    )
+    } // Box
 }
