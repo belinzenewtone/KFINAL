@@ -82,13 +82,13 @@ fun WeekReviewScreen(
                         horizontal = Spacing.screenHorizontal,
                         vertical   = Spacing.lg,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.base),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     // ─ Week label ─
                     item {
                         Text(
                             text  = state.weekLabel,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -98,7 +98,6 @@ fun WeekReviewScreen(
                         Text(
                             text  = greeting,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -108,31 +107,6 @@ fun WeekReviewScreen(
 
                     // ─ 7-day Spend Pattern ─
                     item { SpendPatternCard(state.dayBars) }
-
-                    // ─ Fees This Week ─
-                    if (state.feesTotal > 0) {
-                        item {
-                            GlassCard {
-                                Row(
-                                    modifier              = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment     = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text       = "Fees This Week",
-                                        style      = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                    Text(
-                                        text       = formatCurrency(state.feesTotal),
-                                        style      = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color      = COLOR_PEAK,
-                                    )
-                                }
-                            }
-                        }
-                    }
 
                     // ─ What Changed? ─
                     if (state.changeItems.isNotEmpty()) {
@@ -310,6 +284,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                 val barColor  = when {
                     bar.isFuture || bar.amount == 0.0 ->
                         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                    bar.avg == 0.0                     -> COLOR_NORMAL
                     bar.amount > bar.avg * 1.5         -> COLOR_PEAK
                     bar.amount > bar.avg               -> COLOR_HIGH
                     else                               -> COLOR_NORMAL
@@ -448,6 +423,6 @@ private fun ChangeItemRow(icon: String, text: String, sentiment: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(imageVector, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(Spacing.sm))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = color)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }

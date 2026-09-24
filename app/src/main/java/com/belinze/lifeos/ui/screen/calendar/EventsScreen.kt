@@ -18,10 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -78,6 +80,7 @@ fun EventsScreen(
             placeholder = { Text("Search events...") },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine = true,
+            shape = RoundedCornerShape(999.dp),
             modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
         )
 
@@ -112,27 +115,38 @@ fun EventsScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     event.title,
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                 )
                                 Text(
-                                    formatEventSubtitle(event.date, event.type),
+                                    formatEventSubtitle(event.date),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 com.belinze.lifeos.util.formatLocation(event.location)?.let { loc ->
-                                    Text(
-                                        loc,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.LocationOn,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(11.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        Text(
+                                            loc,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                        )
+                                    }
                                 }
                             }
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
+                                tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
@@ -142,16 +156,10 @@ fun EventsScreen(
     }
 }
 
-private fun formatEventSubtitle(iso: String, type: String): String {
-    val typeLabel = when (type) {
-        "birthday"    -> "Birthday"
-        "anniversary" -> "Anniversary"
-        "countdown"   -> "Countdown"
-        else          -> "Event"
-    }
+private fun formatEventSubtitle(iso: String): String {
     val datePart = try {
         val date = LocalDate.parse(iso.take(10))
-        date.format(DateTimeFormatter.ofPattern("EEE, MMM dd, yyyy"))
+        date.format(DateTimeFormatter.ofPattern("EEE, MMM d yyyy"))
     } catch (_: Exception) {
         iso.take(10)
     }
@@ -169,7 +177,7 @@ private fun formatEventSubtitle(iso: String, type: String): String {
     } else {
         ""
     }
-    return "$datePart$timePart · $typeLabel"
+    return "$datePart$timePart"
 }
 
 @Composable

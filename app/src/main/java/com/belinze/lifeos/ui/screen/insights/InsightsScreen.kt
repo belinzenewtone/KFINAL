@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -180,6 +181,7 @@ fun InsightsScreen(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(12.dp),
                                 )
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,

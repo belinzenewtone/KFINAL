@@ -134,8 +134,14 @@ fun SearchScreen(
         }
 
         if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxWidth().padding(Spacing.x2l), contentAlignment = Alignment.Center) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(Spacing.x2l),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                Text("Searching…", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             return@PageScaffold
         }
@@ -149,10 +155,10 @@ fun SearchScreen(
                     Icon(Icons.Outlined.Search, contentDescription = null,
                         tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(36.dp))
                     Spacer(Modifier.height(Spacing.sm))
-                    Text("Search everything", style = MaterialTheme.typography.titleMedium,
+                    Text("Search everything", style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface)
                     Text("Search by name, M-Pesa ref code, task, event, birthday and more.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
@@ -237,11 +243,17 @@ fun SearchScreen(
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Tasks) && state.tasks.isNotEmpty()) {
                 item { SectionHeader("Tasks", state.tasks.size) }
                 items(state.tasks, key = { it.id }) { task ->
+                    val priorityColor = when (task.priority) {
+                        "high"   -> Color(0xFFEF4444)
+                        "medium" -> Color(0xFFFBBF24)
+                        else     -> Color(0xFF60A5FA)
+                    }
                     SearchRow(
                         title = highlightText(task.title, query),
                         subtitle = highlightText(task.deadline?.let { formatDateTime(it) } ?: "", query),
                         icon = Icons.Outlined.Check,
                         iconColor = if (task.status == "completed") Color(0xFF22C55E) else MaterialTheme.colorScheme.outline,
+                        trailingDot = if (task.status != "completed") priorityColor else null,
                         onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
                     )
                 }
@@ -473,6 +485,7 @@ private fun SearchRow(
     onClick: () -> Unit,
     trailing: String? = null,
     trailingColor: Color = Color.Unspecified,
+    trailingDot: Color? = null,
 ) {
     GlassCard(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
         Row(
@@ -498,6 +511,9 @@ private fun SearchRow(
                 Text(trailing, style = MaterialTheme.typography.bodyMedium,
                     color = if (trailingColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else trailingColor,
                     fontWeight = FontWeight.Bold)
+            }
+            if (trailingDot != null) {
+                Box(Modifier.size(10.dp).background(trailingDot, CircleShape))
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
                 tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(16.dp))

@@ -124,7 +124,7 @@ fun TasksScreen(
                 Icon(Icons.Outlined.CheckCircle, contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(36.dp))
                 Spacer(Modifier.height(Spacing.base))
-                Text("No tasks found", style = MaterialTheme.typography.bodyLarge,
+                Text("No tasks found", style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
@@ -191,8 +191,8 @@ fun TasksScreen(
     taskToDelete?.let { task ->
         AlertDialog(
             onDismissRequest = { taskToDelete = null },
-            title = { Text("Delete task?") },
-            text  = { Text("\"${task.title}\" will be removed.") },
+            title = { Text("Delete task") },
+            text  = { Text("Remove \"${task.title}\"?") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.softDelete(task.id)
@@ -209,7 +209,7 @@ fun TasksScreen(
 @Composable
 private fun PrioritySectionHeader(title: String, color: Color, count: Int) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg, bottom = Spacing.base),
+        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
