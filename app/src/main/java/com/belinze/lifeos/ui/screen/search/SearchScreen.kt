@@ -21,8 +21,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -30,6 +28,8 @@ import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.History
@@ -93,7 +93,7 @@ private val FILTERS = listOf(
     FilterEntry(SearchTab.Tasks,         "Tasks",      Icons.Outlined.CheckBox),
     FilterEntry(SearchTab.Events,        "Events",     Icons.Outlined.CalendarMonth),
     FilterEntry(SearchTab.Birthdays,     "Birthdays",  Icons.Outlined.CardGiftcard),
-    FilterEntry(SearchTab.Anniversaries, "Anniversary",Icons.Outlined.Favorite),
+    FilterEntry(SearchTab.Anniversaries, "Anniversary", Icons.Outlined.Favorite),
     FilterEntry(SearchTab.Countdowns,    "Countdown",  Icons.Outlined.Timer),
     FilterEntry(SearchTab.Budgets,       "Budgets",    Icons.Outlined.AccountBalance),
     FilterEntry(SearchTab.Recurring,     "Recurring",  Icons.Outlined.Repeat),
@@ -114,8 +114,8 @@ fun SearchScreen(
     val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
     val focusRequester = remember { FocusRequester() }
     var expandedSections by remember {
-        mutableStateOf(setOf("transactions","tasks","events","birthdays","anniversaries",
-            "countdowns","budgets","recurring","bills","goals","incomes","loans"))
+        mutableStateOf(setOf("transactions", "tasks", "events", "birthdays", "anniversaries",
+            "countdowns", "budgets", "recurring", "bills", "goals", "incomes", "loans"))
     }
 
     LaunchedEffect(Unit) {

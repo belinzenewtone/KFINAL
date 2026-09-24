@@ -51,8 +51,8 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
-import com.belinze.lifeos.viewmodel.CategorizeViewModel
 import com.belinze.lifeos.util.formatCurrency
+import com.belinze.lifeos.viewmodel.CategorizeViewModel
 import com.belinze.lifeos.viewmodel.MerchantGroup
 
 private val CATEGORIZE_CATEGORIES = listOf(
@@ -265,4 +265,3 @@ private fun CategoryPickerSheet(
 
 private fun capitalize(value: String): String =
     value.split('_').joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
-

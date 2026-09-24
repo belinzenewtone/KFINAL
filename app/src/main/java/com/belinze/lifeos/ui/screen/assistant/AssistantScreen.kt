@@ -424,15 +424,24 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
                                         onClick = { onActionPress(action) },
                                         label   = { Text(action, style = MaterialTheme.typography.bodySmall) },
                                         colors  = AssistChipDefaults.assistChipColors(
-                                            containerColor = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
-                                                             else MaterialTheme.colorScheme.surface,
-                                            labelColor     = if (isUser) MaterialTheme.colorScheme.onPrimary
-                                                             else MaterialTheme.colorScheme.primary,
+                                            containerColor = if (isUser) {
+                                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
+                                            } else {
+                                                MaterialTheme.colorScheme.surface
+                                            },
+                                            labelColor = if (isUser) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            },
                                         ),
                                         border  = AssistChipDefaults.assistChipBorder(
                                             enabled     = true,
-                                            borderColor = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
-                                                          else MaterialTheme.colorScheme.outlineVariant,
+                                            borderColor = if (isUser) {
+                                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
+                                            } else {
+                                                MaterialTheme.colorScheme.outlineVariant
+                                            },
                                         ),
                                     )
                                 }

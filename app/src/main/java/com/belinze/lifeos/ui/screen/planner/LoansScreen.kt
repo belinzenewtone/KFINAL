@@ -192,7 +192,6 @@ fun LoansScreen(
                         LoanCard(loan = loan, onEdit = { navController.navigate(NavTo.loanForm(loan.id)) })
                     }
                 }
-
             }
         }
     }
