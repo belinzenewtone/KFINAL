@@ -193,48 +193,7 @@ fun AssistantScreen(
             contentPadding      = PaddingValues(top = Spacing.sm, bottom = Spacing.sm),
         ) {
             if (state.messages.isEmpty()) {
-                item {
-                    // Empty state — centred in the message area, 60dp badge (React parity)
-                    Column(
-                        modifier = Modifier
-                            .fillParentMaxHeight()
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.xl),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(60.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f),
-                                    CircleShape,
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(26.dp),
-                            )
-                        }
-                        Spacer(Modifier.height(Spacing.sm))
-                        Text(
-                            "Ask me anything",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                        )
-                        Spacer(Modifier.height(Spacing.sm))
-                        Text(
-                            "I can check your spending, income, budgets, tasks, and transactions.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
+                item { AssistantEmptyState() }
             } else {
                 items(state.messages, key = { it.id }) { message ->
                     ChatBubble(message, onActionPress = ::send)
@@ -339,6 +298,50 @@ fun AssistantScreen(
                 },
             )
         }
+    }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun AssistantEmptyState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.xl, vertical = Spacing.x2l),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0x20 / 255f),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+        Spacer(Modifier.height(Spacing.sm))
+        Text(
+            "Ask me anything",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(Spacing.sm))
+        Text(
+            "I can check your spending, income, budgets, tasks, and transactions.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

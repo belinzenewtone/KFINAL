@@ -54,8 +54,6 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.CategorizeViewModel
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.MerchantGroup
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 private val CATEGORIZE_CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",
@@ -268,8 +266,3 @@ private fun CategoryPickerSheet(
 private fun capitalize(value: String): String =
     value.split('_').joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
 
-private fun formatDateTime(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM d, h:mm a"))
-} catch (_: Exception) {
-    iso?.take(10) ?: ""
-}

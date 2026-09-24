@@ -43,7 +43,18 @@ import com.belinze.lifeos.ui.components.InlineBanner
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
+import com.belinze.lifeos.viewmodel.CsvColumnMapping
 import com.belinze.lifeos.viewmodel.CsvImportViewModel
+
+private fun mappingFor(field: String, m: CsvColumnMapping): String = when (field) {
+    "amount" -> m.amount
+    "merchant" -> m.merchant
+    "date" -> m.date
+    "category" -> m.category
+    "type" -> m.type
+    "status" -> m.status
+    else -> m.description
+}
 
 private val ALL_FIELDS = listOf(
     "amount" to "Amount *",
@@ -122,30 +133,14 @@ fun CsvImportScreen(
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                             item {
                                 FilterChip(
-                                    selected = when (field) {
-                                        "amount" -> state.mapping.amount.isBlank()
-                                        "merchant" -> state.mapping.merchant.isBlank()
-                                        "date" -> state.mapping.date.isBlank()
-                                        "category" -> state.mapping.category.isBlank()
-                                        "type" -> state.mapping.type.isBlank()
-                                        "status" -> state.mapping.status.isBlank()
-                                        else -> state.mapping.description.isBlank()
-                                    },
+                                    selected = mappingFor(field, state.mapping).isBlank(),
                                     onClick = { viewModel.updateMapping(field, "") },
                                     label = { Text("None") },
                                 )
                             }
                             items(state.headers, key = { it }) { header ->
                                 FilterChip(
-                                    selected = when (field) {
-                                        "amount" -> state.mapping.amount == header
-                                        "merchant" -> state.mapping.merchant == header
-                                        "date" -> state.mapping.date == header
-                                        "category" -> state.mapping.category == header
-                                        "type" -> state.mapping.type == header
-                                        "status" -> state.mapping.status == header
-                                        else -> state.mapping.description == header
-                                    },
+                                    selected = mappingFor(field, state.mapping) == header,
                                     onClick = { viewModel.updateMapping(field, header) },
                                     label = { Text(header) },
                                 )

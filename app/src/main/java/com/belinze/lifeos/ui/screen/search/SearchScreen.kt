@@ -244,7 +244,11 @@ fun SearchScreen(
             contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
         ) {
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Transactions) && state.transactions.isNotEmpty()) {
-                item { SectionHeader("Transactions", state.transactions.size, expandedSections.contains("transactions")) { expandedSections = if (expandedSections.contains("transactions")) expandedSections - "transactions" else expandedSections + "transactions" } }
+                item {
+                    SectionHeader("Transactions", state.transactions.size, expandedSections.contains("transactions")) {
+                        expandedSections = if ("transactions" in expandedSections) expandedSections - "transactions" else expandedSections + "transactions"
+                    }
+                }
                 if (expandedSections.contains("transactions")) {
                     items(state.transactions, key = { it.id }) { tx ->
                         SearchRow(
@@ -261,7 +265,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Tasks) && state.tasks.isNotEmpty()) {
-                item { SectionHeader("Tasks", state.tasks.size, expandedSections.contains("tasks")) { expandedSections = if (expandedSections.contains("tasks")) expandedSections - "tasks" else expandedSections + "tasks" } }
+                item {
+                    SectionHeader("Tasks", state.tasks.size, expandedSections.contains("tasks")) {
+                        expandedSections = if ("tasks" in expandedSections) expandedSections - "tasks" else expandedSections + "tasks"
+                    }
+                }
                 if (expandedSections.contains("tasks")) {
                     items(state.tasks, key = { it.id }) { task ->
                         val priorityColor = when (task.priority) {
@@ -282,7 +290,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Events) && state.events.isNotEmpty()) {
-                item { SectionHeader("Events", state.events.size, expandedSections.contains("events")) { expandedSections = if (expandedSections.contains("events")) expandedSections - "events" else expandedSections + "events" } }
+                item {
+                    SectionHeader("Events", state.events.size, expandedSections.contains("events")) {
+                        expandedSections = if ("events" in expandedSections) expandedSections - "events" else expandedSections + "events"
+                    }
+                }
                 if (expandedSections.contains("events")) {
                     items(state.events, key = { it.id }) { event ->
                         SearchRow(
@@ -301,7 +313,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Birthdays) && state.birthdays.isNotEmpty()) {
-                item { SectionHeader("Birthdays", state.birthdays.size, expandedSections.contains("birthdays")) { expandedSections = if (expandedSections.contains("birthdays")) expandedSections - "birthdays" else expandedSections + "birthdays" } }
+                item {
+                    SectionHeader("Birthdays", state.birthdays.size, expandedSections.contains("birthdays")) {
+                        expandedSections = if ("birthdays" in expandedSections) expandedSections - "birthdays" else expandedSections + "birthdays"
+                    }
+                }
                 if (expandedSections.contains("birthdays")) {
                     items(state.birthdays, key = { it.id }) { event ->
                         SearchRow(
@@ -315,7 +331,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Anniversaries) && state.anniversaries.isNotEmpty()) {
-                item { SectionHeader("Anniversaries", state.anniversaries.size, expandedSections.contains("anniversaries")) { expandedSections = if (expandedSections.contains("anniversaries")) expandedSections - "anniversaries" else expandedSections + "anniversaries" } }
+                item {
+                    SectionHeader("Anniversaries", state.anniversaries.size, expandedSections.contains("anniversaries")) {
+                        expandedSections = if ("anniversaries" in expandedSections) expandedSections - "anniversaries" else expandedSections + "anniversaries"
+                    }
+                }
                 if (expandedSections.contains("anniversaries")) {
                     items(state.anniversaries, key = { it.id }) { event ->
                         SearchRow(
@@ -329,7 +349,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Countdowns) && state.countdowns.isNotEmpty()) {
-                item { SectionHeader("Countdowns", state.countdowns.size, expandedSections.contains("countdowns")) { expandedSections = if (expandedSections.contains("countdowns")) expandedSections - "countdowns" else expandedSections + "countdowns" } }
+                item {
+                    SectionHeader("Countdowns", state.countdowns.size, expandedSections.contains("countdowns")) {
+                        expandedSections = if ("countdowns" in expandedSections) expandedSections - "countdowns" else expandedSections + "countdowns"
+                    }
+                }
                 if (expandedSections.contains("countdowns")) {
                     items(state.countdowns, key = { it.id }) { event ->
                         SearchRow(
@@ -343,7 +367,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Budgets) && state.budgets.isNotEmpty()) {
-                item { SectionHeader("Budgets", state.budgets.size, expandedSections.contains("budgets")) { expandedSections = if (expandedSections.contains("budgets")) expandedSections - "budgets" else expandedSections + "budgets" } }
+                item {
+                    SectionHeader("Budgets", state.budgets.size, expandedSections.contains("budgets")) {
+                        expandedSections = if ("budgets" in expandedSections) expandedSections - "budgets" else expandedSections + "budgets"
+                    }
+                }
                 if (expandedSections.contains("budgets")) {
                     items(state.budgets, key = { it.id }) { budget ->
                         SearchRow(
@@ -357,7 +385,11 @@ fun SearchScreen(
             }
 
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Recurring) && state.recurring.isNotEmpty()) {
-                item { SectionHeader("Recurring", state.recurring.size, expandedSections.contains("recurring")) { expandedSections = if (expandedSections.contains("recurring")) expandedSections - "recurring" else expandedSections + "recurring" } }
+                item {
+                    SectionHeader("Recurring", state.recurring.size, expandedSections.contains("recurring")) {
+                        expandedSections = if ("recurring" in expandedSections) expandedSections - "recurring" else expandedSections + "recurring"
+                    }
+                }
                 if (expandedSections.contains("recurring")) {
                     items(state.recurring, key = { it.id }) { rule ->
                         SearchRow(
@@ -372,7 +404,11 @@ fun SearchScreen(
 
             // SE-1: Bills section
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Bills) && state.bills.isNotEmpty()) {
-                item { SectionHeader("Bills", state.bills.size, expandedSections.contains("bills")) { expandedSections = if (expandedSections.contains("bills")) expandedSections - "bills" else expandedSections + "bills" } }
+                item {
+                    SectionHeader("Bills", state.bills.size, expandedSections.contains("bills")) {
+                        expandedSections = if ("bills" in expandedSections) expandedSections - "bills" else expandedSections + "bills"
+                    }
+                }
                 if (expandedSections.contains("bills")) {
                     items(state.bills, key = { it.id }) { bill ->
                         SearchRow(
@@ -399,7 +435,11 @@ fun SearchScreen(
 
             // SE-2: Goals section
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Goals) && state.goals.isNotEmpty()) {
-                item { SectionHeader("Goals", state.goals.size, expandedSections.contains("goals")) { expandedSections = if (expandedSections.contains("goals")) expandedSections - "goals" else expandedSections + "goals" } }
+                item {
+                    SectionHeader("Goals", state.goals.size, expandedSections.contains("goals")) {
+                        expandedSections = if ("goals" in expandedSections) expandedSections - "goals" else expandedSections + "goals"
+                    }
+                }
                 if (expandedSections.contains("goals")) {
                     items(state.goals, key = { it.id }) { goal ->
                         SearchRow(
@@ -425,7 +465,11 @@ fun SearchScreen(
 
             // SE-3: Income section
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Incomes) && state.incomes.isNotEmpty()) {
-                item { SectionHeader("Income", state.incomes.size, expandedSections.contains("incomes")) { expandedSections = if (expandedSections.contains("incomes")) expandedSections - "incomes" else expandedSections + "incomes" } }
+                item {
+                    SectionHeader("Income", state.incomes.size, expandedSections.contains("incomes")) {
+                        expandedSections = if ("incomes" in expandedSections) expandedSections - "incomes" else expandedSections + "incomes"
+                    }
+                }
                 if (expandedSections.contains("incomes")) {
                     items(state.incomes, key = { it.id }) { income ->
                         SearchRow(
@@ -452,7 +496,11 @@ fun SearchScreen(
 
             // SE-4: Loans section
             if ((state.activeTab == SearchTab.All || state.activeTab == SearchTab.Loans) && state.loans.isNotEmpty()) {
-                item { SectionHeader("Loans", state.loans.size, expandedSections.contains("loans")) { expandedSections = if (expandedSections.contains("loans")) expandedSections - "loans" else expandedSections + "loans" } }
+                item {
+                    SectionHeader("Loans", state.loans.size, expandedSections.contains("loans")) {
+                        expandedSections = if ("loans" in expandedSections) expandedSections - "loans" else expandedSections + "loans"
+                    }
+                }
                 if (expandedSections.contains("loans")) {
                     items(state.loans, key = { it.id }) { loan ->
                         SearchRow(
