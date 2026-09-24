@@ -33,9 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowCircleUp
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -189,8 +189,8 @@ fun AssistantScreen(
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.screenHorizontal),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-            contentPadding      = PaddingValues(bottom = Spacing.bottomNavSafeArea),
+            verticalArrangement = Arrangement.spacedBy(Spacing.base),
+            contentPadding      = PaddingValues(top = Spacing.sm, bottom = Spacing.sm),
         ) {
             if (state.messages.isEmpty()) {
                 item {
@@ -242,13 +242,11 @@ fun AssistantScreen(
             }
 
             // Typing indicator
-            if (state.isLoading) {
+            if (state.messages.isNotEmpty() && state.isLoading) {
                 item {
                     TypingIndicator()
                 }
             }
-
-            item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
         }
 
         // ── Suggested prompts — pinned below the list, above the input. Matches
@@ -284,6 +282,14 @@ fun AssistantScreen(
                             onClick = { send(prompt) },
                             label = { Text(prompt, maxLines = 1) },
                             modifier = Modifier.wrapContentWidth(),
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                labelColor     = MaterialTheme.colorScheme.primary,
+                            ),
+                            border = AssistChipDefaults.assistChipBorder(
+                                enabled     = true,
+                                borderColor = MaterialTheme.colorScheme.outlineVariant,
+                            ),
                         )
                     }
                 }
@@ -302,9 +308,9 @@ fun AssistantScreen(
             val canSend = inputText.isNotBlank() && !state.isLoading
             OutlinedTextField(
                 value             = inputText,
-                onValueChange     = { inputText = it },
+                onValueChange     = { if (it.length <= 500) inputText = it },
                 modifier          = Modifier.fillMaxWidth(),
-                placeholder       = { Text("Message LifeOS…", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                placeholder       = { Text("Message LifeOS...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine        = false,
                 maxLines          = 4,
                 keyboardOptions   = KeyboardOptions(imeAction = ImeAction.Send),
@@ -321,8 +327,9 @@ fun AssistantScreen(
                     } else {
                         IconButton(onClick = { send(inputText) }, enabled = canSend) {
                             Icon(
-                                imageVector        = Icons.Outlined.Send,
+                                imageVector        = Icons.Outlined.ArrowCircleUp,
                                 contentDescription = "Send",
+                                modifier           = Modifier.size(26.dp),
                                 tint               = if (canSend) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
@@ -447,7 +454,7 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
 private fun TypingIndicator() {
     // Static three-dot cluster with decreasing opacity — 1:1 with React's
     // TypingIndicator (dots do not bounce; opacity 1 / 0.6 / 0.3).
-    Row(horizontalArrangement = Arrangement.Start) {
+    Row(modifier = Modifier.padding(top = Spacing.sm), horizontalArrangement = Arrangement.Start) {
         Row(
             modifier             = Modifier
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
