@@ -261,7 +261,7 @@ fun AssistantScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = Spacing.screenHorizontal, top = Spacing.xs, bottom = Spacing.sm),
+                .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.xs, bottom = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val canSend = inputText.isNotBlank() && !state.isLoading

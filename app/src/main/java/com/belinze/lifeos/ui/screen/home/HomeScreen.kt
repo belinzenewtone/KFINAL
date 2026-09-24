@@ -110,7 +110,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.screenHorizontal, top = Spacing.sm, bottom = Spacing.bottomNavSafeArea),
+                    .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.sm, bottom = Spacing.bottomNavSafeArea),
             ) {
                 // ── Header row ────────────────────────────────────────────────
                 Row(
