@@ -89,9 +89,10 @@ fun WeekReviewScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
-                        horizontal = Spacing.screenHorizontal,
-                        top        = Spacing.sm,
-                        bottom     = Spacing.lg,
+                        start  = Spacing.screenHorizontal,
+                        end    = Spacing.screenHorizontal,
+                        top    = Spacing.sm,
+                        bottom = Spacing.lg,
                     ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
