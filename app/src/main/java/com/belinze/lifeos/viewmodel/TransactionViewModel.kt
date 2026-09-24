@@ -65,7 +65,8 @@ data class TransactionFilters(
 data class TransactionUiState(
     val filters:       TransactionFilters = TransactionFilters(),
     val monthTotals:   MonthTotals?       = null,
-    val uncategorized: Int                = 0,
+    val uncategorized:       Int    = 0,
+    val uncategorizedAmount: Double = 0.0,
     val feeTotal:      Double             = 0.0,
     val todayExpense:  Double             = 0.0,
     val weekExpense:   Double             = 0.0,
@@ -250,7 +251,8 @@ class TransactionViewModel
 
             val totals   = dao.getMonthTotals(monthKey)
             val feeTotal = dao.getFeeTotal(startIso, endIso) ?: 0.0
-            val uncat    = dao.countUncategorized()
+            val uncat       = dao.countUncategorized()
+            val uncatAmount = dao.sumUncategorizedAmount()
 
             // Today / week spend for the Finance hero card sub-metrics
             val today         = java.time.LocalDate.now()
@@ -271,7 +273,8 @@ class TransactionViewModel
                 it.copy(
                     monthTotals   = totals,
                     feeTotal      = feeTotal,
-                    uncategorized = uncat,
+                    uncategorized       = uncat,
+                    uncategorizedAmount = uncatAmount,
                     todayExpense  = todayExpense,
                     weekExpense   = weekExpense,
                     netCashFlow   = netCashFlow,

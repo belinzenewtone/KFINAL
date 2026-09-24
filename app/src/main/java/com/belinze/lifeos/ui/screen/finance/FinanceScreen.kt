@@ -144,7 +144,8 @@ fun FinanceScreen(
     // insights row, and filter chips stay composed during long scroll sessions.
     val monthTotals     by remember { derivedStateOf { state.monthTotals } }
     val feeTotal        by remember { derivedStateOf { state.feeTotal } }
-    val uncategorized   by remember { derivedStateOf { state.uncategorized } }
+    val uncategorized       by remember { derivedStateOf { state.uncategorized } }
+    val uncategorizedAmount by remember { derivedStateOf { state.uncategorizedAmount } }
     val activeFilters   by remember { derivedStateOf { state.filters } }
     val activeBudgetsDs by remember { derivedStateOf { budgetState.budgets.filter { it.budget.isActive != 0 } } }
     val activeLoansDs   by remember { derivedStateOf { plannerState.loans.filter { it.status == "active" } } }
@@ -421,7 +422,7 @@ fun FinanceScreen(
                 if (uncategorized > 0) {
                     item {
                         InlineBanner(
-                            message  = "$uncategorized uncategorized transaction${if (uncategorized == 1) "" else "s"}",
+                            message  = "$uncategorized uncategorized transaction${if (uncategorized == 1) "" else "s"} · ${formatCurrency(uncategorizedAmount, decimals = 0)} missing from charts",
                             tone     = BannerTone.Info,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -643,7 +644,7 @@ fun FinanceScreen(
             onClick        = { navController.navigate(Route.TRANSACTION_FORM) },
             modifier       = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = Spacing.lg, bottom = Spacing.bottomNavSafeArea),
+                .padding(end = Spacing.lg, bottom = Spacing.lg),
             containerColor = MaterialTheme.colorScheme.primary,
         ) {
             Icon(

@@ -33,6 +33,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,6 +74,7 @@ fun TransactionFormScreen(
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !transactionId.isNullOrEmpty()
+    val scope  = rememberCoroutineScope()
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -249,7 +253,7 @@ fun TransactionFormScreen(
             }
 
             Button(
-                onClick  = { viewModel.saveForm { navController.popBackStack() } },
+                onClick  = { viewModel.saveForm { scope.launch { delay(400); navController.popBackStack() } } },
                 enabled  = !formState.isSaving,
                 shape    = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),

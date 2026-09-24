@@ -151,7 +151,7 @@ private fun MerchantGroupCard(
             ) {
                 Text(
                     group.merchant,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
@@ -159,7 +159,7 @@ private fun MerchantGroupCard(
                     onClick = {},
                     label = {
                         Text(
-                            "${group.count}",
+                            "${group.count} transaction${if (group.count == 1) "" else "s"}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

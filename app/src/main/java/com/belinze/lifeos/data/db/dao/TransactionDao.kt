@@ -131,6 +131,13 @@ interface TransactionDao {
     suspend fun countUncategorized(): Int
 
     @Query("""
+        SELECT COALESCE(SUM(ABS(amount)), 0.0) FROM transactions
+        WHERE deleted_at IS NULL
+          AND (category IS NULL OR category = 'uncategorized')
+    """)
+    suspend fun sumUncategorizedAmount(): Double
+
+    @Query("""
         SELECT * FROM transactions
         WHERE deleted_at IS NULL
           AND (category IS NULL OR category = 'uncategorized')

@@ -41,7 +41,7 @@ import com.belinze.lifeos.viewmodel.FeeAnalyticsViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-private val WARNING = Color(0xFFF5CB5C)
+private val WARNING = Color(0xFFFBBF24)
 
 @Composable
 fun FeeAnalyticsScreen(

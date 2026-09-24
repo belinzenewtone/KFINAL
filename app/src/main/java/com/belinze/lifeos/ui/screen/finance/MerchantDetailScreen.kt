@@ -133,7 +133,7 @@ fun MerchantDetailScreen(
                     GlassCard {
                         Column {
                             state.transactions.forEachIndexed { i, tx ->
-                                val isIncome = tx.transactionType?.uppercase() in setOf("RECEIVED", "DEPOSIT", "INCOME")
+                                val isIncome = tx.transactionType?.uppercase() in setOf("RECEIVED", "DEPOSIT")
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm),
                                     verticalAlignment = Alignment.CenterVertically,
