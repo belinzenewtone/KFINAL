@@ -373,13 +373,14 @@ private fun FormPage(
                     Icon(Icons.Outlined.Delete, contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                 }
-            }
-            TextButton(onClick = onSave, enabled = !form.isSaving && form.title.isNotBlank()) {
-                if (form.isSaving) {
-                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary)
-                } else {
-                    Text("Save", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            } else {
+                TextButton(onClick = onSave, enabled = !form.isSaving && form.title.isNotBlank()) {
+                    if (form.isSaving) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary)
+                    } else {
+                        Text("Save", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -476,6 +477,22 @@ private fun FormPage(
             if (form.error != null) {
                 Text(form.error!!, color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
+            }
+
+            if (isEdit) {
+                Spacer(Modifier.height(Spacing.xl))
+                Button(
+                    onClick  = onSave,
+                    enabled  = !form.isSaving && form.title.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (form.isSaving) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("Save")
+                    }
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

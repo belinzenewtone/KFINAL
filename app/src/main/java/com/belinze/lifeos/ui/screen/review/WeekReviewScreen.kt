@@ -40,6 +40,7 @@ private val COLOR_NORMAL = Color(0xFF22C55E)
 private val COLOR_HIGH   = Color(0xFFF59E0B)
 private val COLOR_PEAK   = Color(0xFFEF4444)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeekReviewScreen(
     navController: NavHostController,
@@ -51,7 +52,10 @@ fun WeekReviewScreen(
     val firstName = pref.profileName.split(" ").firstOrNull()?.ifBlank { null } ?: "there"
     val greeting  = "${state.greeting}, $firstName"
 
-    // ViewModel.init already calls load(); no second launch needed.
+    var isPullingRefresh by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isPullingRefresh = false
+    }
 
     PageScaffold(
         title      = "Weekly Review",
@@ -59,7 +63,7 @@ fun WeekReviewScreen(
         scrollable = false,
     ) {
         when {
-            state.isLoading -> {
+            state.isLoading && !isPullingRefresh -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
@@ -76,6 +80,11 @@ fun WeekReviewScreen(
                 }
             }
             else -> {
+                PullToRefreshBox(
+                    isRefreshing = isPullingRefresh,
+                    onRefresh    = { isPullingRefresh = true; viewModel.load() },
+                    modifier     = Modifier.fillMaxSize(),
+                ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
@@ -200,6 +209,7 @@ fun WeekReviewScreen(
 
                     item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                 }
+                } // PullToRefreshBox
             }
         }
     }
