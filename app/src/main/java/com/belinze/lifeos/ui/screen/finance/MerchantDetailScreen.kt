@@ -26,13 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
-import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.MerchantDetailViewModel
@@ -65,20 +65,23 @@ fun MerchantDetailScreen(
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.x2l),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
                 Icon(Icons.Outlined.Receipt, contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No transactions", style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center)
                 Spacer(Modifier.height(Spacing.sm))
                 Text("No transactions found for this merchant.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center)
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().then(rememberFormFadeIn()),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
             ) {
                 item {
@@ -170,7 +173,6 @@ fun MerchantDetailScreen(
                     }
                 }
 
-                item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
         }
     }

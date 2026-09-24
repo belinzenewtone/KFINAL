@@ -17,10 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.outlined.Message
-import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,8 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -110,8 +110,12 @@ fun ImportSmsSheet(
                         color    = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = Spacing.sm),
                     )
+                    val sortedDetected = detected.sortedByDescending {
+                        it.institutionId.equals("mpesa", ignoreCase = true) ||
+                        it.institutionId.contains("mpesa", ignoreCase = true)
+                    }
                     LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                        items(detected, key = { it.institutionId }) { inst ->
+                        items(sortedDetected, key = { it.institutionId }) { inst ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -124,10 +128,10 @@ fun ImportSmsSheet(
                                     color    = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f),
                                 )
-                                SuggestionChip(
+                                AssistChip(
                                     onClick = {},
                                     label   = { Text("${inst.count} msgs", fontSize = 11.sp) },
-                                    border  = SuggestionChipDefaults.suggestionChipBorder(
+                                    border  = AssistChipDefaults.assistChipBorder(
                                         enabled    = true,
                                         borderColor = Color.White.copy(alpha = 0.12f),
                                     ),
@@ -146,12 +150,12 @@ fun ImportSmsSheet(
                         OutlinedButton(
                             onClick  = { viewModel.cancelDetection(); selectedMode = null; onDismiss() },
                             modifier = Modifier.weight(1f),
-                            shape    = RoundedCornerShape(20.dp),
+                            shape    = RoundedCornerShape(12.dp),
                         ) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
                         Button(
                             onClick  = { viewModel.confirmBankImport(); selectedMode = null; onDismiss() },
                             modifier = Modifier.weight(1f),
-                            shape    = RoundedCornerShape(20.dp),
+                            shape    = RoundedCornerShape(12.dp),
                         ) { Text("Import All") }
                     }
                 }
@@ -240,9 +244,9 @@ fun ImportSmsSheet(
                         }
                     } else {
                         listOf(
-                            Triple("mpesa_only", Icons.Outlined.Message,        "M-Pesa Only"),
-                            Triple("banks_only", Icons.Outlined.AccountBalance,  "Banks Only"),
-                            Triple("all",        Icons.Outlined.SwapHoriz,       "M-Pesa + Banks"),
+                            Triple("mpesa_only", Icons.Outlined.Sms,                             "M-Pesa Only"),
+                            Triple("banks_only", Icons.Outlined.AccountBalance,                   "Banks Only"),
+                            Triple("all",        Icons.AutoMirrored.Outlined.CompareArrows,       "M-Pesa + Banks"),
                         ).forEach { (mode, icon, label) ->
                             OutlinedButton(
                                 onClick  = { selectedMode = mode },
