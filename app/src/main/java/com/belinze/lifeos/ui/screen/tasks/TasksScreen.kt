@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,8 +61,8 @@ import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.TaskViewModel
 
-private val SUCCESS = Color(0xFF7BC47B)
-private val WARNING = Color(0xFFF5CB5C)
+private val SUCCESS = Color(0xFF4ADE80)
+private val WARNING = Color(0xFFFBBF24)
 private const val COMPLETED_LIMIT = 20
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +74,7 @@ fun TasksScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
+    var taskToDelete by remember { mutableStateOf<TaskEntity?>(null) }
 
     val filtered = remember(state.tasks, query) {
         if (query.isBlank()) {
@@ -110,7 +113,7 @@ fun TasksScreen(
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = Spacing.lg),
+                .padding(bottom = Spacing.sm),
         )
 
         if (filtered.isEmpty()) {
@@ -119,7 +122,7 @@ fun TasksScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Icon(Icons.Outlined.CheckCircle, contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(48.dp))
+                    tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(36.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No tasks found", style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -132,19 +135,19 @@ fun TasksScreen(
                 if (urgent.isNotEmpty()) {
                     item { PrioritySectionHeader("Urgent", MaterialTheme.colorScheme.error, urgent.size) }
                     items(urgent, key = { it.id }) { task ->
-                        TaskCard(task, MaterialTheme.colorScheme.error, viewModel, navController)
+                        TaskCard(task, MaterialTheme.colorScheme.error, viewModel, navController) { taskToDelete = it }
                     }
                 }
                 if (important.isNotEmpty()) {
                     item { PrioritySectionHeader("Important", WARNING, important.size) }
                     items(important, key = { it.id }) { task ->
-                        TaskCard(task, WARNING, viewModel, navController)
+                        TaskCard(task, WARNING, viewModel, navController) { taskToDelete = it }
                     }
                 }
                 if (other.isNotEmpty()) {
                     item { PrioritySectionHeader("Other", MaterialTheme.colorScheme.primary, other.size) }
                     items(other, key = { it.id }) { task ->
-                        TaskCard(task, MaterialTheme.colorScheme.primary, viewModel, navController)
+                        TaskCard(task, MaterialTheme.colorScheme.primary, viewModel, navController) { taskToDelete = it }
                     }
                 }
                 if (completed.isNotEmpty()) {
@@ -158,7 +161,7 @@ fun TasksScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
                             Box(
-                                modifier = Modifier.size(width = 4.dp, height = 18.dp)
+                                modifier = Modifier.size(width = 4.dp, height = 14.dp)
                                     .background(MaterialTheme.colorScheme.outline, CircleShape),
                             )
                             Text("Completed", style = MaterialTheme.typography.titleMedium,
@@ -176,12 +179,30 @@ fun TasksScreen(
                     }
                     if (completedExpanded) {
                         items(completed, key = { it.id }) { task ->
-                            TaskCard(task, MaterialTheme.colorScheme.outline, viewModel, navController)
+                            TaskCard(task, MaterialTheme.colorScheme.outline, viewModel, navController) { taskToDelete = it }
                         }
                     }
                 }
             }
         }
+    }
+
+    // Delete confirmation — matches React's useConfirm dialog on swipe-to-delete
+    taskToDelete?.let { task ->
+        AlertDialog(
+            onDismissRequest = { taskToDelete = null },
+            title = { Text("Delete task?") },
+            text  = { Text("\"${task.title}\" will be removed.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.softDelete(task.id)
+                    taskToDelete = null
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { taskToDelete = null }) { Text("Cancel") }
+            },
+        )
     }
 }
 
@@ -193,7 +214,7 @@ private fun PrioritySectionHeader(title: String, color: Color, count: Int) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Box(
-            modifier = Modifier.size(width = 4.dp, height = 18.dp).background(color, CircleShape),
+            modifier = Modifier.size(width = 4.dp, height = 14.dp).background(color, CircleShape),
         )
         Text(title, style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
@@ -208,6 +229,7 @@ private fun TaskCard(
     color: Color,
     viewModel: TaskViewModel,
     navController: NavHostController,
+    onDelete: (TaskEntity) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isTimerActive = state.activeTimerTaskId == task.id
@@ -215,11 +237,10 @@ private fun TaskCard(
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { newValue ->
             when (newValue) {
-                SwipeToDismissBoxValue.StartToEnd -> viewModel.complete(task.id)
-                SwipeToDismissBoxValue.EndToStart -> viewModel.softDelete(task.id)
-                SwipeToDismissBoxValue.Settled -> {}
+                SwipeToDismissBoxValue.StartToEnd -> { viewModel.complete(task.id); true }
+                SwipeToDismissBoxValue.EndToStart -> { onDelete(task); false }
+                SwipeToDismissBoxValue.Settled    -> true
             }
-            true
         },
     )
 

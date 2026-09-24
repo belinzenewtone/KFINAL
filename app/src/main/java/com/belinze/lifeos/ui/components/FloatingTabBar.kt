@@ -186,52 +186,42 @@ private fun TabButton(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            horizontalAlignment   = Alignment.CenterHorizontally,
-            verticalArrangement   = Arrangement.spacedBy(2.dp),  // gap 2dp between icon and label
-            modifier              = Modifier.graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),  // gap 2dp between icon and label
         ) {
-            // Active pill background (fades in/out behind icon)
-            Box(contentAlignment = Alignment.Center) {
-                // Pill background
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = pillAlpha),
-                            shape = ShapePill,
-                        )
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
-                ) {
-                    // Icon
-                    Icon(
-                        imageVector        = if (isSelected) tab.iconFilled else tab.iconOutlined,
-                        contentDescription = tab.label,
-                        tint               = if (isSelected) {
-                            primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier           = Modifier.size(TabBarDimens.iconSize),   // 24dp
-                    )
-                }
-            }
-
-            // Label
-            Text(
-                text       = tab.label,
-                fontSize   = TabBarDimens.labelSize.sp,                // 10sp
-                fontWeight = FontWeight.Medium,                         // weight 500
-                color      = if (isSelected) {
-                    primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                textAlign  = TextAlign.Center,
-                lineHeight = 13.sp,
-                maxLines   = 1,
+            // Icon with spring scale (scale on icon only, matching React's separate Animated.View)
+            Icon(
+                imageVector        = if (isSelected) tab.iconFilled else tab.iconOutlined,
+                contentDescription = tab.label,
+                tint               = if (isSelected) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier           = Modifier
+                    .size(TabBarDimens.iconSize)   // 20dp
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
             )
+
+            // Label pill — pill fades in/out around label text (matching React's labelPill)
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = pillAlpha),
+                        shape = ShapePill,
+                    )
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text       = tab.label,
+                    fontSize   = TabBarDimens.labelSize.sp,   // 10sp
+                    fontWeight = FontWeight.Medium,            // weight 500
+                    color      = if (isSelected) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign  = TextAlign.Center,
+                    lineHeight = 13.sp,
+                    maxLines   = 1,
+                )
+            }
         }
     }
 }

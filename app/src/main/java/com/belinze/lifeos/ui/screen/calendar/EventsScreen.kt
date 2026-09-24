@@ -78,7 +78,7 @@ fun EventsScreen(
             placeholder = { Text("Search events...") },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
         )
 
         if (upcoming.isEmpty()) {

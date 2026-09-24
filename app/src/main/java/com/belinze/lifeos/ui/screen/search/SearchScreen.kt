@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Receipt
@@ -146,7 +147,7 @@ fun SearchScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(Icons.Outlined.Search, contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(48.dp))
+                        tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(36.dp))
                     Spacer(Modifier.height(Spacing.sm))
                     Text("Search everything", style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface)
@@ -200,6 +201,9 @@ fun SearchScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.x4l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                Icon(Icons.Outlined.ErrorOutline, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(48.dp))
+                Spacer(Modifier.height(Spacing.sm))
                 Text("No results", style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Text("Try different keywords or adjust filters.",

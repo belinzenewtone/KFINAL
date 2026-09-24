@@ -22,7 +22,7 @@ object Spacing {
 
     /**
      * 100 dp — bottom content padding on every scrollable screen.
-     * Ensures content is not obscured by the floating tab bar (58 dp height
+     * Ensures content is not obscured by the floating tab bar (48 dp height
      * + its bottom offset from the safe area).
      */
     val bottomNavSafeArea = 100.dp
@@ -33,10 +33,10 @@ object Spacing {
 // ─────────────────────────────────────────────────────────────────────────────
 
 object TabBarDimens {
-    val height       = 58.dp
+    val height       = 48.dp
     val borderRadius = 24.dp      // ShapeXl
     val sideInset    = 12.dp      // Spacing.screenHorizontal
-    val iconSize     = 24.dp
+    val iconSize     = 20.dp
     const val labelSize = 10          // sp (Spacing.xs - 2 in the RN version = 10 sp)
 }
 

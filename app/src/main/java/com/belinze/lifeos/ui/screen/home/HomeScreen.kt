@@ -1,10 +1,8 @@
 package com.belinze.lifeos.ui.screen.home
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,10 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,7 +65,6 @@ import java.util.Locale
 // 1:1 port of src/screens/home/HomeScreen.tsx.
 //
 // Layout (top-to-bottom):
-//   ‣ Aurora glow (3 radial rings + linear gradient — pointer-events none)
 //   ‣ TopBanner for errors
 //   ‣ Header row: "Today" + date + profile button
 //   ‣ Focus section: "Daily focus" eyebrow, greeting headline, subtitle
@@ -88,7 +81,6 @@ fun HomeScreen(
     eventViewModel:       EventViewModel       = hiltViewModel(),
     profileViewModel:     ProfileViewModel     = hiltViewModel(),
 ) {
-    val isDark       = isSystemInDarkTheme()
     val txState      by transactionViewModel.uiState.collectAsStateWithLifecycle()
     val taskState    by taskViewModel.uiState.collectAsStateWithLifecycle()
     val eventState   by eventViewModel.uiState.collectAsStateWithLifecycle()
@@ -108,16 +100,7 @@ fun HomeScreen(
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH))
     }
 
-    val bgGrad = if (isDark) {
-        Brush.verticalGradient(listOf(Color(0xFF0A0A0B), Color(0xFF0D1117), Color(0xFF0A0A0B)))
-    } else {
-        Brush.verticalGradient(listOf(Color(0xFFE8EDF3), Color(0xFFDDE4EE), Color(0xFFE8EDF3)))
-    }
-
-    Box(modifier = Modifier.fillMaxSize().drawBehind { drawRect(brush = bgGrad) }) {
-        // ── Aurora glow rings (non-interactive, behind content) ───────────────
-        AuroraGlow(isDark = isDark)
-
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -159,7 +142,7 @@ fun HomeScreen(
                             imageVector        = Icons.Outlined.Person,
                             contentDescription = "Profile",
                             tint               = MaterialTheme.colorScheme.onSurface,
-                            modifier           = Modifier.size(20.dp),
+                            modifier           = Modifier.size(22.dp),
                         )
                     }
                 }
@@ -231,31 +214,6 @@ fun HomeScreen(
                 .align(Alignment.TopCenter)
                 .windowInsetsPadding(WindowInsets.statusBars),
         )
-    }
-}
-
-// ─── Aurora glow (pointer-events none in RN) ─────────────────────────────────
-
-@Composable
-private fun AuroraGlow(isDark: Boolean) {
-    val primary = if (isDark) Color(0xFF57B9FF) else Color(0xFF0369A1)
-    val teal    = if (isDark) Color(0xFF5EEAD4) else Color(0xFF0D9488)
-
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(420.dp),
-    ) {
-        val w = size.width
-        // Ring 1 (top-right, primary) — top: -140, right: -90, size: 340
-        drawCircle(primary.copy(alpha = if (isDark) 0.08f else 0.05f),
-            radius = 170.dp.toPx(), center = Offset(w + 90.dp.toPx() - 170.dp.toPx(), -140.dp.toPx() + 170.dp.toPx()))
-        // Ring 2 (top-right, primary) — top: -100, right: -50, size: 250
-        drawCircle(primary.copy(alpha = if (isDark) 0.09f else 0.06f),
-            radius = 125.dp.toPx(), center = Offset(w + 50.dp.toPx() - 125.dp.toPx(), -100.dp.toPx() + 125.dp.toPx()))
-        // Ring 3 (left, teal) — top: 60, left: -120, size: 280
-        drawCircle(teal.copy(alpha = if (isDark) 0.05f else 0.04f),
-            radius = 140.dp.toPx(), center = Offset(-120.dp.toPx() + 140.dp.toPx(), 60.dp.toPx() + 140.dp.toPx()))
     }
 }
 
