@@ -48,7 +48,11 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -187,6 +191,16 @@ fun LoanFormScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+            OutlinedTextField(
+                value = form.totalRepaidKes,
+                onValueChange = { viewModel.updateLoanTotalRepaid(it) },
+                label = { Text("Total repaid") },
+                placeholder = { Text("0.00") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = form.drawDate.take(10),
@@ -209,16 +223,6 @@ fun LoanFormScreen(
                         ) { showDatePicker = true },
                 )
             }
-
-            OutlinedTextField(
-                value = form.totalRepaidKes,
-                onValueChange = { viewModel.updateLoanTotalRepaid(it) },
-                label = { Text("Total repaid") },
-                placeholder = { Text("0.00") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
 
             var showRepayDatePicker by remember { mutableStateOf(false) }
             val repayDatePickerState = rememberDatePickerState(
@@ -296,6 +300,7 @@ fun LoanFormScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = androidx.compose.material3.ripple(),
                         ) {
+                            Haptics.light()
                             val next = LOAN_STATUSES[(LOAN_STATUSES.indexOf(form.status).let { if (it < 0) 0 else it } + 1) % LOAN_STATUSES.size]
                             viewModel.updateLoanStatus(next)
                         }
@@ -310,11 +315,11 @@ fun LoanFormScreen(
 
                 Button(
                     onClick = {
-                        // CC-3: banner + delayed navigation
+                        Haptics.light()
                         viewModel.saveLoan {
                             successMsg = if (isEdit) "Loan updated" else "Loan added"
                             scope.launch {
-                                delay(1200)
+                                delay(400)
                                 navController.popBackStack()
                             }
                         }
@@ -322,15 +327,17 @@ fun LoanFormScreen(
                     enabled = !form.isSaving,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(
-                        if (form.isSaving) {
-                            "Saving…"
-                        } else if (isEdit) {
-                            "Update Loan"
-                        } else {
-                            "Add Loan"
-                        },
-                    )
+                    if (form.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(Modifier.width(Spacing.xs))
+                        Text("Saving…")
+                    } else {
+                        Text(if (isEdit) "Update Loan" else "Add Loan")
+                    }
                 }
             }
 

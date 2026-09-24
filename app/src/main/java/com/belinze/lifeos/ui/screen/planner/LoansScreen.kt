@@ -146,7 +146,7 @@ fun LoansScreen(
                         Text("Net Outstanding", style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                         Text(formatCurrency(netOutstanding),
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.titleLarge,
                             color = if (netOutstanding > 0) WARNING else SUCCESS,
                             modifier = Modifier.padding(top = Spacing.xs))
                         Text(
@@ -165,7 +165,7 @@ fun LoansScreen(
                 if (openLoans.isNotEmpty()) {
                     item {
                         Text("Open Draws", style = MaterialTheme.typography.labelLarge,
-                            color = WARNING, modifier = Modifier.padding(bottom = Spacing.sm))
+                            color = WARNING, modifier = Modifier.padding(top = Spacing.xs, bottom = Spacing.sm))
                     }
                     items(openLoans, key = { it.id }) { loan ->
                         LoanCard(
@@ -179,6 +179,8 @@ fun LoansScreen(
 
                 if (closedLoans.isNotEmpty()) {
                     item {
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant))
                         Spacer(Modifier.height(Spacing.base))
                         Text("Repaid", style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -236,6 +238,7 @@ fun LoansScreen(
                                 payAmount = ""
                             }
                         } else {
+                            banner = "Enter a positive repayment amount"
                             payLoanId = null
                             payAmount = ""
                         }

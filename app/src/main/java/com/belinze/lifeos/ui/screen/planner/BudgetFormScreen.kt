@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -52,6 +53,7 @@ import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.BudgetViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -234,13 +236,13 @@ fun BudgetFormScreen(
                         }
                     }
 
-                    // CC-3: show banner then navigate
                     Button(
                         onClick = {
+                            Haptics.light()
                             viewModel.saveForm {
                                 scope.launch {
                                     successMsg = if (isEdit) "Budget updated" else "Budget added"
-                                    delay(1200)
+                                    delay(400)
                                     navController.popBackStack()
                                 }
                             }
@@ -250,10 +252,12 @@ fun BudgetFormScreen(
                     ) {
                         if (form.isSaving) {
                             CircularProgressIndicator(
-                                modifier    = Modifier.size(18.dp),
+                                modifier    = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
                                 color       = MaterialTheme.colorScheme.onPrimary,
                             )
+                            Spacer(Modifier.width(Spacing.xs))
+                            Text("Saving…")
                         } else {
                             Text(if (isEdit) "Update Budget" else "Save Budget")
                         }

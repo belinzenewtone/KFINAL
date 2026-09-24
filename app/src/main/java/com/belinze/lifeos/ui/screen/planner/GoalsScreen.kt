@@ -18,11 +18,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.AddCircleOutline
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -119,7 +119,7 @@ fun GoalsScreen(
                     modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Outlined.Flag, contentDescription = null,
+                    Icon(Icons.Filled.Flag, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
                 Spacer(Modifier.height(Spacing.base))
@@ -149,7 +149,6 @@ fun GoalsScreen(
                         )
                     }
                 }
-                item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
         }
     }
@@ -186,6 +185,8 @@ fun GoalsScreen(
                             } else {
                                 "Logged ${formatCurrency(delta)} · ${goal.title}"
                             }
+                        } else {
+                            banner = "Enter a positive amount"
                         }
                         logGoalId = null
                         logAmount = ""
@@ -258,11 +259,11 @@ private fun GoalCard(
             Spacer(Modifier.weight(1f))
             if (!isCompleted) {
                 IconButton(onClick = onLogProgress, modifier = Modifier.size(30.dp)) {
-                    Icon(Icons.Outlined.AddCircleOutline, contentDescription = "Log progress",
+                    Icon(Icons.Filled.AddCircle, contentDescription = "Log progress",
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                 }
                 IconButton(onClick = onComplete, modifier = Modifier.size(30.dp)) {
-                    Icon(Icons.Outlined.CheckCircle, contentDescription = "Mark complete",
+                    Icon(Icons.Filled.CheckCircle, contentDescription = "Mark complete",
                         tint = SUCCESS, modifier = Modifier.size(22.dp))
                 }
             }

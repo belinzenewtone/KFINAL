@@ -50,7 +50,11 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -83,14 +87,6 @@ fun GoalFormScreen(
         targetValue = if (contentVisible) 1f else 0f,
         animationSpec = tween(300),
         label = "formFadeIn",
-    )
-
-    TopBanner(
-        visible       = successMsg != null,
-        message       = successMsg ?: "",
-        tone          = BannerTone.Success,
-        onDismiss     = { successMsg = null },
-        autoDismissMs = 2000,
     )
 
     var showDeadlinePicker by remember { mutableStateOf(false) }
@@ -156,6 +152,15 @@ fun GoalFormScreen(
     PageScaffold(
         title = if (isEdit) "Edit Goal" else "Add Goal",
         onBack = { navController.popBackStack() },
+        topBanner = {
+            TopBanner(
+                visible       = successMsg != null,
+                message       = successMsg ?: "",
+                tone          = BannerTone.Success,
+                onDismiss     = { successMsg = null },
+                autoDismissMs = 2000,
+            )
+        },
         actions = {
             if (isEdit) {
                 IconButton(onClick = { showDeleteConfirm = true }) {
@@ -270,11 +275,11 @@ fun GoalFormScreen(
 
                 Button(
                     onClick = {
-                        // CC-3: success banner + delayed navigation
+                        Haptics.light()
                         viewModel.saveGoal {
                             successMsg = if (isEdit) "Goal updated" else "Goal added"
                             scope.launch {
-                                delay(1200)
+                                delay(400)
                                 navController.popBackStack()
                             }
                         }
@@ -282,15 +287,17 @@ fun GoalFormScreen(
                     enabled = !form.isSaving,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(
-                        if (form.isSaving) {
-                            "Saving…"
-                        } else if (isEdit) {
-                            "Update Goal"
-                        } else {
-                            "Add Goal"
-                        },
-                    )
+                    if (form.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(Modifier.width(Spacing.xs))
+                        Text("Saving…")
+                    } else {
+                        Text(if (isEdit) "Update Goal" else "Add Goal")
+                    }
                 }
             }
 

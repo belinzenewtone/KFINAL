@@ -20,8 +20,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +54,7 @@ import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -257,17 +261,13 @@ fun BillFormScreen(
                 )
             }
 
-            if (form.error != null) {
-                Text(form.error!!, color = MaterialTheme.colorScheme.error)
-            }
-
             Button(
                 onClick = {
-                    // CC-3: banner + delayed navigation
+                    Haptics.light()
                     viewModel.saveBill {
                         successMsg = if (isEdit) "Bill updated" else "Bill added"
                         scope.launch {
-                            delay(1200)
+                            delay(400)
                             navController.popBackStack()
                         }
                     }
@@ -275,15 +275,17 @@ fun BillFormScreen(
                 enabled = !form.isSaving,
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.lg),
             ) {
-                Text(
-                    if (form.isSaving) {
-                        "Saving…"
-                    } else if (isEdit) {
-                        "Update Bill"
-                    } else {
-                        "Add Bill"
-                    }
-                )
+                if (form.isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Spacer(Modifier.width(Spacing.xs))
+                    Text("Saving…")
+                } else {
+                    Text(if (isEdit) "Update Bill" else "Add Bill")
+                }
             }
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))

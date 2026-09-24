@@ -98,6 +98,7 @@ fun RecurringFormScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     // RF-5: validation error dialog
     var validationError by remember { mutableStateOf<String?>(null) }
+    var validationTitle by remember { mutableStateOf("Validation error") }
 
     // RF-1: fade-in animation when form data loads
     var contentVisible by remember { mutableStateOf(false) }
@@ -169,7 +170,7 @@ fun RecurringFormScreen(
     if (validationError != null) {
         AlertDialog(
             onDismissRequest = { validationError = null },
-            title = { Text("Missing fields") },
+            title = { Text(validationTitle) },
             text  = { Text(validationError!!) },
             confirmButton = {
                 TextButton(onClick = { validationError = null }) { Text("OK") }
@@ -177,18 +178,18 @@ fun RecurringFormScreen(
         )
     }
 
-    // RF-2: success banner
-    TopBanner(
-        visible       = successMsg != null,
-        message       = successMsg ?: "",
-        tone          = BannerTone.Success,
-        onDismiss     = { successMsg = null },
-        autoDismissMs = 2000,
-    )
-
     PageScaffold(
         title = if (isEdit) "Edit Recurring Rule" else "Add Recurring Rule",
         onBack = { navController.popBackStack() },
+        topBanner = {
+            TopBanner(
+                visible       = successMsg != null,
+                message       = successMsg ?: "",
+                tone          = BannerTone.Success,
+                onDismiss     = { successMsg = null },
+                autoDismissMs = 2000,
+            )
+        },
         actions = {
             if (isEdit) {
                 // RF-3: show confirmation dialog instead of deleting immediately
@@ -261,7 +262,7 @@ fun RecurringFormScreen(
                 onExpandedChange = { cadenceExpanded = it },
             ) {
                 OutlinedTextField(
-                    value = form.frequency.replaceFirstChar { it.uppercase() },
+                    value = CADENCE_LABELS[form.frequency] ?: form.frequency.replaceFirstChar { it.uppercase() },
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Cadence") },
@@ -354,20 +355,22 @@ fun RecurringFormScreen(
                     onClick = {
                         // RF-5: validation before save
                         if (form.name.isBlank()) {
+                            validationTitle = "Title required"
                             validationError = "Please enter a title for this recurring rule."
                             return@Button
                         }
                         if (form.nextRunAt.isBlank()) {
+                            validationTitle = "Date required"
                             validationError = "Please select a next run date."
                             return@Button
                         }
                         // RF-4: haptic feedback on save
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         // RF-2: show success banner then pop
                         viewModel.saveRecurring {
                             successMsg = if (isEdit) "Rule updated" else "Rule added"
                             scope.launch {
-                                delay(1200)
+                                delay(400)
                                 navController.popBackStack()
                             }
                         }

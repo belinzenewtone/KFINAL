@@ -3,7 +3,9 @@ package com.belinze.lifeos.ui.screen.planner
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.InsertDriveFile
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -96,7 +98,7 @@ fun CsvImportScreen(
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Icon(Icons.Outlined.InsertDriveFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(4.dp))
                     Text("Pick CSV file")
                 }
@@ -174,13 +176,19 @@ fun CsvImportScreen(
                 }
 
                 state.invalid.take(3).forEach { row ->
-                    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
-                        Text(row.errors.joinToString(", "), style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error)
-                        Text("${row.merchant.ifBlank { "(no merchant)" }} · ${row.amount}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)
+                            .background(MaterialTheme.colorScheme.errorContainer, MaterialTheme.shapes.large)
+                            .padding(Spacing.base),
+                    ) {
+                        Column {
+                            Text(row.errors.joinToString(", "), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer)
+                            Text("${row.merchant.ifBlank { "(no merchant)" }} · ${row.amount}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp))
+                        }
                     }
                 }
 

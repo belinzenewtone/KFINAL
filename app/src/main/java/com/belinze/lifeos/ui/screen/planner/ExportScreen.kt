@@ -79,7 +79,7 @@ private val PREVIEW_DOMAINS = listOf(
 )
 
 private val DATE_WINDOWS =
-    listOf("all" to "All Time", "week" to "This Week", "month" to "This Month", "last30" to "Last 30 Days", "custom" to "Custom")
+    listOf("all" to "All Time", "last30" to "Last 30 Days", "month" to "This Month", "week" to "This Week", "custom" to "Custom Range")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -315,14 +315,12 @@ fun ExportScreen(
                                 maxLines = 1)
                             // EX-2: item count
                             val count = state.domainCounts[domain.key]
-                            if (count != null) {
-                                Text(
-                                    count.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
+                            Text(
+                                count?.toString() ?: "—",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 }
@@ -393,7 +391,7 @@ fun ExportScreen(
                         color = MaterialTheme.colorScheme.onSurface)
                     // EX-3: clear history button
                     TextButton(onClick = { viewModel.clearHistory() }) {
-                        Text("Clear history", color = MaterialTheme.colorScheme.error)
+                        Text("Clear", color = MaterialTheme.colorScheme.error)
                     }
                 }
                 state.history.take(10).forEach { exp ->

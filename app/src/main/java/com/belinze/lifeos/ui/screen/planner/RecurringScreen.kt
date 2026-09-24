@@ -174,11 +174,11 @@ fun RecurringScreen(
 
                         // Row 2: cadence | next run
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                CADENCE_LABELS[rule.cadence] ?: rule.cadence ?: "Monthly",
+                                CADENCE_LABELS[rule.cadence] ?: rule.cadence ?: "",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
@@ -222,7 +222,6 @@ fun RecurringScreen(
                         }
                     }
                 }
-                item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
         }
     }

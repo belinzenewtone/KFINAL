@@ -120,7 +120,7 @@ fun IncomeScreen(
                 item {
                     GlassCard(
                         variant = com.belinze.lifeos.ui.components.GlassCardVariant.Elevated,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
                     ) {
                         Text("Total Income", style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -234,7 +234,6 @@ fun IncomeScreen(
                 }
             }
 
-            item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
         }
     }
 }

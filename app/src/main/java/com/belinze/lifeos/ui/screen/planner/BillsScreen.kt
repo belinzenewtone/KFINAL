@@ -46,6 +46,7 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import java.time.LocalDate
@@ -132,6 +133,7 @@ fun BillsScreen(
                             bill = bill,
                             onEdit = { navController.navigate(NavTo.billForm(bill.id)) },
                             onTogglePaid = {
+                                if (bill.paidStatus == 0) Haptics.success() else Haptics.light()
                                 viewModel.toggleBillPaid(bill.id)
                                 banner = "${bill.title} marked as ${if (bill.paidStatus == 0) "paid" else "unpaid"}"
                             },
@@ -170,10 +172,8 @@ private fun BillCard(
                 maxLines = 1,
                 modifier = Modifier.weight(1f).padding(end = Spacing.sm),
             )
-            bill.amount?.let {
-                Text(formatCurrency(it), style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface)
-            }
+            Text(formatCurrency(bill.amount ?: 0.0), style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface)
         }
 
         // Row 2: chips | actions

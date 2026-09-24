@@ -132,7 +132,7 @@ fun BudgetsScreen(
             item {
                 GlassCard(
                     variant = com.belinze.lifeos.ui.components.GlassCardVariant.Elevated,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xl),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         // Chip sits on its own top row next to the short label so a
@@ -150,7 +150,7 @@ fun BudgetsScreen(
                             Box(
                                 modifier = Modifier
                                     .background(summaryColor.copy(alpha = 0x20 / 255f), MaterialTheme.shapes.large)
-                                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+                                    .padding(horizontal = Spacing.base, vertical = Spacing.xs),
                             ) {
                                 Text(
                                     if (summaryPct > 100) {
