@@ -33,7 +33,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -111,6 +113,11 @@ fun TasksScreen(
             placeholder = { Text("Search tasks") },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine = true,
+            shape = RoundedCornerShape(999.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedContainerColor   = MaterialTheme.colorScheme.surfaceVariant,
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = Spacing.sm),
@@ -288,7 +295,7 @@ private fun TaskCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 Box(
-                    modifier = Modifier.size(width = 4.dp, height = 40.dp)
+                    modifier = Modifier.size(width = 4.dp, height = 32.dp)
                         .background(if (task.status == "completed") MaterialTheme.colorScheme.outline else color, CircleShape),
                 )
                 IconButton(

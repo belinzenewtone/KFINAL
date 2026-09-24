@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -132,12 +134,14 @@ fun InsightsScreen(
                     selected = state.activeTab == AnalyticsTab.Analytics,
                     onClick  = { viewModel.setActiveTab(AnalyticsTab.Analytics) },
                     shape    = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    icon     = { Icon(Icons.Outlined.BarChart, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     label    = { Text("Analytics") },
                 )
                 SegmentedButton(
                     selected = state.activeTab == AnalyticsTab.Insights,
                     onClick  = { viewModel.setActiveTab(AnalyticsTab.Insights) },
                     shape    = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    icon     = { Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     label    = { Text("Insights") },
                 )
             }
@@ -146,13 +150,13 @@ fun InsightsScreen(
                 // ── Analytics tab ─────────────────────────────────────────────
                 AnalyticsTab.Analytics -> {
                     // Date range chips
-                    Row(
+                    LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = Spacing.base),
                     ) {
-                        listOf(AnalyticsRange.ThisWeek, AnalyticsRange.ThisMonth).forEach { range ->
+                        items(listOf(AnalyticsRange.ThisWeek, AnalyticsRange.ThisMonth)) { range ->
                             val selected = state.dateRange == range
                             FilterChip(
                                 selected = selected,

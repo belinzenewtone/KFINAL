@@ -44,7 +44,7 @@ import java.time.format.DateTimeFormatter
 
 private val PRIORITY_COLORS = mapOf(
     "low" to Color(0xFF7FC8F8),
-    "medium" to Color(0xFFF5CB5C),
+    "medium" to Color(0xFFFBBF24),
     "high" to Color(0xFFF2B8B5),
 )
 
@@ -59,7 +59,7 @@ fun EventDetailScreen(
     var showDelete by remember { mutableStateOf(false) }
 
     PageScaffold(
-        title = "Event",
+        title = "",
         onBack = { navController.popBackStack() },
         actions = {
             if (event != null) {
@@ -80,30 +80,13 @@ fun EventDetailScreen(
         val priorityColor = PRIORITY_COLORS[event.importance] ?: MaterialTheme.colorScheme.onSurfaceVariant
 
         Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).then(rememberFormFadeIn())) {
+            val kindSuffix = if (event.kind != event.type && event.kind != "other") " · ${event.kind}" else ""
             GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xl)) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(Spacing.xl),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(priorityColor.copy(alpha = 0x20 / 255f), RoundedCornerShape(9999.dp))
-                            .padding(horizontal = Spacing.base, vertical = Spacing.xs),
-                    ) {
-                        Text(event.importance.uppercase(), style = MaterialTheme.typography.labelSmall,
-                            color = priorityColor)
-                    }
-                    Spacer(Modifier.height(Spacing.base))
-                    Text(event.title, style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
-                    val kindSuffix = if (event.kind != event.type && event.kind != "other") " · ${event.kind}" else ""
-                    Text("${event.type}$kindSuffix", style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                    event.description?.let {
-                        Text(it, style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center, modifier = Modifier.padding(top = Spacing.base))
-                    }
+                DetailRow("Title", event.title)
+                DetailRow("Category", "${event.type}$kindSuffix")
+                DetailRow("Priority", event.importance, valueColor = priorityColor)
+                event.description?.let { desc ->
+                    DetailRow("Description", desc)
                 }
             }
 
@@ -144,7 +127,7 @@ fun EventDetailScreen(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color? = null) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.base),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -152,7 +135,7 @@ private fun DetailRow(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.End,
+            color = valueColor ?: MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.End,
             modifier = Modifier.weight(1f).padding(start = Spacing.base))
     }
 }

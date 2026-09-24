@@ -311,8 +311,8 @@ fun EventFormScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title            = { Text("Delete event?") },
-            text             = { Text("This event will be permanently removed. This cannot be undone.") },
+            title            = { Text("Delete event") },
+            text             = { Text("Are you sure?") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false

@@ -364,8 +364,8 @@ fun TaskFormScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title            = { Text("Delete task?") },
-            text             = { Text("This task will be permanently removed.") },
+            title            = { Text("Delete task") },
+            text             = { Text("Remove \"${formState.title}\"?") },
             confirmButton    = {
                 TextButton(onClick = {
                     showDeleteConfirm = false

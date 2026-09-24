@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.tasks
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,7 +46,7 @@ import com.belinze.lifeos.viewmodel.TaskViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-private val WARNING = Color(0xFFF5CB5C)
+private val WARNING = Color(0xFFFBBF24)
 
 @Composable
 fun TaskDetailScreen(
@@ -92,6 +94,7 @@ fun TaskDetailScreen(
                 ) {
                     Box(
                         modifier = Modifier
+                            .border(1.dp, priorityColor.copy(alpha = 0x70 / 255f), RoundedCornerShape(9999.dp))
                             .background(priorityColor.copy(alpha = 0x33 / 255f), RoundedCornerShape(9999.dp))
                             .padding(horizontal = Spacing.base, vertical = Spacing.xs),
                     ) {
@@ -128,6 +131,10 @@ fun TaskDetailScreen(
                     if (isCompleted) viewModel.reopen(task.id) else viewModel.complete(task.id)
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                    contentColor   = if (isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onTertiary,
+                ),
             ) {
                 Text(if (isCompleted) "Mark as Active" else "Mark as Completed")
             }

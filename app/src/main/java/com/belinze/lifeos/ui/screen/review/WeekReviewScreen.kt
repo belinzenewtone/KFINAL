@@ -80,7 +80,8 @@ fun WeekReviewScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         horizontal = Spacing.screenHorizontal,
-                        vertical   = Spacing.lg,
+                        top        = Spacing.sm,
+                        bottom     = Spacing.lg,
                     ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
@@ -307,7 +308,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                     Box(
                         modifier         = Modifier
                             .fillMaxWidth(0.85f)
-                            .height(128.dp),
+                            .height(148.dp),
                         contentAlignment = Alignment.BottomCenter,
                     ) {
                         // Track background

@@ -100,7 +100,7 @@ fun EventsScreen(
                 items(upcoming, key = { it.id }) { event ->
                     GlassCard(
                         onClick = { navController.navigate(NavTo.eventDetail(event.id)) },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.base),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -109,7 +109,7 @@ fun EventsScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(width = 3.dp, height = 40.dp)
+                                    .size(width = 3.dp, height = 36.dp)
                                     .background(eventImportanceColor(event.importance), MaterialTheme.shapes.extraSmall),
                             )
                             Column(modifier = Modifier.weight(1f)) {

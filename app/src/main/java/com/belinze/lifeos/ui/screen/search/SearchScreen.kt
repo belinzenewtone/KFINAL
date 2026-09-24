@@ -469,7 +469,7 @@ private fun SectionHeader(title: String, count: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium,
+        Text(title, style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         Text("$count", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
