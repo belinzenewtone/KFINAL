@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -133,7 +132,7 @@ fun AssistantScreen(
         Row(
             modifier              = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.md),
+                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment     = Alignment.CenterVertically,
         ) {
@@ -160,6 +159,7 @@ fun AssistantScreen(
                         imageVector        = Icons.Outlined.DeleteOutline,
                         contentDescription = "Clear conversation",
                         tint               = MaterialTheme.colorScheme.error,
+                        modifier           = Modifier.size(22.dp),
                     )
                 }
             }
@@ -302,7 +302,7 @@ fun AssistantScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
+                .padding(horizontal = Spacing.screenHorizontal, top = Spacing.xs, bottom = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val canSend = inputText.isNotBlank() && !state.isLoading
@@ -315,8 +315,6 @@ fun AssistantScreen(
                 maxLines          = 4,
                 keyboardOptions   = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions   = KeyboardActions(onSend = { send(inputText) }),
-                // AS-5: pill shape to match RN ChatInput component
-                shape = RoundedCornerShape(9999.dp),
                 trailingIcon = {
                     if (state.isLoading) {
                         CircularProgressIndicator(
@@ -374,7 +372,7 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
         Row(
-            modifier             = Modifier.widthIn(max = 280.dp),
+            modifier             = Modifier.fillMaxWidth(0.78f),
             verticalAlignment    = Alignment.Bottom,
         ) {
             // AS-6: bot avatar next to assistant messages, bottom-aligned with the bubble
@@ -409,10 +407,9 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
                             style      = MaterialTheme.typography.bodyMedium,
                             fontWeight = if (isUser) FontWeight.SemiBold else FontWeight.Normal,
                         )
-                        // AS-1: interactive action chips for assistant messages, rendered
-                        // INSIDE the bubble (React parity). Tapping sends the chip text
-                        // through the same pipeline as manual input.
-                        if (!isUser && message.actions.isNotEmpty()) {
+                        // AS-1: interactive action chips, rendered INSIDE the bubble (React parity).
+                        // Tapping sends the chip text through the same pipeline as manual input.
+                        if (message.actions.isNotEmpty()) {
                             Spacer(Modifier.height(Spacing.base))
                             FlowRow(
                                 modifier              = Modifier.wrapContentWidth(),
@@ -424,12 +421,15 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
                                         onClick = { onActionPress(action) },
                                         label   = { Text(action, style = MaterialTheme.typography.bodySmall) },
                                         colors  = AssistChipDefaults.assistChipColors(
-                                            containerColor = MaterialTheme.colorScheme.surface,
-                                            labelColor     = MaterialTheme.colorScheme.primary,
+                                            containerColor = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
+                                                             else MaterialTheme.colorScheme.surface,
+                                            labelColor     = if (isUser) MaterialTheme.colorScheme.onPrimary
+                                                             else MaterialTheme.colorScheme.primary,
                                         ),
                                         border  = AssistChipDefaults.assistChipBorder(
                                             enabled     = true,
-                                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                            borderColor = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
+                                                          else MaterialTheme.colorScheme.outlineVariant,
                                         ),
                                     )
                                 }
