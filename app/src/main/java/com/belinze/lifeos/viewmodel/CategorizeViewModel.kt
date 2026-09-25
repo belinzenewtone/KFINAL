@@ -3,9 +3,11 @@ package com.belinze.lifeos.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.ml.TransactionClassifier
+import com.belinze.lifeos.services.BudgetAlertService
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -14,6 +16,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,6 +41,8 @@ class CategorizeViewModel
     constructor(
     private val dao:        TransactionDao,
     private val classifier: TransactionClassifier,
+    private val budgetAlerts: BudgetAlertService,
+    private val appPreferences: AppPreferences,
 ) : ViewModel() {
     @Immutable
     data class CategorizeUiState(
@@ -58,9 +63,9 @@ class CategorizeViewModel
             val txs = dao.getUncategorized()
             val groups = txs
                 .groupBy { it.merchant?.trim()?.ifBlank { "Unknown" } ?: "Unknown" }
-                .entries
-                .sortedByDescending { it.value.size }
                 .map { (merchant, list) -> MerchantGroup(merchant, list.toImmutableList()) }
+                // RFINAL orders merchant groups by most-recent activity, not by volume.
+                .sortedByDescending { it.latestDate ?: "" }
                 .toImmutableList()
             _uiState.value = CategorizeUiState(
                 isLoading      = false,
@@ -113,6 +118,9 @@ class CategorizeViewModel
             try {
                 dao.updateCategoryForMerchant(merchant, category, nowIso())
                 txsForML.forEach { classifier.recordCorrection(it, category) }
+                // RFINAL re-checks budget thresholds for the assigned category so a
+                // newly-categorised expense can trigger a budget alert immediately.
+                budgetAlerts.checkBudgetThresholds(appPreferences.state.first(), category)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(message = "Failed to save category", isError = true)
                 refresh()

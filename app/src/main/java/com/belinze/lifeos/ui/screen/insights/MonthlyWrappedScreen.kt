@@ -1,23 +1,24 @@
 package com.belinze.lifeos.ui.screen.insights
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,25 +51,15 @@ fun MonthlyWrappedScreen(
     viewModel:          MonthlyWrappedViewModel = hiltViewModel(),
 ) {
     val state  by viewModel.uiState.collectAsStateWithLifecycle()
-    val isDark = isSystemInDarkTheme()
 
     LaunchedEffect(Unit) { viewModel.setMonthOffset(initialMonthOffset) }
 
-    // Page gradient — matches PageScaffold's background brush
-    val bgGradient: Brush = if (isDark) {
-        Brush.verticalGradient(
-            colors = listOf(Color(0xFF0A0A0B), Color(0xFF0D1117), Color(0xFF0A0A0B)),
-        )
-    } else {
-        Brush.verticalGradient(
-            colors = listOf(Color(0xFFE8EDF3), Color(0xFFDDE4EE), Color(0xFFE8EDF3)),
-        )
-    }
-
+    // React uses a flat theme background (SafeAreaView backgroundColor); there is no
+    // page-level gradient on this screen.
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .drawBehind { drawRect(bgGradient) }
+            .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
         // ── Single combined header row ─────────────────────────────────────────
@@ -144,12 +135,17 @@ fun MonthlyWrappedScreen(
         // ── Content ──────────────────────────────────────────────────────────
         when {
             state.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                // React: top-padded (4xl) centred block, not a full-screen centre.
+                Box(
+                    modifier         = Modifier.fillMaxSize().padding(top = Spacing.x4l),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
-                        Spacer(Modifier.height(Spacing.base))
+                        Spacer(Modifier.height(Spacing.sm))
                         Text(
                             "Crunching the numbers…",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -157,8 +153,8 @@ fun MonthlyWrappedScreen(
             }
             state.error != null -> {
                 Box(
-                    Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
-                    contentAlignment = Alignment.Center,
+                    modifier         = Modifier.fillMaxSize().padding(top = Spacing.x4l),
+                    contentAlignment = Alignment.TopCenter,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
@@ -179,15 +175,22 @@ fun MonthlyWrappedScreen(
             }
             !state.hasData -> {
                 Box(
-                    Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
-                    contentAlignment = Alignment.Center,
+                    modifier         = Modifier.fillMaxSize().padding(top = Spacing.x4l),
+                    contentAlignment = Alignment.TopCenter,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Outlined.Receipt,
+                            contentDescription = null,
+                            tint     = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(48.dp),
+                        )
                         Text(
                             "No spending recorded for ${state.monthLabel} yet.",
                             style     = MaterialTheme.typography.bodyLarge,
                             color     = MaterialTheme.colorScheme.outline,
                             textAlign = TextAlign.Center,
+                            modifier  = Modifier.padding(top = Spacing.base),
                         )
                     }
                 }
@@ -198,7 +201,7 @@ fun MonthlyWrappedScreen(
                         .fillMaxSize()
                         .padding(horizontal = Spacing.screenHorizontal),
                     contentPadding      = PaddingValues(top = Spacing.sm, bottom = Spacing.bottomNavSafeArea),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.base),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     // ─ Hero ─
                     item {
@@ -206,12 +209,12 @@ fun MonthlyWrappedScreen(
                             Column(
                                 modifier            = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = Spacing.xl),
+                                    .padding(vertical = Spacing.base),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text(
                                     "You spent",
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
@@ -221,6 +224,7 @@ fun MonthlyWrappedScreen(
                                     lineHeight = 44.sp,
                                     color      = MaterialTheme.colorScheme.primary,
                                     textAlign  = TextAlign.Center,
+                                    modifier   = Modifier.padding(vertical = Spacing.xs),
                                 )
                                 Text(
                                     text  = "this month · ${state.txCount} transaction${if (state.txCount != 1) "s" else ""}",
@@ -242,65 +246,69 @@ fun MonthlyWrappedScreen(
                                     modifier      = Modifier.padding(bottom = Spacing.base),
                                 )
                                 state.topCategories.forEachIndexed { i, row ->
-                                    if (i > 0) {
-                                        HorizontalDivider(
-                                        modifier  = Modifier.padding(vertical = Spacing.xs),
-                                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                    // React separates rows with a top margin, not a divider.
+                                    CategoryRow(
+                                        row      = row,
+                                        modifier = if (i > 0) Modifier.padding(top = Spacing.sm) else Modifier,
                                     )
-                                    }
-                                    CategoryRow(row)
                                 }
                             }
                         }
                     }
 
                     // ─ Top Merchant + Biggest Spend (half-cards) ─
-                    item {
-                        Row(
-                            modifier              = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            // Top merchant
-                            GlassCard(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "TOP MERCHANT",
-                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
-                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = Spacing.sm),
-                                )
-                                Text(
-                                    text       = state.topMerchantName.ifBlank { "—" },
-                                    style      = MaterialTheme.typography.titleMedium,
-                                    color      = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines   = 1,
-                                )
-                                Text(
-                                    text  = formatCurrency(state.topMerchantSpend, decimals = 0),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            // Biggest spend
-                            GlassCard(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "BIGGEST SPEND",
-                                    style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
-                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = Spacing.sm),
-                                )
-                                Text(
-                                    text       = formatCurrency(state.biggestAmount, decimals = 0),
-                                    style      = MaterialTheme.typography.titleMedium,
-                                    color      = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    text     = state.biggestMerchant.ifBlank { "—" },
-                                    style    = MaterialTheme.typography.bodySmall,
-                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                )
+                    // React renders each half-card only when the corresponding row exists,
+                    // so a lone card stretches to full width.
+                    if (state.topMerchantName.isNotBlank() || state.biggestAmount > 0.0) {
+                        item {
+                            Row(
+                                modifier              = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            ) {
+                                if (state.topMerchantName.isNotBlank()) {
+                                    GlassCard(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "TOP MERCHANT",
+                                            style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = Spacing.sm),
+                                        )
+                                        Text(
+                                            text     = state.topMerchantName,
+                                            style    = MaterialTheme.typography.titleMedium,
+                                            color    = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                        )
+                                        Text(
+                                            text     = formatCurrency(state.topMerchantSpend, decimals = 0),
+                                            style    = MaterialTheme.typography.bodySmall,
+                                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(top = 2.dp),
+                                        )
+                                    }
+                                }
+                                if (state.biggestAmount > 0.0) {
+                                    GlassCard(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "BIGGEST SPEND",
+                                            style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
+                                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = Spacing.sm),
+                                        )
+                                        Text(
+                                            text  = formatCurrency(state.biggestAmount, decimals = 0),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text     = state.biggestMerchant,
+                                            style    = MaterialTheme.typography.bodySmall,
+                                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            modifier = Modifier.padding(top = 2.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -313,25 +321,33 @@ fun MonthlyWrappedScreen(
                                 "ACTIVE DAYS",
                                 style    = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
                                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = Spacing.xs),
+                                modifier = Modifier.padding(bottom = Spacing.sm),
                             )
-                            Text(
-                                text  = "${state.activeDays}",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Spacer(Modifier.height(Spacing.xs))
+                            Row(
+                                verticalAlignment     = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                Text(
+                                    text  = "${state.activeDays}",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text  = "/ ${state.totalDaysInMonth}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Spacer(Modifier.height(Spacing.sm))
                             LinearProgressIndicator(
-                                progress  = { (state.activeDays.toFloat() / state.totalDaysInMonth.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                                modifier  = Modifier.fillMaxWidth().height(4.dp),
-                                color     = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                            )
-                            Spacer(Modifier.height(Spacing.xs))
-                            Text(
-                                text  = "of ${state.totalDaysInMonth} days",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                progress   = { (state.activeDays.toFloat() / state.totalDaysInMonth.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                                modifier   = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp)),
+                                color      = MaterialTheme.colorScheme.primary,
+                                // React track: rgba(128,128,128,0.2)
+                                trackColor = Color(0x33808080),
                             )
                         }
                         if (state.feesTotal > 0.0) {
@@ -348,14 +364,15 @@ fun MonthlyWrappedScreen(
                                         modifier = Modifier.padding(bottom = Spacing.sm),
                                     )
                                     Text(
-                                        text       = formatCurrency(state.feesTotal, decimals = 0),
-                                        style      = MaterialTheme.typography.headlineSmall,
-                                        color      = MaterialTheme.colorScheme.onSurface,
+                                        text  = formatCurrency(state.feesTotal, decimals = 0),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     Text(
                                         text  = "M-Pesa charges",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 2.dp),
                                     )
                                 }
                             }
@@ -381,9 +398,10 @@ fun MonthlyWrappedScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
-                                    text  = "Try to keep this below 3 times per month",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    text     = "Try to keep this below 3 times per month",
+                                    style    = MaterialTheme.typography.bodySmall,
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = Spacing.xs),
                                 )
                             }
                         }
@@ -402,10 +420,9 @@ fun MonthlyWrappedScreen(
                                     modifier = Modifier.padding(bottom = Spacing.sm),
                                 )
                                 Text(
-                                    text       = formatCurrency(kotlin.math.abs(saved), decimals = 0),
-                                    style      = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color      = if (isSaving) COLOR_SUCCESS else COLOR_DANGER,
+                                    text  = formatCurrency(kotlin.math.abs(saved), decimals = 0),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = if (isSaving) COLOR_SUCCESS else COLOR_DANGER,
                                 )
                                 Text(
                                     text     = "Income ${formatCurrency(state.totalIncome, decimals = 0)} · " +
@@ -417,8 +434,6 @@ fun MonthlyWrappedScreen(
                             }
                         }
                     }
-
-                    item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                 }
             }
         }
@@ -428,35 +443,32 @@ fun MonthlyWrappedScreen(
 // ─── Category row ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun CategoryRow(row: TopCategoryRow) {
+private fun CategoryRow(row: TopCategoryRow, modifier: Modifier = Modifier) {
     val rankColor = RANK_COLORS.getOrNull(row.rank - 1) ?: MaterialTheme.colorScheme.onSurfaceVariant
     val rankLabel = when (row.rank) { 1 -> "1st"; 2 -> "2nd"; 3 -> "3rd"; else -> "${row.rank}th" }
     Row(
-        modifier              = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier              = modifier.fillMaxWidth(),
         verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            Text(
-                text       = rankLabel,
-                style      = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color      = rankColor,
-                modifier   = Modifier.width(28.dp),
-            )
-            Text(
-                text  = row.category.replaceFirstChar { it.uppercaseChar() },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        Text(
+            text     = rankLabel,
+            style    = MaterialTheme.typography.labelMedium,
+            color    = rankColor,
+            modifier = Modifier.width(28.dp),
+        )
+        Text(
+            text     = row.category.replaceFirstChar { it.uppercaseChar() },
+            style    = MaterialTheme.typography.bodyMedium,
+            color    = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
         Text(
             text       = formatCurrency(row.total, decimals = 0),
             style      = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.onSurface,
         )
     }

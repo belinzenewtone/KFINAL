@@ -83,7 +83,7 @@ class ReviewQueueViewModel
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                val all = smsService.getAuditLog(500)
+                val all = smsService.getAuditLog(200)
                 val pending = all.filter { isPendingOutcome(it.outcome) }
                 _uiState.update { it.copy(isLoading = false, entries = pending.toImmutableList()) }
             } catch (e: Exception) {

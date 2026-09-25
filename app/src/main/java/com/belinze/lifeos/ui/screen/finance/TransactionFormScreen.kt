@@ -27,9 +27,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -48,12 +45,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppDropdownField
+import com.belinze.lifeos.ui.components.AppPickerSheet
+import com.belinze.lifeos.ui.components.AppSegmentedControl
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.PickerOption
+import com.belinze.lifeos.ui.components.SegmentOption
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
-import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import kotlinx.coroutines.launch
 
@@ -125,16 +126,16 @@ fun TransactionFormScreen(
                 .then(rememberFormFadeIn()),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                TX_TYPES.forEachIndexed { idx, type ->
-                    SegmentedButton(
-                        selected = formState.transactionType == type,
-                        onClick  = { viewModel.updateFormType(type); Haptics.light() },
-                        shape    = SegmentedButtonDefaults.itemShape(index = idx, count = TX_TYPES.size),
-                        label    = { Text(type.replaceFirstChar { it.uppercase() }) },
-                    )
-                }
-            }
+            // RFINAL uses its own pill track (SegmentedControl.tsx) here, not M3
+            // segments, and fires no haptic when the type changes.
+            AppSegmentedControl(
+                options     = TX_TYPES.map {
+                    SegmentOption(key = it, label = it.replaceFirstChar { c -> c.uppercase() })
+                },
+                selectedKey = formState.transactionType,
+                onSelect    = { viewModel.updateFormType(it) },
+                modifier    = Modifier.fillMaxWidth(),
+            )
 
             OutlinedTextField(
                 value = formState.amount,
@@ -186,73 +187,51 @@ fun TransactionFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            var categoryExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = categoryExpanded,
-                onExpandedChange = { categoryExpanded = it },
-            ) {
-                OutlinedTextField(
-                    value = formState.category.replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Category") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                ExposedDropdownMenu(
-                    expanded = categoryExpanded,
-                    onDismissRequest = { categoryExpanded = false },
-                ) {
-                    CATEGORIES.forEach { cat ->
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                Icon(categoryIcon(cat), contentDescription = null, tint = categoryColor(cat), modifier = Modifier.size(18.dp))
-                            },
-                            trailingIcon = {
-                                if (formState.category == cat) {
-                                    Icon(Icons.Outlined.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                                }
-                            },
-                            text = { Text(cat.replaceFirstChar { it.uppercase() }) },
-                            onClick = {
-                                viewModel.updateFormCategory(cat)
-                                Haptics.light()
-                                categoryExpanded = false
-                            },
-                        )
-                    }
-                }
-            }
+            var categorySheetOpen by remember { mutableStateOf(false) }
+            AppDropdownField(
+                label       = "Category",
+                valueLabel  = formState.category.replaceFirstChar { it.uppercase() },
+                onClick     = { categorySheetOpen = true },
+                modifier    = Modifier.fillMaxWidth(),
+                leadingIcon = categoryIcon(formState.category),
+                leadingTint = categoryColor(formState.category),
+            )
 
-            var statusExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = statusExpanded,
-                onExpandedChange = { statusExpanded = it },
-            ) {
-                OutlinedTextField(
-                    value = formState.status.replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Status") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(statusExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                ExposedDropdownMenu(
-                    expanded = statusExpanded,
-                    onDismissRequest = { statusExpanded = false },
-                ) {
-                    STATUSES.forEach { status ->
-                        DropdownMenuItem(
-                            text = { Text(status.replaceFirstChar { it.uppercase() }) },
-                            onClick = {
-                                viewModel.updateFormStatus(status)
-                                Haptics.light()
-                                statusExpanded = false
-                            },
-                        )
-                    }
-                }
-            }
+            var statusSheetOpen by remember { mutableStateOf(false) }
+            AppDropdownField(
+                label      = "Status",
+                valueLabel = formState.status.replaceFirstChar { it.uppercase() },
+                onClick    = { statusSheetOpen = true },
+                modifier   = Modifier.fillMaxWidth(),
+            )
+
+            // RN opens a SwipeableSheet option list for both pickers; there is no
+            // anchored Material dropdown in the reference app.
+            AppPickerSheet(
+                visible     = categorySheetOpen,
+                title       = "Category",
+                options     = CATEGORIES.map { cat ->
+                    PickerOption(
+                        key   = cat,
+                        label = cat.replaceFirstChar { it.uppercase() },
+                        icon  = categoryIcon(cat),
+                        tint  = categoryColor(cat),
+                    )
+                },
+                selectedKey = formState.category,
+                onSelect    = { viewModel.updateFormCategory(it) },
+                onDismiss   = { categorySheetOpen = false },
+            )
+            AppPickerSheet(
+                visible     = statusSheetOpen,
+                title       = "Status",
+                options     = STATUSES.map { st ->
+                    PickerOption(key = st, label = st.replaceFirstChar { it.uppercase() })
+                },
+                selectedKey = formState.status,
+                onSelect    = { viewModel.updateFormStatus(it) },
+                onDismiss   = { statusSheetOpen = false },
+            )
 
             if (formState.error != null) {
                 Text(formState.error!!, color = MaterialTheme.colorScheme.error)

@@ -19,9 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Share
@@ -34,7 +36,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -56,10 +57,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppChip
+import com.belinze.lifeos.ui.components.AppDropdownField
+import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ExportFormat
 import com.belinze.lifeos.viewmodel.ExportViewModel
@@ -116,11 +121,17 @@ fun ExportScreen(
                 SectionLabel("FORMAT")
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     ExportFormat.values().forEach { fmt ->
-                        FilterChip(
-                            selected = format == fmt,
-                            onClick = { format = fmt },
-                            label = { Text(fmt.name) },
-                            modifier = Modifier.weight(1f),
+                        AppChip(
+                            label             = fmt.name,
+                            selected          = format == fmt,
+                            onClick           = { format = fmt },
+                            leadingIcon       = when (fmt) {
+                                ExportFormat.CSV  -> Icons.Outlined.GridOn
+                                ExportFormat.JSON -> Icons.Outlined.Description
+                                ExportFormat.PDF  -> Icons.Outlined.Article
+                            },
+                            modifier          = Modifier.weight(1f),
+                            unselectedContent = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -138,34 +149,28 @@ fun ExportScreen(
 
             GlassCard {
                 SectionLabel("DATE WINDOW")
-                var dateWindowExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = dateWindowExpanded,
-                    onExpandedChange = { dateWindowExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = DATE_WINDOWS.firstOrNull { it.first == dateWindow }?.second ?: "All Time",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Date window") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dateWindowExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = dateWindowExpanded,
-                        onDismissRequest = { dateWindowExpanded = false },
-                    ) {
-                        DATE_WINDOWS.forEach { (key, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    dateWindow = key
-                                    dateWindowExpanded = false
-                                },
-                            )
+                var dateWindowSheetOpen by remember { mutableStateOf(false) }
+                AppDropdownField(
+                    label      = "Date window",
+                    valueLabel = DATE_WINDOWS.firstOrNull { it.first == dateWindow }?.second ?: "All Time",
+                    onClick    = { dateWindowSheetOpen = true },
+                    modifier   = Modifier.fillMaxWidth(),
+                )
+                AppPickerSheet(
+                    visible     = dateWindowSheetOpen,
+                    title       = "Date window",
+                    options     = DATE_WINDOWS.map { (key, label) -> PickerOption(key = key, label = label) },
+                    selectedKey = dateWindow,
+                    onSelect    = {
+                        dateWindow = it
+                        // RN clears the custom range whenever the window moves off "custom".
+                        if (it != "custom") {
+                            customStart = ""
+                            customEnd = ""
                         }
-                    }
-                }
+                    },
+                    onDismiss   = { dateWindowSheetOpen = false },
+                )
                 // EX-1: custom date range fields
                 if (dateWindow == "custom") {
                     Spacer(Modifier.height(Spacing.sm))
@@ -407,30 +412,31 @@ fun ExportScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                state.history.take(10).forEach { exp ->
+                state.history.forEach { exp ->
                     GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
+                            // RFINAL varies the icon and colour per format, and the green
+                            // status dot is a separate TRAILING element — not an overlay on
+                            // the icon box. Both dot and JSON accent are #34D399 in React.
                             val fmtColor = when (exp.format?.lowercase()) {
-                                "json" -> Color(0xFF22C55E)
+                                "json" -> Color(0xFF34D399)
                                 "pdf"  -> Color(0xFFF59E0B)
                                 else   -> MaterialTheme.colorScheme.primary
                             }
-                            Box(contentAlignment = Alignment.TopEnd) {
-                                Box(
-                                    modifier = Modifier.size(40.dp).background(fmtColor.copy(alpha = 0x20 / 255f), CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(Icons.Outlined.Description, contentDescription = null,
-                                        tint = fmtColor, modifier = Modifier.size(18.dp))
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(Color(0xFF22C55E), CircleShape),
-                                )
+                            val fmtIcon = when (exp.format?.lowercase()) {
+                                "json" -> Icons.Outlined.Description
+                                "pdf"  -> Icons.Outlined.Article
+                                else   -> Icons.Outlined.GridOn
+                            }
+                            Box(
+                                modifier = Modifier.size(40.dp).background(fmtColor.copy(alpha = 0x20 / 255f), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(fmtIcon, contentDescription = null,
+                                    tint = fmtColor, modifier = Modifier.size(18.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(exp.filePath ?: "", style = MaterialTheme.typography.bodyMedium,
@@ -439,6 +445,7 @@ fun ExportScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                            Box(modifier = Modifier.size(8.dp).background(Color(0xFF34D399), CircleShape))
                         }
                     }
                 }

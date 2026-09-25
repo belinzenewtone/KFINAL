@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
@@ -43,18 +42,14 @@ import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -73,10 +69,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppChip
+import com.belinze.lifeos.ui.components.AppSegmentedControl
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.SegmentOption
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
+import com.belinze.lifeos.ui.theme.ShapeSm
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.AnalyticsFeesData
@@ -101,6 +101,7 @@ private val BAD     = Color(0xFFEF4444)
 // Matches AnalyticsSummaryCards.tsx / InsightsTab.tsx SUCCESS constant.
 private val SUCCESS = Color(0xFF4ADE80)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(
     navController: NavHostController,
@@ -109,15 +110,25 @@ fun InsightsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // Accordion state lives in the screen (pure UI state)
     var expandedMonthKey    by remember { mutableStateOf<String?>(null) }
-    // Show-more toggle for month history (React's History accordion has one)
-    var showAllMonths       by remember { mutableStateOf(false) }
+
+    var isPullingRefresh    by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isPullingRefresh = false
+    }
 
     PageScaffold(
-        title    = "Analytics",
-        subtitle = "Productivity and finance trends in one place",
-        onBack   = { navController.popBackStack() },
+        title      = "Analytics",
+        titleStyle = MaterialTheme.typography.headlineSmall,
+        subtitle   = "Productivity and finance trends in one place",
+        onBack     = { navController.popBackStack() },
         scrollable = false,
     ) {
+        // React wraps the whole page in a ScrollView with a RefreshControl.
+        PullToRefreshBox(
+            isRefreshing = isPullingRefresh,
+            onRefresh    = { isPullingRefresh = true; viewModel.load() },
+            modifier     = Modifier.fillMaxSize(),
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -125,26 +136,26 @@ fun InsightsScreen(
                 .padding(bottom = Spacing.bottomNavSafeArea),
         ) {
             // ── Tab bar ───────────────────────────────────────────────────────
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
+            AppSegmentedControl(
+                options     = AnalyticsTab.values().map {
+                    SegmentOption(
+                        key   = it.name,
+                        label = it.name,
+                        icon  = if (it == AnalyticsTab.Analytics) {
+                            Icons.Outlined.BarChart
+                        } else {
+                            Icons.Outlined.Lightbulb
+                        },
+                    )
+                },
+                selectedKey = state.activeTab.name,
+                onSelect    = { key ->
+                    AnalyticsTab.values().firstOrNull { it.name == key }?.let { viewModel.setActiveTab(it) }
+                },
+                modifier    = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = Spacing.base),
-            ) {
-                SegmentedButton(
-                    selected = state.activeTab == AnalyticsTab.Analytics,
-                    onClick  = { viewModel.setActiveTab(AnalyticsTab.Analytics) },
-                    shape    = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    icon     = { Icon(Icons.Outlined.BarChart, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                    label    = { Text("Analytics") },
-                )
-                SegmentedButton(
-                    selected = state.activeTab == AnalyticsTab.Insights,
-                    onClick  = { viewModel.setActiveTab(AnalyticsTab.Insights) },
-                    shape    = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    icon     = { Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                    label    = { Text("Insights") },
-                )
-            }
+                    .padding(bottom = Spacing.sm),
+            )
 
             when (state.activeTab) {
                 // ── Analytics tab ─────────────────────────────────────────────
@@ -154,23 +165,17 @@ fun InsightsScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = Spacing.base),
+                            .padding(bottom = Spacing.sm),
                     ) {
                         items(listOf(AnalyticsRange.ThisWeek, AnalyticsRange.ThisMonth)) { range ->
-                            val selected = state.dateRange == range
-                            FilterChip(
-                                selected = selected,
-                                onClick  = { viewModel.setDateRange(range) },
-                                label    = {
-                                    Text(
-                                        if (range == AnalyticsRange.ThisWeek) "This week" else "This month",
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor     = MaterialTheme.colorScheme.onPrimary,
-                                ),
+                            AppChip(
+                                label             = if (range == AnalyticsRange.ThisWeek) "This week" else "This month",
+                                selected          = state.dateRange == range,
+                                onClick           = { viewModel.setDateRange(range) },
+                                pill              = false,
+                                // RFINAL: unselected label is onSurface, not muted.
+                                unselectedContent = MaterialTheme.colorScheme.onSurface,
+                                contentLabel      = MaterialTheme.typography.bodySmall,
                             )
                         }
                     }
@@ -180,7 +185,7 @@ fun InsightsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = Spacing.base)
+                                .padding(bottom = Spacing.sm)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(12.dp),
@@ -206,17 +211,19 @@ fun InsightsScreen(
                                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
                             )
-                            IconButton(
-                                onClick  = { viewModel.dismissNudge() },
-                                modifier = Modifier.size(24.dp),
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Close,
-                                    contentDescription = "Dismiss",
-                                    tint     = MaterialTheme.colorScheme.outline,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                            }
+                            // React renders a bare 16dp icon here (Pressable + hitSlop),
+                            // not a 24dp icon button.
+                            Icon(
+                                Icons.Outlined.Close,
+                                contentDescription = "Dismiss",
+                                tint     = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication        = null,
+                                    ) { viewModel.dismissNudge() },
+                            )
                         }
                     }
 
@@ -227,7 +234,7 @@ fun InsightsScreen(
                     )
 
                     // Summary 2x2 grid — always shown, matching AnalyticsScreen.tsx
-                    Spacer(Modifier.height(Spacing.base))
+                    Spacer(Modifier.height(Spacing.sm))
                     AnalyticsSummaryCards(
                         spend   = state.totalSpend,
                         income  = state.totalIncome,
@@ -238,14 +245,15 @@ fun InsightsScreen(
                     // Category spend cards — all of them (ViewModel already caps at 8),
                     // matching CategorySpendCards.tsx which has no show-more toggle.
                     if (state.categorySparklines.isNotEmpty()) {
-                        Spacer(Modifier.height(Spacing.base))
+                        Spacer(Modifier.height(Spacing.sm))
+                        // SectionHeader.tsx: titleMedium "Spending by Category" on
+                        // onSurface with marginBottom = spacing.base.
                         Text(
-                            "SPENDING BY CATEGORY",
-                            fontSize      = 12.sp,
-                            fontWeight    = FontWeight.SemiBold,
-                            color         = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = 0.5.sp,
-                            modifier      = Modifier.padding(vertical = Spacing.sm),
+                            text     = "Spending by Category",
+                            style    = MaterialTheme.typography.titleMedium,
+                            color    = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            modifier = Modifier.padding(bottom = Spacing.base),
                         )
                         state.categorySparklines.forEach { item ->
                             CategorySpendCard(item = item)
@@ -395,7 +403,8 @@ fun InsightsScreen(
                         val trendIcon = when (state.trend) {
                             InsightsTrend.Increasing -> Icons.AutoMirrored.Filled.TrendingUp
                             InsightsTrend.Decreasing -> Icons.AutoMirrored.Filled.TrendingDown
-                            InsightsTrend.Stable     -> Icons.AutoMirrored.Filled.TrendingFlat
+                            // React "stable" uses remove-outline (a minus), not an arrow.
+                            InsightsTrend.Stable     -> Icons.Outlined.Remove
                         }
 
                         GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -409,6 +418,7 @@ fun InsightsScreen(
                                     icon     = Icons.Outlined.Lightbulb,
                                     iconTint = MaterialTheme.colorScheme.primary,
                                     bgColor  = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
+                                    iconSize = 16,
                                 )
                                 Text(
                                     "Spending Insights",
@@ -483,12 +493,8 @@ fun InsightsScreen(
                             modifier   = Modifier.padding(horizontal = 2.dp, vertical = Spacing.sm),
                         )
 
-                        val visibleMonths = if (showAllMonths) {
-                            state.monthBreakdown
-                        } else {
-                            state.monthBreakdown.take(3)
-                        }
-                        visibleMonths.forEach { m ->
+                        // React maps the full breakdown — there is no "show more" toggle.
+                        state.monthBreakdown.forEach { m ->
                             val isExpanded = expandedMonthKey == m.monthKey
                             val deltaColor = when {
                                 m.delta == null || m.delta == 0.0 -> MaterialTheme.colorScheme.outlineVariant
@@ -496,7 +502,7 @@ fun InsightsScreen(
                                 else                              -> GOOD
                             }
                             val deltaIcon = when {
-                                m.delta == null || m.delta == 0.0 -> Icons.AutoMirrored.Filled.TrendingFlat
+                                m.delta == null || m.delta == 0.0 -> Icons.Outlined.Remove
                                 m.delta > 0                       -> Icons.AutoMirrored.Filled.TrendingUp
                                 else                              -> Icons.AutoMirrored.Filled.TrendingDown
                             }
@@ -656,21 +662,6 @@ fun InsightsScreen(
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(Spacing.base))
-                        }
-                        if (state.monthBreakdown.size > 3) {
-                            TextButton(
-                                onClick  = { showAllMonths = !showAllMonths },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(
-                                    if (showAllMonths) {
-                                        "Show less"
-                                    } else {
-                                        "Show ${state.monthBreakdown.size - 3} more months"
-                                    },
-                                )
-                            }
                             Spacer(Modifier.height(Spacing.sm))
                         }
 
@@ -689,6 +680,7 @@ fun InsightsScreen(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -931,8 +923,8 @@ private fun MiniSparkline(amounts: List<Double>, color: Color) {
                     .height(h.dp)
                     .background(
                         // React uses a fixed dark-gray "#33333330" for zero-amount bars
-                        // regardless of the category's own color, not a faded item color.
-                        if (amt > 0) color else Color(0xFF333333).copy(alpha = 0x30 / 255f),
+                        // and additionally applies opacity 0.3 to them.
+                        if (amt > 0) color else Color(0xFF333333).copy(alpha = (0x30 / 255f) * 0.3f),
                         RoundedCornerShape(2.dp),
                     ),
             )
@@ -968,7 +960,7 @@ private fun FeesCard(fees: AnalyticsFeesData) {
             verticalAlignment     = Alignment.Bottom,
         ) {
             if (fees.topCategory != null) {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Top category", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(fees.topCategory.replaceFirstChar { it.uppercase() },
@@ -976,7 +968,10 @@ private fun FeesCard(fees: AnalyticsFeesData) {
                         color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                 }
             }
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                horizontalAlignment  = Alignment.End,
+                verticalArrangement  = Arrangement.spacedBy(2.dp),
+            ) {
                 Text("Avg fee", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${formatCurrency(fees.avgFee)} · ${fees.txCount} tx",
@@ -1101,6 +1096,7 @@ private fun IconBox(
     iconTint: Color,
     bgColor:  Color,
     size:     Int = 28,
+    iconSize: Int = 14,
 ) {
     Box(
         modifier = Modifier
@@ -1108,7 +1104,7 @@ private fun IconBox(
             .background(bgColor, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(14.dp))
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(iconSize.dp))
     }
 }
 
@@ -1188,7 +1184,7 @@ private fun PaydayPulseCard(pulse: PaydayPulse) {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Outlined.ElectricBolt, contentDescription = null,
-                    tint = Color(0xFFF59E0B), modifier = Modifier.size(14.dp))
+                    tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
             }
             Text("Payday Pulse", style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
@@ -1265,7 +1261,7 @@ private fun SpendAnatomyCard(sb: SizeBreakdown, totalCount: Int) {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Outlined.Layers, contentDescription = null,
-                    tint = Color(0xFF8B5CF6), modifier = Modifier.size(14.dp))
+                    tint = Color(0xFF8B5CF6), modifier = Modifier.size(16.dp))
             }
             Text("Spend Anatomy", style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)

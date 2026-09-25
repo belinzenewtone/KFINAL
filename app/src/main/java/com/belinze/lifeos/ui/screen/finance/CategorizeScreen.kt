@@ -48,8 +48,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppDropdownField
+import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.CategorizeViewModel
@@ -205,62 +208,25 @@ private fun MerchantGroupCard(
             }
 
             Spacer(Modifier.height(Spacing.sm))
-            OutlinedButton(
-                onClick  = { pickerOpen = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape    = RoundedCornerShape(50.dp),
-                colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Text("Pick a category", modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
-                Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
-            }
+            AppDropdownField(
+                label      = "Category",
+                valueLabel = "Pick a category…",
+                onClick    = { pickerOpen = true },
+                modifier   = Modifier.fillMaxWidth(),
+            )
         }
     }
 
-    if (pickerOpen) {
-        CategoryPickerSheet(
-            onPick    = { cat -> pickerOpen = false; onAssignAll(cat) },
-            onDismiss = { pickerOpen = false },
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CategoryPickerSheet(
-    onPick:    (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor   = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.7f)
-                .padding(Spacing.lg),
-        ) {
-            Text("Pick a category", style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = Spacing.base))
-            CATEGORIZE_CATEGORIES.forEach { cat ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                        ) { onPick(cat) }
-                        .padding(vertical = Spacing.sm, horizontal = Spacing.xs),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(capitalize(cat), style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
-        }
-    }
+    AppPickerSheet(
+        visible     = pickerOpen,
+        title       = "Pick a category",
+        options     = CATEGORIZE_CATEGORIES.map { cat ->
+            PickerOption(key = cat, label = capitalize(cat))
+        },
+        selectedKey = null,
+        onSelect    = { cat -> onAssignAll(cat) },
+        onDismiss   = { pickerOpen = false },
+    )
 }
 
 private fun capitalize(value: String): String =

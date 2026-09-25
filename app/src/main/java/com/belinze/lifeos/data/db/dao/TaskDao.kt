@@ -48,21 +48,23 @@ interface TaskDao {
     @Query("UPDATE tasks SET deleted_at = :timestamp WHERE id = :id")
     suspend fun softDelete(id: String, timestamp: String)
 
-    /** Count tasks completed (status='done') on or after [since] (ISO date-time string). */
+    /** Count tasks completed (status='done') on or after [since] (ISO date-time string).
+     *  Falls back to updated_at when completed_at was never stamped — mirrors the
+     *  WeekReviewScreen.tsx query. */
     @Query("""
         SELECT COUNT(*) FROM tasks
         WHERE deleted_at IS NULL
           AND status = 'done'
-          AND completed_at >= :since
+          AND (completed_at >= :since OR (completed_at IS NULL AND updated_at >= :since))
     """)
     suspend fun countCompletedSince(since: String): Int
 
-    /** Count active (pending) tasks created on or after [since] — same week scope as countCompletedSince. */
+    /** Count every outstanding (not-done) task. WeekReviewScreen.tsx counts all pending
+     *  tasks — it is deliberately NOT scoped to the current week. */
     @Query("""
         SELECT COUNT(*) FROM tasks
         WHERE deleted_at IS NULL
-          AND status = 'active'
-          AND created_at >= :since
+          AND status != 'done'
     """)
-    suspend fun countPendingCreatedSince(since: String): Int
+    suspend fun countAllPending(): Int
 }

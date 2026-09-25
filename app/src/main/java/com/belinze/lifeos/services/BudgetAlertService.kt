@@ -119,7 +119,7 @@ class BudgetAlertService
             .atZone(zone).format(isoDtFmt)
         val endIso = Instant.ofEpochMilli(monthKeyToEndMillis(key))
             .atZone(zone).format(isoDtFmt)
-        return transactionDao.getCategoryTotals(startIso, endIso)
+        return transactionDao.getExpenseCategoryTotals(startIso, endIso)
             .associate { (it.category ?: "").lowercase() to it.total }
     }
 

@@ -56,8 +56,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -87,12 +85,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.belinze.lifeos.ui.components.AppDropdownField
+import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FrostCard
 import com.belinze.lifeos.ui.components.InlineBanner
-import com.belinze.lifeos.ui.components.SectionHeader
-import com.belinze.lifeos.ui.components.ShimmerLoadingState
-import com.belinze.lifeos.ui.components.TopBanner
+import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
@@ -156,7 +154,6 @@ fun FinanceScreen(
     val context      = LocalContext.current
     var showImportSmsSheet     by remember { mutableStateOf(false) }
     var showImportCsvSheet     by remember { mutableStateOf(false) }
-    var selectedTransactionId  by remember { mutableStateOf<String?>(null) }
 
     // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
     // from the Budgets/Categorize screens) so the budget alert, budget card, and
@@ -275,20 +272,7 @@ fun FinanceScreen(
             val listState              = rememberLazyListState()
             var periodExpanded by remember { mutableStateOf(false) }
 
-            var pullRefreshing by remember { mutableStateOf(false) }
-            val pullToRefreshState = rememberPullToRefreshState()
-
-            PullToRefreshBox(
-                isRefreshing = pullRefreshing,
-                state        = pullToRefreshState,
-                onRefresh    = {
-                    pullRefreshing = true
-                    pagingItems.refresh()
-                    viewModel.refreshMetrics()
-                    pullRefreshing = false
-                },
-                modifier     = Modifier.fillMaxSize(),
-            ) {
+            // RFINAL has no pull-to-refresh here — only the header refresh button.
             LazyColumn(
                 state               = listState,
                 modifier            = Modifier.fillMaxSize(),
@@ -486,33 +470,12 @@ fun FinanceScreen(
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                     ) {
-                        ExposedDropdownMenuBox(
-                            expanded          = periodExpanded,
-                            onExpandedChange  = { periodExpanded = it },
-                        ) {
-                            OutlinedTextField(
-                                value         = activeFilters.period.replaceFirstChar { it.uppercase() },
-                                onValueChange = {},
-                                readOnly      = true,
-                                label         = { Text("Period") },
-                                trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(periodExpanded) },
-                                modifier      = Modifier.fillMaxWidth().menuAnchor(),
-                            )
-                            ExposedDropdownMenu(
-                                expanded          = periodExpanded,
-                                onDismissRequest  = { periodExpanded = false },
-                            ) {
-                                listOf("all", "today", "week", "month").forEach { period ->
-                                    DropdownMenuItem(
-                                        text    = { Text(period.replaceFirstChar { it.uppercase() }) },
-                                        onClick = {
-                                            viewModel.setPeriod(period)
-                                            periodExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
+                        AppDropdownField(
+                            label      = "Period",
+                            valueLabel = activeFilters.period.replaceFirstChar { it.uppercase() },
+                            onClick    = { periodExpanded = true },
+                            modifier   = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
 
@@ -563,24 +526,36 @@ fun FinanceScreen(
                 }
 
                 // ── Transactions header ───────────────────────────────────────
+                // RFINAL: titleMedium "Transactions" + a bodyMedium count, with a 12dp
+                // horizontal gutter and 8dp vertical margins. SectionHeader was wrong
+                // here — it uppercases its label, and it only draws the action when
+                // onAction is non-null, which is why the count never appeared.
                 item {
-                    SectionHeader(
-                        label    = "Transactions",
-                        action   = pagingItems.itemCount.takeIf { it > 0 }?.toString(),
-                        modifier = Modifier.padding(top = Spacing.md),
-                    )
-                }
-
-                // ── Shimmer — only on the very first load (empty + refreshing) ─
-                val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading
-                if (isRefreshing && pagingItems.itemCount == 0) {
-                    item {
-                        ShimmerLoadingState(
-                            rowCount = 6,
-                            modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.screenHorizontal)
+                            .padding(top = Spacing.sm, bottom = Spacing.sm),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment     = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text     = "Transactions",
+                            style    = MaterialTheme.typography.titleMedium,
+                            color    = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                        )
+                        Text(
+                            text     = pagingItems.itemCount.toString(),
+                            style    = MaterialTheme.typography.bodyMedium,
+                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
-                } else if (!isRefreshing && pagingItems.itemCount == 0) {
+                }
+
+                // RFINAL renders no loading skeleton — only the empty state.
+                if (pagingItems.itemCount == 0 && pagingItems.loadState.refresh !is LoadState.Loading) {
                     item {
                         Box(
                             modifier         = Modifier
@@ -620,43 +595,24 @@ fun FinanceScreen(
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start  = Spacing.screenHorizontal,
-                                end    = Spacing.screenHorizontal,
-                                bottom = Spacing.sm,
+                    // RFINAL pushes the detail screen; there is no in-place dialog.
+                    // TransactionListItem draws its own bordered card (as in RFINAL),
+                    // so no wrapper container is needed here.
+                    TransactionListItem(
+                        tx      = tx,
+                        onClick = {
+                            navController.navigate(
+                                Route.TRANSACTION_DETAIL.replace("{transactionId}", tx.id)
                             )
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
-                    ) {
-                        TransactionListItem(
-                            tx      = tx,
-                            onClick = { selectedTransactionId = tx.id },
-                        )
-                    }
+                        },
+                    )
                 }
 
-                // ── Append (load-more) spinner ────────────────────────────────
-                if (pagingItems.loadState.append is LoadState.Loading) {
-                    item(key = "load_more") {
-                        Box(
-                            modifier         = Modifier
-                                .fillMaxWidth()
-                                .padding(Spacing.lg),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                        }
-                    }
-                }
+                // RFINAL renders no load-more spinner; Paging 3 appends silently.
 
                 // Bottom nav clearance
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
-            } // PullToRefreshBox
         }
 
         // FAB — Add transaction (mirrors RFINAL's bottom-right FAB on FinanceScreen)
@@ -675,20 +631,20 @@ fun FinanceScreen(
             )
         }
 
-        // BUG-F9: merge into one TopBanner — error takes priority over import result,
-        // so both can never overlap at the same TopCenter position.
-        val bannerVisible = state.error != null || smsState.banner != null
-        val bannerTone    = if (state.error != null) BannerTone.Error else BannerTone.Success
-        val bannerMessage = state.error ?: smsState.banner ?: ""
-        TopBanner(
-            visible       = bannerVisible,
-            message       = bannerMessage,
-            tone          = bannerTone,
-            onDismiss     = if (state.error == null) ({ smsImportViewModel.clearBanner() }) else null,
-            autoDismissMs = if (state.error == null) 3000 else 0,
-            modifier      = Modifier
-                .align(Alignment.TopCenter)
-                .windowInsetsPadding(WindowInsets.statusBars),
+        // RFINAL shows import results inline in the scroll flow, never as a
+        // floating toast, so no TopBanner is rendered here.
+
+        // Period picker — hoisted out of the LazyColumn so scrolling can't dispose
+        // the sheet while it is open (mirrors RN's Dropdown + SwipeableSheet).
+        AppPickerSheet(
+            visible     = periodExpanded,
+            title       = "Period",
+            options     = listOf("all", "today", "week", "month").map {
+                PickerOption(key = it, label = it.replaceFirstChar { c -> c.uppercase() })
+            },
+            selectedKey = activeFilters.period,
+            onSelect    = { viewModel.setPeriod(it) },
+            onDismiss   = { periodExpanded = false },
         )
 
         if (showImportSmsSheet) {
@@ -701,13 +657,6 @@ fun FinanceScreen(
             ImportCsvSheet(
                 onDismiss     = { showImportCsvSheet = false },
                 navController = navController,
-            )
-        }
-        if (selectedTransactionId != null) {
-            TransactionDetailDialog(
-                transactionId = selectedTransactionId!!,
-                onDismiss     = { selectedTransactionId = null },
-                viewModel     = viewModel,
             )
         }
     }

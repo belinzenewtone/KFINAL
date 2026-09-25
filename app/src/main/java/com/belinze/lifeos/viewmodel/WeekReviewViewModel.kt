@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
+import com.belinze.lifeos.util.formatCurrency
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -114,9 +115,9 @@ class WeekReviewViewModel
                 val fulizaCount  = transactionDao.countFulizaInRange(startStr, endStr)
                 val feesTotal    = transactionDao.getFeeTotalInRange(startStr, endStr)
 
-                // ─ Tasks — scope both to the same week for a fair rate ─
+                // ─ Tasks — completed is week-scoped; pending is all outstanding tasks ─
                 val tasksDone    = taskDao.countCompletedSince(startStr)
-                val tasksPending = taskDao.countPendingCreatedSince(startStr)
+                val tasksPending = taskDao.countAllPending()
 
                 // ─ DOW averages (4 prior complete weeks) ─
                 val dowAvg = computeDowAverages(monThis)
@@ -161,7 +162,8 @@ class WeekReviewViewModel
                 }
                 // Tasks
                 val totalTasks = tasksDone + tasksPending
-                val taskRate   = if (totalTasks > 0) tasksDone.toDouble() / totalTasks else 0.0
+                // React treats "no tasks at all" as a perfect rate (1.0) — not 0.
+                val taskRate   = if (totalTasks > 0) tasksDone.toDouble() / totalTasks else 1.0
                 score += when {
                     taskRate >= 0.8  -> 10
                     taskRate >= 0.5  -> 5
@@ -190,7 +192,7 @@ class WeekReviewViewModel
                 }
 
                 // ─ What Changed items (up to 3) ─
-                val changes = buildChangeItems(weekSpend, prevSpend, uncatCount, fulizaCount, topCategory)
+                val changes = buildChangeItems(weekSpend, prevSpend, uncatCount, fulizaCount, topCategory, tasksDone)
 
                 _uiState.value = WeekReviewUiState(
                     isLoading      = false,
@@ -250,57 +252,62 @@ class WeekReviewViewModel
         uncatCount: Int,
         fulizaCount: Int,
         topCategory: String,
+        tasksCompleted: Int,
     ): List<ChangeItem> {
+        // Mirror of the WeekReviewScreen.tsx "What Changed?" builder: the first three
+        // *applicable* items win, in this exact priority order.
         val items = mutableListOf<ChangeItem>()
 
-        // 1. Spending change vs last week
+        // 1. Week-on-week spend change (absolute amount, not a percentage)
         if (prevSpend > 0) {
-            val pct = ((weekSpend - prevSpend) / prevSpend * 100).toInt()
-            when {
-                pct <= -10 -> items += ChangeItem(
+            val delta = weekSpend - prevSpend
+            if (delta < 0) {
+                items += ChangeItem(
                     icon = "trending-down-outline",
-                    text = "Spent ${-pct}% less than last week — great job!",
+                    text = "Saved ${formatCurrency(Math.abs(delta), showCurrency = true, decimals = 0)} vs last week",
                     sentiment = "good",
                 )
-                pct >= 20 -> items += ChangeItem(
+            } else if (delta > 0) {
+                items += ChangeItem(
                     icon = "trending-up-outline",
-                    text = "Spent $pct% more than last week",
+                    text = "Spent ${formatCurrency(delta, showCurrency = true, decimals = 0)} more than last week",
                     sentiment = "warn",
-                )
-                else -> items += ChangeItem(
-                    icon = "bar-chart-outline",
-                    text = "Spending similar to last week",
-                    sentiment = "neutral",
                 )
             }
         }
 
-        // 2. Uncategorized warning
-        if (uncatCount > 0) {
+        // 2. Fuliza usage
+        if (fulizaCount > 0) {
             items += ChangeItem(
                 icon = "warning-outline",
-                text = "$uncatCount transaction${if (uncatCount > 1) "s" else ""} still uncategorized",
+                text = "Fuliza used $fulizaCount time${if (fulizaCount != 1) "s" else ""} — watch this",
                 sentiment = "warn",
             )
-        } else {
+        }
+
+        // 3. Uncategorized transactions
+        if (uncatCount > 0) {
+            items += ChangeItem(
+                icon = "alert-circle-outline",
+                text = "$uncatCount transaction${if (uncatCount != 1) "s" else ""} still need categorizing",
+                sentiment = "warn",
+            )
+        }
+
+        // 4. Tasks completed (only if room left)
+        if (items.size < 3 && tasksCompleted > 0) {
             items += ChangeItem(
                 icon = "checkmark-circle-outline",
-                text = "All transactions categorized",
+                text = "$tasksCompleted task${if (tasksCompleted != 1) "s" else ""} completed this week",
                 sentiment = "good",
             )
         }
 
-        // 3. Fuliza or top category
-        if (fulizaCount > 0) {
-            items += ChangeItem(
-                icon = "alert-circle-outline",
-                text = "Used Fuliza $fulizaCount time${if (fulizaCount > 1) "s" else ""} this week",
-                sentiment = "warn",
-            )
-        } else if (topCategory.isNotBlank()) {
+        // 5. Top category (only if room left)
+        if (items.size < 3 && topCategory.isNotBlank()) {
             items += ChangeItem(
                 icon = "bar-chart-outline",
-                text = "Biggest spending category: ${topCategory.replaceFirstChar { it.uppercaseChar() }}",
+                text = "Most spent on $topCategory",
                 sentiment = "neutral",
             )
         }

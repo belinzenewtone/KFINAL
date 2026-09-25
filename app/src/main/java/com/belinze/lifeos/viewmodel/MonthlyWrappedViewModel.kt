@@ -37,7 +37,7 @@ data class MonthlyWrappedUiState(
     val isLoading:          Boolean                      = true,
     val monthLabel:         String                       = "",    // "August" or "August 2024"
     val monthOffset:        Int                          = 0,
-    val minMonthOffset:     Int                          = -60,   // nav limit (oldest data)
+    val minMonthOffset:     Int                          = -24,   // nav limit (oldest data)
     val totalSpend:         Double                       = 0.0,
     val totalIncome:        Double                       = 0.0,
     val txCount:            Int                          = 0,
@@ -107,17 +107,18 @@ class MonthlyWrappedViewModel
                     val curYm = YearMonth.from(today)
                     minYm.until(curYm, java.time.temporal.ChronoUnit.MONTHS).toInt().let { -it }
                 } else {
-                    -60
+                    -24
                 }
 
-                // Top 3 categories
+                // Top 3 categories — React takes the raw category groups with no
+                // filtering, so an "uncategorized"/null group can appear here too.
                 val top3 = catTotals
-                    .filter { !it.category.isNullOrBlank() && it.category != "uncategorized" }
                     .take(3)
-                    .mapIndexed { i, c -> TopCategoryRow(i + 1, c.category ?: "Other", c.total) }
+                    .mapIndexed { i, c -> TopCategoryRow(i + 1, c.category ?: "", c.total) }
 
-                // Month label
-                val monthLabel = if (offset > -11) {
+                // React shows the year only once the month is 12+ months back
+                // (monthOffset < -11), so -11 and above stay month-only.
+                val monthLabel = if (offset >= -11) {
                     targetMonth.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
                 } else {
                     targetMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", java.util.Locale.ENGLISH))

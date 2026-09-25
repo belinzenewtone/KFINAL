@@ -10,8 +10,11 @@ import java.util.Locale
 // 1:1 port of src/utils/format.ts — currency and number formatting.
 //
 // All monetary values in the app are KES (Kenyan Shilling).
-// The RN version uses: formatCurrency(amount, 'KES') → "KES 1,234.50"
-// Negative amounts show: "-KES 1,234.50"
+// RFINAL formats with Intl.NumberFormat('en-KE', {style:'currency', currency:'KES',
+// currencyDisplay:'symbol'}), whose CLDR symbol for KES is "Ksh" — so the reference
+// app renders "Ksh 1,234.50". This helper must emit the same prefix or every
+// currency value in the app diverges from the reference.
+// Negative amounts show: "-Ksh 1,234.50"
 // ─────────────────────────────────────────────────────────────────────────────
 
 private val KES_FORMAT: NumberFormat by lazy {
@@ -59,7 +62,7 @@ fun formatCurrency(
         KES_FORMAT.format(absAmount)
     }
 
-    return if (showCurrency) "${sign}KES $formatted" else "$sign$formatted"
+    return if (showCurrency) "${sign}Ksh $formatted" else "$sign$formatted"
 }
 
 /** Overload accepting Long (integer amounts stored as cents × 100 / 100). */
@@ -99,8 +102,8 @@ fun compactCurrency(amount: Double): String {
     val abs = Math.abs(amount)
     val sign = if (amount < 0) "-" else ""
     return when {
-        abs >= 1_000_000 -> "${sign}KES ${String.format(Locale.US, "%.1f", abs / 1_000_000)}M"
-        abs >= 1_000     -> "${sign}KES ${String.format(Locale.US, "%.1f", abs / 1_000)}K"
+        abs >= 1_000_000 -> "${sign}Ksh ${String.format(Locale.US, "%.1f", abs / 1_000_000)}M"
+        abs >= 1_000     -> "${sign}Ksh ${String.format(Locale.US, "%.1f", abs / 1_000)}K"
         else             -> formatCurrency(amount)
     }
 }

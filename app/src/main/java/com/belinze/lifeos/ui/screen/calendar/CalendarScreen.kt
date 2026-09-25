@@ -45,9 +45,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -76,7 +73,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
+import com.belinze.lifeos.ui.components.AppSegmentedControl
 import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.SegmentOption
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatLocationFirst
@@ -240,20 +239,18 @@ fun CalendarScreen(
                 }
             }
 
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
+            // RFINAL uses its own pill track (common/SegmentedControl.tsx) here,
+            // not Material's segmented buttons.
+            AppSegmentedControl(
+                options     = CalendarTab.values().map { SegmentOption(key = it.name, label = it.name) },
+                selectedKey = selectedTab.name,
+                onSelect    = { key ->
+                    CalendarTab.values().firstOrNull { it.name == key }?.let { selectedTab = it }
+                },
+                modifier    = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
-            ) {
-                CalendarTab.values().forEachIndexed { idx, tab ->
-                    SegmentedButton(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        shape = SegmentedButtonDefaults.itemShape(index = idx, count = CalendarTab.values().size),
-                        label = { Text(tab.name) },
-                    )
-                }
-            }
+            )
 
             Spacer(Modifier.height(Spacing.xs))
 

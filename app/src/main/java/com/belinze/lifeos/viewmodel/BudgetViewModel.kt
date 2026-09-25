@@ -93,7 +93,7 @@ class BudgetViewModel
             val endMs    = monthKeyToEndMillis(monthKey)
             val startIso = Instant.ofEpochMilli(startMs).atZone(zone).format(isoDtFmt)
             val endIso   = Instant.ofEpochMilli(endMs).atZone(zone).format(isoDtFmt)
-            val catSpend = transactionDao.getCategoryTotals(startIso, endIso)
+            val catSpend = transactionDao.getExpenseCategoryTotals(startIso, endIso)
                 .associate { it.category to it.total }
 
             val enriched = budgets.map { b ->

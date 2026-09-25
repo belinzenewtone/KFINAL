@@ -6,7 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,19 +29,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,12 +48,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppDropdownField
+import com.belinze.lifeos.ui.components.AppPickerSheet
+import com.belinze.lifeos.ui.components.AppSegmentedControl
 import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.PickerOption
+import com.belinze.lifeos.ui.components.SegmentOption
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
@@ -101,11 +100,17 @@ fun TransactionDetailDialog(
 
     LaunchedEffect(transactionId) { viewModel.loadTransaction(transactionId) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
-    ) {
-        Box(
+    // Ordinary screen content, deliberately NOT a Dialog. Compose Navigation already
+    // replaces the previous destination, so the Dialog never produced RFINAL's
+    // "previous screen visible behind" effect — it only hosted a second window, and
+    // nesting a ModalBottomSheet (the Category/Status pickers below) inside a Dialog
+    // is fragile. Same visual result, one less window.
+    Box(modifier = Modifier.fillMaxSize()) {
+        // BoxWithConstraints so the card can cap itself against the REAL available
+        // height instead of a hard-coded 520dp: it grows to fit its content (so the
+        // edit panel extends naturally, like RFINAL) and only starts scrolling once
+        // it would otherwise run off the screen.
+        BoxWithConstraints(
             modifier         = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.4f))
@@ -116,10 +121,11 @@ fun TransactionDetailDialog(
                 ),
             contentAlignment = Alignment.Center,
         ) {
+            val maxCardHeight = maxHeight * 0.9f
             Surface(
                 modifier  = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 520.dp)
+                    .heightIn(max = maxCardHeight)
                     .padding(horizontal = 24.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -145,6 +151,9 @@ fun TransactionDetailDialog(
                             else -> MaterialTheme.colorScheme.onSurface
                         }
                         Column(
+                            // Content-sized up to the cap above; this scroll only engages
+                            // for genuinely tall content, so tapping Edit extends the card
+                            // rather than cramming the panel into a fixed-height box.
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState())
@@ -280,74 +289,84 @@ private fun InlineEditPanel(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                TX_TYPES_DETAIL.forEachIndexed { idx, type ->
-                    SegmentedButton(
-                        selected = formState.transactionType == type,
-                        onClick  = { viewModel.updateFormType(type) },
-                        shape    = SegmentedButtonDefaults.itemShape(idx, TX_TYPES_DETAIL.size),
-                        label    = { Text(type.replaceFirstChar { it.uppercase() }) },
+            AppSegmentedControl(
+                options     = TX_TYPES_DETAIL.map {
+                    SegmentOption(key = it, label = it.replaceFirstChar { c -> c.uppercase() })
+                },
+                selectedKey = formState.transactionType,
+                onSelect    = { viewModel.updateFormType(it) },
+                modifier    = Modifier.fillMaxWidth(),
+            )
+            var catSheetOpen by remember { mutableStateOf(false) }
+            AppDropdownField(
+                label       = "Category",
+                valueLabel  = formState.category.replaceFirstChar { it.uppercase() },
+                onClick     = { catSheetOpen = true },
+                modifier    = Modifier.fillMaxWidth(),
+                leadingIcon = categoryIcon(formState.category),
+                leadingTint = categoryColor(formState.category),
+            )
+            var statusSheetOpen by remember { mutableStateOf(false) }
+            AppDropdownField(
+                label      = "Status",
+                valueLabel = formState.status.replaceFirstChar { it.uppercase() },
+                onClick    = { statusSheetOpen = true },
+                modifier   = Modifier.fillMaxWidth(),
+            )
+            // RN opens a SwipeableSheet option list for both pickers.
+            AppPickerSheet(
+                visible     = catSheetOpen,
+                title       = "Category",
+                options     = CATEGORIES_DETAIL.map { cat ->
+                    PickerOption(
+                        key   = cat,
+                        label = cat.replaceFirstChar { it.uppercase() },
+                        icon  = categoryIcon(cat),
+                        tint  = categoryColor(cat),
                     )
-                }
-            }
-            var catExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = catExpanded, onExpandedChange = { catExpanded = it }) {
-                OutlinedTextField(
-                    value = formState.category.replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Category") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(catExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                ExposedDropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
-                    CATEGORIES_DETAIL.forEach { cat ->
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                Icon(categoryIcon(cat), contentDescription = null, tint = categoryColor(cat), modifier = Modifier.size(18.dp))
-                            },
-                            trailingIcon = {
-                                if (formState.category == cat) {
-                                    Icon(Icons.Outlined.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                                }
-                            },
-                            text = { Text(cat.replaceFirstChar { it.uppercase() }) },
-                            onClick = { viewModel.updateFormCategory(cat); catExpanded = false },
-                        )
-                    }
-                }
-            }
-            var statusExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = statusExpanded, onExpandedChange = { statusExpanded = it }) {
-                OutlinedTextField(
-                    value = formState.status.replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Status") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(statusExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                ExposedDropdownMenu(expanded = statusExpanded, onDismissRequest = { statusExpanded = false }) {
-                    STATUSES_DETAIL.forEach { status ->
-                        DropdownMenuItem(
-                            text = { Text(status.replaceFirstChar { it.uppercase() }) },
-                            onClick = { viewModel.updateFormStatus(status); statusExpanded = false },
-                        )
-                    }
-                }
-            }
+                },
+                selectedKey = formState.category,
+                onSelect    = { viewModel.updateFormCategory(it) },
+                onDismiss   = { catSheetOpen = false },
+            )
+            AppPickerSheet(
+                visible     = statusSheetOpen,
+                title       = "Status",
+                options     = STATUSES_DETAIL.map { st ->
+                    PickerOption(key = st, label = st.replaceFirstChar { it.uppercase() })
+                },
+                selectedKey = formState.status,
+                onSelect    = { viewModel.updateFormStatus(it) },
+                onDismiss   = { statusSheetOpen = false },
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier              = Modifier.fillMaxWidth(),
+                verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
-                TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                // RFINAL keeps "Cancel" on a single line (compact text button, flex 1).
+                // A weighted 1:3 split squeezes it below its intrinsic width on narrow
+                // screens, so the label breaks and renders vertically. Let Cancel size to
+                // its content and give Save the remaining space instead.
+                TextButton(
+                    onClick        = onCancel,
+                    // RFINAL: a flat text button whose label is onSurfaceVariant (not
+                    // primary), at the theme's 16dp roundness — not an M3 pill.
+                    shape          = RoundedCornerShape(16.dp),
+                    colors         = TextButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                    contentPadding = PaddingValues(horizontal = Spacing.sm),
+                ) {
+                    Text("Cancel", maxLines = 1, softWrap = false)
+                }
                 Button(
                     onClick  = {
                         viewModel.saveForm { onSaved(); viewModel.loadTransaction(transactionId) }
                     },
                     enabled  = !formState.isSaving,
                     shape    = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(3f),
+                    modifier = Modifier.weight(1f),
                 ) {
                     if (formState.isSaving) {
                         CircularProgressIndicator(

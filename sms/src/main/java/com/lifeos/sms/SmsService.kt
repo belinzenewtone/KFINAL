@@ -5,15 +5,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -83,19 +80,17 @@ class SmsService
     // ─── WorkManager scheduling ───────────────────────────────────────────────
 
     /**
-     * Schedules the 15-minute ingest sweep worker (idempotent — KEEP policy).
-     * Called from [initialize]; can also be called directly from a settings screen.
+     * Schedules the 15-minute ingest sweep worker.
+     *
+     * Delegates to [IngestSweepWorker.ensureScheduled] so there is exactly ONE
+     * registration for this worker. This method previously registered the same
+     * worker a second time under a different unique name ("lifeos_ingest_sweep"
+     * vs IngestSweepWorker's "lifeos-ingest-sweep"), which put the sweep on two
+     * independent 15-minute timers — double the battery cost, and two different
+     * existing-work policies (KEEP vs UPDATE) fighting over the same job.
      */
     fun ensureIngestSweep() {
-        val request = PeriodicWorkRequestBuilder<IngestSweepWorker>(
-            15, TimeUnit.MINUTES,
-        ).build()
-
-        workManager.enqueueUniquePeriodicWork(
-            "lifeos_ingest_sweep",
-            ExistingPeriodicWorkPolicy.KEEP,
-            request,
-        )
+        IngestSweepWorker.ensureScheduled(context)
     }
 
     /**

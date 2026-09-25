@@ -1,0 +1,598 @@
+<title>UI Parity Checklist</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700&display=swap">
+<style>
+:root {
+  --bg: #F4F6FA;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #EEF1F7;
+  --border: #DDE2EE;
+  --text: #0F172A;
+  --text-muted: #5A6480;
+  --accent: #0369A1;
+  --accent-soft: #EFF6FF;
+  --success: #15803D;
+  --success-soft: #F0FDF4;
+  --progress-fill: #0369A1;
+  --rule-bg: #FFFBEB;
+  --rule-border: #FDE68A;
+  --rule-text: #78350F;
+  --tag-bg: #E8F0FA;
+  --tag-text: #1D4ED8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #08090E;
+    --bg-card: #141825;
+    --bg-elevated: #1B2335;
+    --border: #2A2E42;
+    --text: #F0F2F8;
+    --text-muted: #9499B0;
+    --accent: #57B9FF;
+    --accent-soft: #0F2A40;
+    --success: #4ADE80;
+    --success-soft: #052E16;
+    --progress-fill: #57B9FF;
+    --rule-bg: #1C1A00;
+    --rule-border: #3D3500;
+    --rule-text: #FCD34D;
+    --tag-bg: #0F2A40;
+    --tag-text: #60A5FA;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #08090E;
+  --bg-card: #141825;
+  --bg-elevated: #1B2335;
+  --border: #2A2E42;
+  --text: #F0F2F8;
+  --text-muted: #9499B0;
+  --accent: #57B9FF;
+  --accent-soft: #0F2A40;
+  --success: #4ADE80;
+  --success-soft: #052E16;
+  --progress-fill: #57B9FF;
+  --rule-bg: #1C1A00;
+  --rule-border: #3D3500;
+  --rule-text: #FCD34D;
+  --tag-bg: #0F2A40;
+  --tag-text: #60A5FA;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 28px 48px;
+}
+.wrap { max-width: 740px; margin: 0 auto; }
+
+/* ── Header ─────────────────────────────── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 4px; }
+.page-header p { color: var(--text-muted); font-size: 13px; max-width: 540px; }
+.controls { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; gap: 12px; flex-wrap: wrap; }
+.progress-block { flex: 1; min-width: 200px; }
+.progress-track { background: var(--bg-elevated); border-radius: 999px; height: 6px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--progress-fill); border-radius: 999px; width: 0%; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+.progress-text { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-muted); }
+.progress-text strong { color: var(--accent); }
+.btn-reset {
+  background: none; border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 12px; font-family: inherit;
+  padding: 5px 12px; border-radius: 7px; cursor: pointer;
+  transition: color .15s, border-color .15s; flex-shrink: 0;
+}
+.btn-reset:hover { color: var(--text); border-color: var(--text-muted); }
+
+/* ── Golden rules ───────────────────────── */
+.golden {
+  background: var(--rule-bg);
+  border: 1px solid var(--rule-border);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;
+}
+.golden-title { font-size: 11px; font-weight: 700; color: var(--rule-text); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.golden-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.golden-list li { font-size: 12.5px; color: var(--rule-text); padding-left: 16px; position: relative; }
+.golden-list li::before { content: "→"; position: absolute; left: 0; font-weight: 700; }
+
+/* ── Sections ───────────────────────────── */
+.sections { display: flex; flex-direction: column; gap: 10px; }
+.section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+
+.sec-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px; cursor: pointer; user-select: none;
+  transition: background .12s;
+}
+.sec-header:hover { background: var(--bg-elevated); }
+.sec-icon { font-size: 15px; flex-shrink: 0; }
+.sec-title { font-weight: 600; font-size: 13.5px; flex: 1; }
+.sec-badge {
+  font-size: 11px; font-weight: 600;
+  background: var(--tag-bg); color: var(--tag-text);
+  padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
+  transition: background .2s, color .2s;
+}
+.sec-badge.all-done { background: var(--success-soft); color: var(--success); }
+.chevron { color: var(--text-muted); font-size: 11px; flex-shrink: 0; transition: transform .2s; }
+.section.open .chevron { transform: rotate(180deg); }
+
+.sec-body { display: none; border-top: 1px solid var(--border); }
+.section.open .sec-body { display: block; }
+
+/* ── Items ──────────────────────────────── */
+.item {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  transition: background .1s; cursor: pointer;
+}
+.item:last-child { border-bottom: none; }
+.item:hover { background: var(--bg-elevated); }
+
+.item input[type="checkbox"] {
+  flex-shrink: 0; width: 15px; height: 15px; margin-top: 2px;
+  cursor: pointer; accent-color: var(--accent);
+}
+.item label { flex: 1; cursor: pointer; font-size: 13px; color: var(--text); }
+.item.done label { text-decoration: line-through; color: var(--text-muted); }
+.item-note { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill, .chevron { transition: none; }
+}
+</style>
+
+<div class="wrap">
+
+  <div class="page-header">
+    <h1>UI Parity Checklist</h1>
+    <p>Use this during every parity pass. The reference app (A) is the source of truth. Tick every item — A and B should be indistinguishable.</p>
+    <div class="controls">
+      <div class="progress-block">
+        <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+        <div class="progress-text"><span id="prog-label">0 of 0 checked</span><strong id="prog-pct">0%</strong></div>
+      </div>
+      <button class="btn-reset" id="btn-reset">Reset all</button>
+    </div>
+  </div>
+
+  <div class="golden">
+    <div class="golden-title">Golden Rules — always apply</div>
+    <ul class="golden-list">
+      <li>Reference app A is the single source of truth.</li>
+      <li>A has it, we don't → add it, even if it needs a DB migration or a full rewrite.</li>
+      <li>We have it, A doesn't → remove it, unless the user explicitly says to keep it.</li>
+      <li>No extra toggles, buttons, or components beyond what A shows.</li>
+      <li>No component present in A may be missing from our app.</li>
+    </ul>
+  </div>
+
+  <div class="sections" id="sections">
+
+    <!-- 1 ── PAGE STRUCTURE -->
+    <div class="section open" data-sec="structure">
+      <div class="sec-header">
+        <span class="sec-icon">🏗</span>
+        <span class="sec-title">Page Structure</span>
+        <span class="sec-badge" id="badge-structure">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s1-1"><label for="s1-1">Page has a header — scrolls with content or stays fixed, matching A exactly</label></div>
+        <div class="item"><input type="checkbox" id="s1-2"><label for="s1-2">Header height and padding match</label></div>
+        <div class="item"><input type="checkbox" id="s1-3"><label for="s1-3">Header title font size, weight, and alignment match</label></div>
+        <div class="item"><input type="checkbox" id="s1-4"><label for="s1-4">Header back button / leading actions match (icon, size, position)</label></div>
+        <div class="item"><input type="checkbox" id="s1-5"><label for="s1-5">Header trailing actions (buttons, icons) match A</label></div>
+        <div class="item"><input type="checkbox" id="s1-6"><label for="s1-6">Page background color matches A (primary, secondary, or elevated surface)</label></div>
+        <div class="item"><input type="checkbox" id="s1-7"><label for="s1-7">Bottom padding / safe-area clearance identical (content not obscured by nav bar)</label></div>
+        <div class="item"><input type="checkbox" id="s1-8"><label for="s1-8">Page-level section ordering matches A top to bottom</label></div>
+        <div class="item"><input type="checkbox" id="s1-9"><label for="s1-9">Horizontal screen gutter (left/right padding) matches A</label></div>
+      </div>
+    </div>
+
+    <!-- 2 ── COLORS & THEMING -->
+    <div class="section" data-sec="theme">
+      <div class="sec-header">
+        <span class="sec-icon">🎨</span>
+        <span class="sec-title">Colors & Theming</span>
+        <span class="sec-badge" id="badge-theme">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s2-1"><label for="s2-1">Background surface colors match A (primary, secondary, elevated, tertiary)</label></div>
+        <div class="item"><input type="checkbox" id="s2-2"><label for="s2-2">Accent/primary color matches A exactly</label></div>
+        <div class="item"><input type="checkbox" id="s2-3"><label for="s2-3">Semantic colors match — success, warning, danger, info</label></div>
+        <div class="item"><input type="checkbox" id="s2-4"><label for="s2-4">Text colors match — primary, secondary, muted, destructive</label></div>
+        <div class="item"><input type="checkbox" id="s2-5"><label for="s2-5">Border and divider colors match</label></div>
+        <div class="item"><input type="checkbox" id="s2-6"><label for="s2-6">Corner radius style matches A — pill, rounded, square</label></div>
+        <div class="item"><input type="checkbox" id="s2-7"><label for="s2-7">Shadow / elevation style matches (depth, spread, color)</label></div>
+        <div class="item"><input type="checkbox" id="s2-8"><label for="s2-8">Glass / blur effects match if A uses them</label></div>
+        <div class="item"><input type="checkbox" id="s2-9"><label for="s2-9">Dark and light modes both match A independently</label></div>
+        <div class="item"><input type="checkbox" id="s2-10"><label for="s2-10">Any decorative patterns or gradients match A</label></div>
+      </div>
+    </div>
+
+    <!-- 3 ── TYPOGRAPHY -->
+    <div class="section" data-sec="type">
+      <div class="sec-header">
+        <span class="sec-icon">✏️</span>
+        <span class="sec-title">Typography</span>
+        <span class="sec-badge" id="badge-type">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s3-1"><label for="s3-1">Heading font sizes match across all levels (H1 → H4)</label></div>
+        <div class="item"><input type="checkbox" id="s3-2"><label for="s3-2">Body text font size and line height match</label></div>
+        <div class="item"><input type="checkbox" id="s3-3"><label for="s3-3">Caption / label font size matches</label></div>
+        <div class="item"><input type="checkbox" id="s3-4"><label for="s3-4">Font weights match throughout — bold, semibold, medium, regular</label></div>
+        <div class="item"><input type="checkbox" id="s3-5"><label for="s3-5">Letter spacing matches on labels, badges, and headings</label></div>
+        <div class="item"><input type="checkbox" id="s3-6"><label for="s3-6">Text truncation behavior matches — maxLines, ellipsis, or wrap</label></div>
+        <div class="item"><input type="checkbox" id="s3-7"><label for="s3-7">Number and currency formatting matches (decimal places, currency symbol)</label></div>
+        <div class="item"><input type="checkbox" id="s3-8"><label for="s3-8">Date and time display format matches A</label></div>
+      </div>
+    </div>
+
+    <!-- 4 ── SPACING & LAYOUT -->
+    <div class="section" data-sec="spacing">
+      <div class="sec-header">
+        <span class="sec-icon">📐</span>
+        <span class="sec-title">Spacing & Layout</span>
+        <span class="sec-badge" id="badge-spacing">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s4-1"><label for="s4-1">Horizontal padding inside all containers matches A</label></div>
+        <div class="item"><input type="checkbox" id="s4-2"><label for="s4-2">Vertical padding inside all containers matches A</label></div>
+        <div class="item"><input type="checkbox" id="s4-3"><label for="s4-3">Gap between containers / sections matches A</label></div>
+        <div class="item"><input type="checkbox" id="s4-4"><label for="s4-4">Gap between items within a container matches A</label></div>
+        <div class="item"><input type="checkbox" id="s4-5"><label for="s4-5">Container and widget widths / heights match A</label></div>
+        <div class="item"><input type="checkbox" id="s4-6"><label for="s4-6">Icon-to-text gap matches A</label></div>
+        <div class="item"><input type="checkbox" id="s4-7"><label for="s4-7">Row count inside cards matches, content in each row is in same order</label></div>
+        <div class="item"><input type="checkbox" id="s4-8"><label for="s4-8">List item height (row height) matches A</label></div>
+        <div class="item"><input type="checkbox" id="s4-9"><label for="s4-9">Divider/separator position and thickness matches</label></div>
+      </div>
+    </div>
+
+    <!-- 5 ── PILLS & CHIPS -->
+    <div class="section" data-sec="pills">
+      <div class="sec-header">
+        <span class="sec-icon">💊</span>
+        <span class="sec-title">Pills & Chips</span>
+        <span class="sec-badge" id="badge-pills">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s5-1"><label for="s5-1">Same number of pills / chips as A</label></div>
+        <div class="item"><input type="checkbox" id="s5-2"><label for="s5-2">Pill labels and icons match A</label></div>
+        <div class="item"><input type="checkbox" id="s5-3"><label for="s5-3">Pill size (height, horizontal padding, font size) matches A</label></div>
+        <div class="item"><input type="checkbox" id="s5-4"><label for="s5-4">Pill colors and border match per state (selected, unselected)</label></div>
+        <div class="item"><input type="checkbox" id="s5-5"><label for="s5-5">Pill tap behavior (selection, navigation, filter) matches A</label></div>
+        <div class="item"><input type="checkbox" id="s5-6"><label for="s5-6">Pills in horizontal scroll — scroll behavior and order match A</label></div>
+      </div>
+    </div>
+
+    <!-- 6 ── CARDS & CONTAINERS -->
+    <div class="section" data-sec="cards">
+      <div class="sec-header">
+        <span class="sec-icon">📦</span>
+        <span class="sec-title">Cards & Containers</span>
+        <span class="sec-badge" id="badge-cards">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s6-1"><label for="s6-1">Same number of cards / containers as A on this page</label></div>
+        <div class="item"><input type="checkbox" id="s6-2"><label for="s6-2">Card order on screen matches A top to bottom</label></div>
+        <div class="item"><input type="checkbox" id="s6-3"><label for="s6-3">Card surface color, border, corner radius, and shadow match</label></div>
+        <div class="item"><input type="checkbox" id="s6-4"><label for="s6-4">Content inside each card — fields, labels, values — matches A</label></div>
+        <div class="item"><input type="checkbox" id="s6-5"><label for="s6-5">Content order within the card matches A (row by row)</label></div>
+        <div class="item"><input type="checkbox" id="s6-6"><label for="s6-6">Action buttons inside card (Edit, Delete, etc.) match A in count and label</label></div>
+        <div class="item"><input type="checkbox" id="s6-7"><label for="s6-7">Card tappable area and navigation behavior match A</label></div>
+        <div class="item"><input type="checkbox" id="s6-8"><label for="s6-8">Hero / stat containers show same metrics with same formatting</label></div>
+      </div>
+    </div>
+
+    <!-- 7 ── TOGGLES & SWITCHES -->
+    <div class="section" data-sec="toggles">
+      <div class="sec-header">
+        <span class="sec-icon">🔘</span>
+        <span class="sec-title">Toggles & Switches</span>
+        <span class="sec-badge" id="badge-toggles">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s7-1"><label for="s7-1">Same number of toggles as A, in same order</label></div>
+        <div class="item"><input type="checkbox" id="s7-2"><label for="s7-2">Toggle labels and subtitles match A</label></div>
+        <div class="item"><input type="checkbox" id="s7-3"><label for="s7-3">Toggle default on/off state matches A</label></div>
+        <div class="item"><input type="checkbox" id="s7-4"><label for="s7-4">Toggle thumb and track colors match A (checked and unchecked)</label></div>
+        <div class="item"><input type="checkbox" id="s7-5"><label for="s7-5">Toggle size matches A — not too large or too small</label></div>
+        <div class="item"><input type="checkbox" id="s7-6"><label for="s7-6">Toggle fires haptic feedback on tap</label></div>
+        <div class="item"><input type="checkbox" id="s7-7"><label for="s7-7">Inactive toggle greys out its associated card or section</label></div>
+        <div class="item"><input type="checkbox" id="s7-8"><label for="s7-8">Re-activating toggle restores card highlight immediately</label></div>
+        <div class="item"><input type="checkbox" id="s7-9"><label for="s7-9">Disabled toggles look disabled and cannot be tapped</label></div>
+      </div>
+    </div>
+
+    <!-- 8 ── BUTTONS & ACTIONS -->
+    <div class="section" data-sec="buttons">
+      <div class="sec-header">
+        <span class="sec-icon">🔲</span>
+        <span class="sec-title">Buttons & Actions</span>
+        <span class="sec-badge" id="badge-buttons">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s8-1"><label for="s8-1">Same buttons present as A — count, labels, position</label></div>
+        <div class="item"><input type="checkbox" id="s8-2"><label for="s8-2">Button style matches A — filled, outlined, text, icon-only</label></div>
+        <div class="item"><input type="checkbox" id="s8-3"><label for="s8-3">Button size (height, font size, padding) matches A</label></div>
+        <div class="item"><input type="checkbox" id="s8-4"><label for="s8-4">Button colors match A per type (primary, secondary, destructive)</label></div>
+        <div class="item"><input type="checkbox" id="s8-5"><label for="s8-5">Floating action button present if A has one — same position and icon</label></div>
+        <div class="item"><input type="checkbox" id="s8-6"><label for="s8-6">Button press / ripple feedback matches A</label></div>
+        <div class="item"><input type="checkbox" id="s8-7"><label for="s8-7">Destructive buttons are styled destructively (red / danger color)</label></div>
+      </div>
+    </div>
+
+    <!-- 9 ── INPUT FIELDS -->
+    <div class="section" data-sec="inputs">
+      <div class="sec-header">
+        <span class="sec-icon">📝</span>
+        <span class="sec-title">Input Fields</span>
+        <span class="sec-badge" id="badge-inputs">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s9-1"><label for="s9-1">Same input fields present as A</label></div>
+        <div class="item"><input type="checkbox" id="s9-2"><label for="s9-2">Input labels and placeholder text match A</label></div>
+        <div class="item"><input type="checkbox" id="s9-3"><label for="s9-3">Date fields open native date picker, not manual text input</label></div>
+        <div class="item"><input type="checkbox" id="s9-4"><label for="s9-4">Time fields open native time picker, not manual text input</label></div>
+        <div class="item"><input type="checkbox" id="s9-5"><label for="s9-5">Input field style (border, background, focus state) matches A</label></div>
+        <div class="item"><input type="checkbox" id="s9-6"><label for="s9-6">Keyboard type matches A (numeric, email, text)</label></div>
+        <div class="item"><input type="checkbox" id="s9-7"><label for="s9-7">Validation errors are shown in same position with same style</label></div>
+        <div class="item"><input type="checkbox" id="s9-8"><label for="s9-8">Input character limits match A (if any)</label></div>
+      </div>
+    </div>
+
+    <!-- 10 ── DESTRUCTIVE ACTIONS -->
+    <div class="section" data-sec="destructive">
+      <div class="sec-header">
+        <span class="sec-icon">🗑</span>
+        <span class="sec-title">Destructive Actions</span>
+        <span class="sec-badge" id="badge-destructive">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s10-1"><label for="s10-1">Every delete action shows a confirmation dialog before executing</label></div>
+        <div class="item"><input type="checkbox" id="s10-2"><label for="s10-2">Confirmation dialog wording matches A (title and body copy)</label></div>
+        <div class="item"><input type="checkbox" id="s10-3"><label for="s10-3">Confirmation dialog button labels match A (e.g. "Delete" vs "Remove")</label></div>
+        <div class="item"><input type="checkbox" id="s10-4"><label for="s10-4">Swipe-to-delete available where A has it, with same visual</label></div>
+        <div class="item"><input type="checkbox" id="s10-5"><label for="s10-5">Cancel action on confirmation dismisses without side effects</label></div>
+      </div>
+    </div>
+
+    <!-- 11 ── NOTIFICATIONS & TOASTS -->
+    <div class="section" data-sec="toasts">
+      <div class="sec-header">
+        <span class="sec-icon">🔔</span>
+        <span class="sec-title">Notifications & Toasts</span>
+        <span class="sec-badge" id="badge-toasts">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s11-1"><label for="s11-1">Toast appears for every action A shows it for (save, update, delete, toggle…)</label></div>
+        <div class="item"><input type="checkbox" id="s11-2"><label for="s11-2">Toast appears immediately — no perceptible delay after action</label></div>
+        <div class="item"><input type="checkbox" id="s11-3"><label for="s11-3">Toast enter animation matches A — scale + translate + fade</label></div>
+        <div class="item"><input type="checkbox" id="s11-4"><label for="s11-4">Toast exit animation matches A</label></div>
+        <div class="item"><input type="checkbox" id="s11-5"><label for="s11-5">Toast text is centered</label></div>
+        <div class="item"><input type="checkbox" id="s11-6"><label for="s11-6">Toast background / theme matches A (dark glass pill or tone-colored)</label></div>
+        <div class="item"><input type="checkbox" id="s11-7"><label for="s11-7">Toast icon matches tone — ✓ success, ✕ error, ⚠ warning, ℹ info</label></div>
+        <div class="item"><input type="checkbox" id="s11-8"><label for="s11-8">Toast text color matches tone</label></div>
+        <div class="item"><input type="checkbox" id="s11-9"><label for="s11-9">Toast auto-dismisses at same duration as A</label></div>
+        <div class="item"><input type="checkbox" id="s11-10"><label for="s11-10">Rapid sequential actions don't cause toast overlap, freeze, or flash</label></div>
+        <div class="item"><input type="checkbox" id="s11-11"><label for="s11-11">No flash or re-animation on back navigation / screen exit</label></div>
+        <div class="item"><input type="checkbox" id="s11-12"><label for="s11-12">Toast is dismissible by tap if A supports it</label></div>
+      </div>
+    </div>
+
+    <!-- 12 ── ANIMATIONS & TRANSITIONS -->
+    <div class="section" data-sec="anim">
+      <div class="sec-header">
+        <span class="sec-icon">🎬</span>
+        <span class="sec-title">Animations & Transitions</span>
+        <span class="sec-badge" id="badge-anim">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s12-1"><label for="s12-1">Page push/pop transition matches A (slide, fade, etc.)</label></div>
+        <div class="item"><input type="checkbox" id="s12-2"><label for="s12-2">Tab switch animation matches A</label></div>
+        <div class="item"><input type="checkbox" id="s12-3"><label for="s12-3">Dropdown open and close animation matches A</label></div>
+        <div class="item"><input type="checkbox" id="s12-4"><label for="s12-4">List item appear / disappear animation matches A (if any)</label></div>
+        <div class="item"><input type="checkbox" id="s12-5"><label for="s12-5">Scroll momentum and bounce behavior match A</label></div>
+        <div class="item"><input type="checkbox" id="s12-6"><label for="s12-6">Swipe gesture behavior matches A (swipe-back, swipe-to-delete)</label></div>
+        <div class="item"><input type="checkbox" id="s12-7"><label for="s12-7">Pull-to-refresh present and styled as A</label></div>
+        <div class="item"><input type="checkbox" id="s12-8"><label for="s12-8">Loading skeleton / shimmer animation matches A</label></div>
+        <div class="item"><input type="checkbox" id="s12-9"><label for="s12-9">Button press state / ripple animation matches A</label></div>
+      </div>
+    </div>
+
+    <!-- 13 ── CHARTS & DATA VIZ -->
+    <div class="section" data-sec="charts">
+      <div class="sec-header">
+        <span class="sec-icon">📊</span>
+        <span class="sec-title">Charts & Data Viz</span>
+        <span class="sec-badge" id="badge-charts">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s13-1"><label for="s13-1">Same chart types present as A (bar, line, pie, donut…)</label></div>
+        <div class="item"><input type="checkbox" id="s13-2"><label for="s13-2">Chart colors match A exactly per category / series</label></div>
+        <div class="item"><input type="checkbox" id="s13-3"><label for="s13-3">Bar / segment proportions and heights visually match A</label></div>
+        <div class="item"><input type="checkbox" id="s13-4"><label for="s13-4">X-axis label names and formatting match A</label></div>
+        <div class="item"><input type="checkbox" id="s13-5"><label for="s13-5">Y-axis label names, scale, and tick marks match A</label></div>
+        <div class="item"><input type="checkbox" id="s13-6"><label for="s13-6">Spacing between bars / segments is consistent and matches A</label></div>
+        <div class="item"><input type="checkbox" id="s13-7"><label for="s13-7">Chart legend present where A has one, with same labels and colors</label></div>
+        <div class="item"><input type="checkbox" id="s13-8"><label for="s13-8">Empty chart state matches A</label></div>
+        <div class="item"><input type="checkbox" id="s13-9"><label for="s13-9">Chart tap/tooltip behavior matches A</label></div>
+      </div>
+    </div>
+
+    <!-- 14 ── FLOATING WINDOWS & BOTTOM SHEETS -->
+    <div class="section" data-sec="sheets">
+      <div class="sec-header">
+        <span class="sec-icon">🪟</span>
+        <span class="sec-title">Floating Windows & Bottom Sheets</span>
+        <span class="sec-badge" id="badge-sheets">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s14-1"><label for="s14-1">Opens with same animation as A — direction, speed, easing</label></div>
+        <div class="item"><input type="checkbox" id="s14-2"><label for="s14-2">Closes with same animation as A</label></div>
+        <div class="item"><input type="checkbox" id="s14-3"><label for="s14-3">Same size (height) and position as A</label></div>
+        <div class="item"><input type="checkbox" id="s14-4"><label for="s14-4">Same components inside — same count, same order, same content</label></div>
+        <div class="item"><input type="checkbox" id="s14-5"><label for="s14-5">Drag handle visible if A has one, drag-to-dismiss works</label></div>
+        <div class="item"><input type="checkbox" id="s14-6"><label for="s14-6">Backdrop dimming and tap-outside-to-close match A</label></div>
+        <div class="item"><input type="checkbox" id="s14-7"><label for="s14-7">Sheet moves up with keyboard when input is focused</label></div>
+        <div class="item"><input type="checkbox" id="s14-8"><label for="s14-8">Multi-step sheets have same steps in same order as A</label></div>
+      </div>
+    </div>
+
+    <!-- 15 ── DATA & FUNCTIONALITY -->
+    <div class="section" data-sec="data">
+      <div class="sec-header">
+        <span class="sec-icon">🔄</span>
+        <span class="sec-title">Data & Functionality</span>
+        <span class="sec-badge" id="badge-data">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s15-1"><label for="s15-1">Toggle activates / deactivates the correct feature, not a visual-only state</label></div>
+        <div class="item"><input type="checkbox" id="s15-2"><label for="s15-2">Save / Update persists data and a success toast is shown</label></div>
+        <div class="item"><input type="checkbox" id="s15-3"><label for="s15-3">Updated data propagates to all dependent screens and total metrics</label></div>
+        <div class="item"><input type="checkbox" id="s15-4"><label for="s15-4">Deleting an item removes it from all screens that reference it</label></div>
+        <div class="item"><input type="checkbox" id="s15-5"><label for="s15-5">Forms submit correctly and data is saved to the database</label></div>
+        <div class="item"><input type="checkbox" id="s15-6"><label for="s15-6">Aggregate totals / metrics recalculate after any data change</label></div>
+        <div class="item"><input type="checkbox" id="s15-7"><label for="s15-7">Navigation after an action (back, stay, or push) matches A</label></div>
+      </div>
+    </div>
+
+    <!-- 16 ── ICONS -->
+    <div class="section" data-sec="icons">
+      <div class="sec-header">
+        <span class="sec-icon">🖼</span>
+        <span class="sec-title">Icons</span>
+        <span class="sec-badge" id="badge-icons">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s16-1"><label for="s16-1">Same icons used for same concepts as A (style: outlined, filled, sharp)</label></div>
+        <div class="item"><input type="checkbox" id="s16-2"><label for="s16-2">Icon sizes match A in every context (header, list row, button, card)</label></div>
+        <div class="item"><input type="checkbox" id="s16-3"><label for="s16-3">Icon colors match A per context (muted, accent, semantic)</label></div>
+        <div class="item"><input type="checkbox" id="s16-4"><label for="s16-4">Category icons match A for all transaction/task categories</label></div>
+        <div class="item"><input type="checkbox" id="s16-5"><label for="s16-5">Icon-in-bubble sizes and bubble colors match A</label></div>
+      </div>
+    </div>
+
+    <!-- 17 ── EMPTY & LOADING STATES -->
+    <div class="section" data-sec="states">
+      <div class="sec-header">
+        <span class="sec-icon">👁</span>
+        <span class="sec-title">Empty, Loading & Error States</span>
+        <span class="sec-badge" id="badge-states">0 / 0</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="item"><input type="checkbox" id="s17-1"><label for="s17-1">Empty state present where A has one (illustration / icon + message)</label></div>
+        <div class="item"><input type="checkbox" id="s17-2"><label for="s17-2">Empty state copy and visual match A</label></div>
+        <div class="item"><input type="checkbox" id="s17-3"><label for="s17-3">Empty state CTA button present and labeled as in A</label></div>
+        <div class="item"><input type="checkbox" id="s17-4"><label for="s17-4">Loading skeleton / spinner present where A shows one</label></div>
+        <div class="item"><input type="checkbox" id="s17-5"><label for="s17-5">Loading state layout matches A (skeleton mirrors real content shape)</label></div>
+        <div class="item"><input type="checkbox" id="s17-6"><label for="s17-6">Error state shown on failure, styled and worded as A</label></div>
+        <div class="item"><input type="checkbox" id="s17-7"><label for="s17-7">Retry action present in error state if A has one</label></div>
+      </div>
+    </div>
+
+  </div><!-- /sections -->
+</div><!-- /wrap -->
+
+<script>
+(function () {
+  const STORAGE_KEY = 'parity-checklist-v1';
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (_) {}
+
+  // ── Restore checkboxes
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (saved[cb.id]) cb.checked = true;
+    updateItemStyle(cb);
+  });
+
+  // ── Section toggle
+  document.querySelectorAll('.sec-header').forEach(h => {
+    h.addEventListener('click', () => {
+      h.closest('.section').classList.toggle('open');
+    });
+  });
+
+  // ── Checkbox interaction
+  document.querySelectorAll('.item').forEach(row => {
+    const cb = row.querySelector('input[type="checkbox"]');
+    row.addEventListener('click', e => {
+      if (e.target !== cb) cb.checked = !cb.checked;
+      updateItemStyle(cb);
+      persist();
+      updateAllBadges();
+      updateProgress();
+    });
+  });
+
+  // ── Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+      updateItemStyle(cb);
+    });
+    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    updateAllBadges();
+    updateProgress();
+  });
+
+  function updateItemStyle(cb) {
+    cb.closest('.item').classList.toggle('done', cb.checked);
+  }
+
+  function persist() {
+    const state = {};
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      if (cb.checked) state[cb.id] = true;
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+  }
+
+  function updateAllBadges() {
+    document.querySelectorAll('.section').forEach(sec => {
+      const key = sec.dataset.sec;
+      const items = sec.querySelectorAll('input[type="checkbox"]');
+      const done = [...items].filter(c => c.checked).length;
+      const badge = document.getElementById('badge-' + key);
+      if (!badge) return;
+      badge.textContent = done + ' / ' + items.length;
+      badge.classList.toggle('all-done', done === items.length && items.length > 0);
+    });
+  }
+
+  function updateProgress() {
+    const all = document.querySelectorAll('input[type="checkbox"]');
+    const done = [...all].filter(c => c.checked).length;
+    const pct = all.length ? Math.round(done / all.length * 100) : 0;
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent = done + ' of ' + all.length + ' checked';
+    document.getElementById('prog-pct').textContent = pct + '%';
+  }
+
+  updateAllBadges();
+  updateProgress();
+})();
+</script>

@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.zIndex
 import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
@@ -61,6 +62,7 @@ fun PageScaffold(
     modifier:   Modifier               = Modifier,
     eyebrow:    String?                = null,
     title:      String?                = null,
+    titleStyle: TextStyle              = MaterialTheme.typography.titleLarge,
     subtitle:   String?                = null,
     onBack:     (() -> Unit)?          = null,
     actions:    @Composable (() -> Unit)? = null,
@@ -123,7 +125,7 @@ fun PageScaffold(
                 if (title != null) {
                     Text(
                         text       = title,
-                        style      = MaterialTheme.typography.titleLarge,
+                        style      = titleStyle,
                         color      = MaterialTheme.colorScheme.onSurface,
                         maxLines   = 1,
                     )

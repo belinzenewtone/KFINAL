@@ -209,12 +209,15 @@ class TransactionViewModel
         val now = java.time.LocalDate.now()
         // endDate must include the full day: transaction dates are ISO timestamps
         // ("2026-08-22T14:00:00"), so "date <= '2026-08-22'" excludes everything from
-        // today. Appending T23:59:59 makes today's transactions visible.
-        val endOfToday = "${now}T23:59:59"
+        // that day. The bound also follows RFINAL, which closes the window at
+        // endOfDay / endOfWeek (Mon-first) / endOfMonth — NOT at today — so rows
+        // dated later in the current week or month are included.
         val (start, end) = when (period) {
-            "today" -> now.toString() to endOfToday
-            "week"  -> now.with(java.time.DayOfWeek.MONDAY).toString() to endOfToday
-            "month" -> now.withDayOfMonth(1).toString() to endOfToday
+            "today" -> now.toString() to "${now}T23:59:59"
+            "week"  -> now.with(java.time.DayOfWeek.MONDAY).toString() to
+                "${now.with(java.time.DayOfWeek.SUNDAY)}T23:59:59"
+            "month" -> now.withDayOfMonth(1).toString() to
+                "${now.withDayOfMonth(now.lengthOfMonth())}T23:59:59"
             else    -> null to null
         }
         _uiState.update {

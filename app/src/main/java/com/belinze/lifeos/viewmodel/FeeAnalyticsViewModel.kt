@@ -53,7 +53,7 @@ class FeeAnalyticsViewModel
                 .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
             val total  = dao.getFeeTotal(startIso, endIso) ?: 0.0
-            val cats   = dao.getFeeByCategory(startIso, endIso)
+            val cats   = dao.getChargesByCategory(startIso, endIso)
             val txs    = dao.getFeeTransactions(startIso, endIso)
             _uiState.value = FeeAnalyticsUiState(
                 isLoading    = false,

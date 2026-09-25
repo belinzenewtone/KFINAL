@@ -25,7 +25,7 @@ interface TransactionDao {
     @Query("""
         SELECT * FROM transactions
         WHERE deleted_at IS NULL
-          AND (:search = '' OR merchant LIKE '%' || :search || '%' OR mpesa_code LIKE '%' || :search || '%')
+          AND (:search = '' OR merchant LIKE '%' || :search || '%' OR description LIKE '%' || :search || '%' OR mpesa_code LIKE '%' || :search || '%')
           AND (:category = 'all' OR category = :category)
           AND (:type IS NULL OR transaction_type = :type)
           AND (:status IS NULL OR status = :status)
@@ -45,7 +45,7 @@ interface TransactionDao {
     @Query("""
         SELECT * FROM transactions
         WHERE deleted_at IS NULL
-          AND (:search = '' OR merchant LIKE '%' || :search || '%' OR mpesa_code LIKE '%' || :search || '%')
+          AND (:search = '' OR merchant LIKE '%' || :search || '%' OR description LIKE '%' || :search || '%' OR mpesa_code LIKE '%' || :search || '%')
           AND (:category = 'all' OR category = :category)
           AND (:type IS NULL OR transaction_type = :type)
           AND (:status IS NULL OR status = :status)
@@ -109,6 +109,23 @@ interface TransactionDao {
     """)
     suspend fun getCategoryTotals(startDate: String, endDate: String): List<CategoryTotal>
 
+    /** Budget-spend population — RFINAL's BudgetRepository counts EXPENSES ONLY
+     *  (`transaction_type = 'expense' AND status = 'completed'`), so transfers and
+     *  Fuliza must NOT inflate a budget's used percentage. Deliberately separate from
+     *  [getCategoryTotals], whose transfer/fuliza inclusion is correct elsewhere
+     *  (MonthlyWrapped top categories, Insights sparklines). */
+    @Query("""
+        SELECT category, COALESCE(SUM(amount), 0.0) AS total
+        FROM transactions
+        WHERE deleted_at IS NULL
+          AND transaction_type = 'expense'
+          AND status = 'completed'
+          AND date >= :startDate AND date <= :endDate
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    suspend fun getExpenseCategoryTotals(startDate: String, endDate: String): List<CategoryTotal>
+
     @Query("""
         SELECT merchant, SUM(amount) AS total
         FROM transactions
@@ -150,6 +167,7 @@ interface TransactionDao {
         SET category = :category, updated_at = :ts
         WHERE deleted_at IS NULL
           AND merchant = :merchant
+          AND (category IS NULL OR category = '' OR category = 'uncategorized')
     """)
     suspend fun updateCategoryForMerchant(merchant: String, category: String, ts: String)
 
@@ -160,14 +178,19 @@ interface TransactionDao {
     """)
     suspend fun updateCategoryById(id: String, category: String, ts: String)
 
+    /** RFINAL's "service charges" population: sums the AMOUNT of rows whose CATEGORY is
+     *  one of the fee-ish categories — NOT the per-transaction `fee` column. Shared by
+     *  the Finance "Charges" card and FeeAnalyticsScreen. */
     @Query("""
-        SELECT SUM(fee) FROM transactions
+        SELECT COALESCE(SUM(amount), 0.0) FROM transactions
         WHERE deleted_at IS NULL
           AND date >= :startDate AND date <= :endDate
-          AND fee IS NOT NULL AND fee > 0
+          AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
     """)
     suspend fun getFeeTotal(startDate: String, endDate: String): Double?
 
+    /** Per-category breakdown of the `fee` column — still used by the Analytics tab's
+     *  fee summary, whose RFINAL counterpart has not been verified. Do not repoint. */
     @Query("""
         SELECT category, SUM(fee) AS total, COUNT(*) AS count
         FROM transactions
@@ -179,13 +202,26 @@ interface TransactionDao {
     """)
     suspend fun getFeeByCategory(startDate: String, endDate: String): List<FeeCategoryTotal>
 
+    /** FeeAnalyticsScreen's per-category breakdown — amount by fee CATEGORY, matching
+     *  RFINAL's query (SUM(amount), no status filter). */
+    @Query("""
+        SELECT category, COALESCE(SUM(amount), 0.0) AS total, COUNT(*) AS count
+        FROM transactions
+        WHERE deleted_at IS NULL
+          AND date >= :startDate AND date <= :endDate
+          AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    suspend fun getChargesByCategory(startDate: String, endDate: String): List<FeeCategoryTotal>
+
     @Query("""
         SELECT * FROM transactions
         WHERE deleted_at IS NULL
-          AND fee IS NOT NULL AND fee > 0
           AND date >= :startDate AND date <= :endDate
+          AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
         ORDER BY date DESC
-        LIMIT 50
+        LIMIT 20
     """)
     suspend fun getFeeTransactions(startDate: String, endDate: String): List<TransactionEntity>
 
@@ -247,7 +283,6 @@ interface TransactionDao {
         WHERE date >= :startDate AND date <= :endDate
           AND transaction_type IN ('expense','transfer','fuliza')
           AND status = 'completed' AND deleted_at IS NULL
-          AND category IS NOT NULL AND category != '' AND category != 'uncategorized'
         GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1
     """)
     suspend fun getTopCategoryInRange(startDate: String, endDate: String): String?

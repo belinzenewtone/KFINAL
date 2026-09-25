@@ -168,72 +168,69 @@ val PriorityHigh   = Color(0xFFEF4444)
 // Material 3 color schemes — values from src/theme/paperTheme.ts exactly
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Dark scheme — mirrors MD3DarkTheme overrides in paperTheme.ts */
+/** Dark scheme — mirrors MD3DarkTheme overrides in paperTheme.ts exactly */
 val LifeOsDarkColorScheme = darkColorScheme(
     primary              = Color(0xFF57B9FF),
-    onPrimary            = Color(0xFF08090E),
-    primaryContainer     = Color(0xFF0F2A40),
-    onPrimaryContainer   = Color(0xFFBFE3FF),
-    secondary            = AccentSecondary,          // #8B5CF6
-    onSecondary          = Color(0xFF08090E),
-    secondaryContainer   = Color(0xFF2E1065),
-    onSecondaryContainer = Color(0xFFDDD6FE),
-    tertiary             = AccentTertiary,           // #38BDF8
-    onTertiary           = Color(0xFF08090E),
-    tertiaryContainer    = Color(0xFF082030),
-    onTertiaryContainer  = Color(0xFFB3E8FD),
+    onPrimary            = Color(0xFF030B14),
+    primaryContainer     = Color(0xFF0F3356),
+    onPrimaryContainer   = Color(0xFFBAE0FF),
+    secondary            = Color(0xFF9BA3B8),
+    onSecondary          = Color(0xFF0B0D14),
+    secondaryContainer   = Color(0xFF1A3A60),
+    onSecondaryContainer = Color(0xFFBAE0FF),
+    tertiary             = Color(0xFF5EEAD4),
+    onTertiary           = Color(0xFF050F0D),
+    tertiaryContainer    = Color(0xFF0C2D27),
+    onTertiaryContainer  = Color(0xFFCCFBF1),
     background           = Color(0xFF08090E),
     onBackground         = Color(0xFFF0F2F8),
-    surface              = Color(0xFF08090E),
+    surface              = Color(0xFF0C0E16),
     onSurface            = Color(0xFFF0F2F8),
-    surfaceVariant       = Color(0xFF161618),
-    onSurfaceVariant     = Color(0xFFA1A1AA),
-    outline              = Color(0xFF2E2E33),
-    outlineVariant       = Color(0xFF222226),
+    surfaceVariant       = Color(0xFF141825),
+    onSurfaceVariant     = Color(0xFF9499B0),
+    outline              = Color(0xFF2A2E42),
+    outlineVariant       = Color(0xFF1E2235),
     error                = Color(0xFFF87171),
-    errorContainer       = Color(0xFF3A1214),
-    onError              = Color(0xFFFFFFFF),
-    onErrorContainer     = Color(0xFFFCA5A5),
+    errorContainer       = Color(0xFF331018),
+    onError              = Color(0xFF0A0A0B),
+    onErrorContainer     = Color(0xFFFECACA),
     surfaceTint          = Color(0xFF57B9FF),
-    inverseSurface       = Color(0xFFF0F2F8),
+    inverseSurface       = Color(0xFFEEF0F8),
     inverseOnSurface     = Color(0xFF08090E),
-    inversePrimary       = Color(0xFF0369A1),
+    inversePrimary       = Color(0xFF1A6FA8),
     scrim                = Color(0xFF000000),
 )
 
-/** Light scheme — mirrors lifeosPaperThemeLight overrides */
+/** Light scheme — mirrors lifeosPaperThemeLight overrides in paperTheme.ts exactly */
 val LifeOsLightColorScheme = lightColorScheme(
     primary              = Color(0xFF0369A1),
     onPrimary            = Color(0xFFFFFFFF),
-    primaryContainer     = Color(0xFFDBEAFE),
-    onPrimaryContainer   = Color(0xFF0369A1),
-    secondary            = Color(0xFF7C3AED),
+    primaryContainer     = Color(0xFFBAE6FD),
+    onPrimaryContainer   = Color(0xFF082F49),
+    secondary            = Color(0xFF64748B),
     onSecondary          = Color(0xFFFFFFFF),
-    secondaryContainer   = Color(0xFFEDE9FE),
-    onSecondaryContainer = Color(0xFF5B21B6),
-    tertiary             = Color(0xFF0EA5E9),
+    secondaryContainer   = Color(0xFFE2E8F0),
+    onSecondaryContainer = Color(0xFF1E293B),
+    tertiary             = Color(0xFF0F766E),
     onTertiary           = Color(0xFFFFFFFF),
-    tertiaryContainer    = Color(0xFFE0F2FE),
-    onTertiaryContainer  = Color(0xFF0369A1),
+    tertiaryContainer    = Color(0xFFCCFBF1),
+    onTertiaryContainer  = Color(0xFF134E4A),
     background           = BgPrimaryLight,           // #E8EDF3
     onBackground         = TextPrimaryLight,         // #0F172A
     surface              = BgSecondaryLight,         // #F8FAFC
     onSurface            = TextPrimaryLight,
     surfaceVariant       = BgElevatedLight,          // #EEF2F7
     onSurfaceVariant     = TextSecondaryLight,       // #475569
-    // outline: used for input borders, switch thumb, decorative strokes.
-    // Was #E2E8F0 (barely visible). Now slate-500 for proper contrast on light bg.
-    outline              = Color(0xFF64748B),
-    // outlineVariant: subtle dividers. Was #F1F5F9 (invisible). Now slate-200.
-    outlineVariant       = Color(0xFFCBD5E1),
-    error                = Color(0xFFCF222E),
-    errorContainer       = Color(0xFFFFE4E6),
+    outline              = Color(0xFFCBD5E1),
+    outlineVariant       = Color(0xFFE2E8F0),
+    error                = Color(0xFFDC2626),
+    errorContainer       = Color(0xFFFEE2E2),
     onError              = Color(0xFFFFFFFF),
     onErrorContainer     = Color(0xFF7F1D1D),
     surfaceTint          = Color(0xFF0369A1),
-    inverseSurface       = Color(0xFF08090E),
-    inverseOnSurface     = Color(0xFFF0F2F8),
-    inversePrimary       = Color(0xFF57B9FF),
+    inverseSurface       = Color(0xFF1E293B),
+    inverseOnSurface     = Color(0xFFF8FAFC),
+    inversePrimary       = Color(0xFF7DD3FC),
     scrim                = Color(0xFF000000),
 )
 
@@ -242,9 +239,9 @@ val LifeOsLightColorScheme = lightColorScheme(
 // ─────────────────────────────────────────────────────────────────────────────
 
 object ElevationColors {
-    val level1 = Color(0xFF131315)
-    val level2 = Color(0xFF161618)
-    val level3 = Color(0xFF1A1A1D)
-    val level4 = Color(0xFF1D1D20)
-    val level5 = Color(0xFF212124)
+    val level1 = Color(0xFF10131E)
+    val level2 = Color(0xFF141825)
+    val level3 = Color(0xFF18202F)
+    val level4 = Color(0xFF1B2335)
+    val level5 = Color(0xFF1F273C)
 }

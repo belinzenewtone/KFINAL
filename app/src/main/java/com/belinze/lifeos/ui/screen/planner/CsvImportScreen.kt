@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppChip
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
@@ -45,6 +46,8 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.CsvColumnMapping
 import com.belinze.lifeos.viewmodel.CsvImportViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private fun mappingFor(field: String, m: CsvColumnMapping): String = when (field) {
     "amount" -> m.amount
@@ -65,6 +68,15 @@ private val ALL_FIELDS = listOf(
     "status" to "Status",
     "description" to "Description",
 )
+
+/** RFINAL renders the preview date via formatDate() → "04 Feb 2026", not ISO. */
+private val CSV_DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+
+private fun formatCsvDate(raw: String): String = try {
+    LocalDate.parse(raw.take(10)).format(CSV_DATE_FMT)
+} catch (_: Exception) {
+    raw
+}
 
 @Composable
 fun CsvImportScreen(
@@ -132,17 +144,22 @@ fun CsvImportScreen(
                         Spacer(Modifier.height(Spacing.xs))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                             item {
-                                FilterChip(
-                                    selected = mappingFor(field, state.mapping).isBlank(),
-                                    onClick = { viewModel.updateMapping(field, "") },
-                                    label = { Text("None") },
+                                AppChip(
+                                    label           = "None",
+                                    selected        = mappingFor(field, state.mapping).isBlank(),
+                                    onClick         = { viewModel.updateMapping(field, "") },
+                                    // Paper's selected chip palette is secondaryContainer.
+                                    accent          = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedContent = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                             }
                             items(state.headers, key = { it }) { header ->
-                                FilterChip(
-                                    selected = mappingFor(field, state.mapping) == header,
-                                    onClick = { viewModel.updateMapping(field, header) },
-                                    label = { Text(header) },
+                                AppChip(
+                                    label           = header,
+                                    selected        = mappingFor(field, state.mapping) == header,
+                                    onClick         = { viewModel.updateMapping(field, header) },
+                                    accent          = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedContent = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                             }
                         }
@@ -169,7 +186,7 @@ fun CsvImportScreen(
                                 color = if (row.type == "income") Color(0xFF34D399) else MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Bold)
                         }
-                        Text("${row.category} · ${row.date.take(10)}",
+                        Text("${row.category} · ${formatCsvDate(row.date)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp))
@@ -180,6 +197,7 @@ fun CsvImportScreen(
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)
                             .background(MaterialTheme.colorScheme.errorContainer, MaterialTheme.shapes.large)
+                            .border(1.dp, MaterialTheme.colorScheme.error, MaterialTheme.shapes.large)
                             .padding(Spacing.base),
                     ) {
                         Column {
@@ -197,7 +215,7 @@ fun CsvImportScreen(
                     onClick = { viewModel.importValid() },
                     enabled = state.valid.isNotEmpty() && !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.valid.isNotEmpty()) Color(0xFF34D399) else MaterialTheme.colorScheme.primary,
+                        containerColor = if (state.valid.isNotEmpty()) Color(0xFF34D399) else MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                 ) {

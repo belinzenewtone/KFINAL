@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.theme.ShapeSm
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.DayBar
@@ -50,8 +51,10 @@ fun WeekReviewScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pref  by viewModel.prefState.collectAsStateWithLifecycle()
 
-    val firstName = pref.profileName.split(" ").firstOrNull()?.ifBlank { null } ?: "there"
-    val greeting  = "${state.greeting}, $firstName"
+    // React only appends the name when a profile name exists ("Good morning, Alex");
+    // with no name stored it shows the bare time-of-day greeting.
+    val firstName = pref.profileName.trim().split(Regex("\\s+")).firstOrNull()?.ifBlank { null }
+    val greeting  = if (firstName != null) "${state.greeting}, $firstName" else state.greeting
 
     var isPullingRefresh by remember { mutableStateOf(false) }
     LaunchedEffect(state.isLoading) {
@@ -60,12 +63,19 @@ fun WeekReviewScreen(
 
     PageScaffold(
         title      = "Weekly Review",
+        // React header uses titleMedium for this screen (not the app-wide titleLarge).
+        titleStyle = MaterialTheme.typography.titleMedium,
         onBack     = { navController.popBackStack() },
         scrollable = false,
     ) {
         when {
             state.isLoading && !isPullingRefresh -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                // React renders this inside the scroll content: top-padded (4xl) block,
+                // horizontally centred — not a full-screen centre.
+                Box(
+                    modifier         = Modifier.fillMaxSize().padding(top = Spacing.x4l),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(Modifier.height(Spacing.base))
@@ -88,11 +98,11 @@ fun WeekReviewScreen(
                 ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    // PageScaffold has already applied the 12dp horizontal gutter and the
+                    // 8dp top inset (React: contentContainerStyle paddingHorizontal/Top),
+                    // so the list must not re-apply them.
                     contentPadding = PaddingValues(
-                        start  = Spacing.screenHorizontal,
-                        end    = Spacing.screenHorizontal,
-                        top    = Spacing.sm,
-                        bottom = Spacing.lg,
+                        bottom = Spacing.bottomNavSafeArea,
                     ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
@@ -126,7 +136,15 @@ fun WeekReviewScreen(
                             GlassCard {
                                 SectionEyebrow("What Changed?", modifier = Modifier.padding(bottom = Spacing.sm))
                                 state.changeItems.forEachIndexed { i, item ->
-                                    if (i > 0) Spacer(Modifier.height(Spacing.sm))
+                                    if (i > 0) {
+                                        // React renders a 1px hairline divider between items.
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .height(1.dp)
+                                                .background(MaterialTheme.colorScheme.outlineVariant)
+                                        )
+                                    }
                                     ChangeItemRow(item.icon, item.text, item.sentiment)
                                 }
                             }
@@ -174,9 +192,12 @@ fun WeekReviewScreen(
                             SectionEyebrow("Tasks", modifier = Modifier.padding(bottom = Spacing.base))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
                                     Text(
                                         text  = state.tasksCompleted.toString(),
                                         style = MaterialTheme.typography.titleLarge,
@@ -188,12 +209,13 @@ fun WeekReviewScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 VerticalDivider(
-                                    modifier  = Modifier
-                                        .height(32.dp)
-                                        .align(Alignment.CenterVertically),
+                                    modifier  = Modifier.height(32.dp),
                                     thickness = 1.dp,
                                 )
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
                                     val pendColor = if (state.tasksPending > 5) COLOR_HIGH else MaterialTheme.colorScheme.onSurface
                                     Text(
                                         text  = state.tasksPending.toString(),
@@ -208,8 +230,6 @@ fun WeekReviewScreen(
                             }
                         }
                     }
-
-                    item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                 }
                 } // PullToRefreshBox
             }
@@ -323,15 +343,8 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                             .height(148.dp),
                         contentAlignment = Alignment.BottomCenter,
                     ) {
-                        // Track background
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))
-                        )
+                        // No track background: React's barTrack is a bare container, so
+                        // only the coloured fill is ever drawn.
                         // Bar fill — matches React's Math.max(pct * 100dp, amount > 0 ? 2dp : 0)
                         // so a very small nonzero spend day is never rendered invisibly thin.
                         if (bar.amount > 0.0) {
@@ -341,7 +354,7 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                                     .align(Alignment.BottomCenter)
                                     .fillMaxWidth()
                                     .height(barHeight)
-                                    .clip(RoundedCornerShape(3.dp))
+                                    .clip(ShapeSm)
                                     .background(barColor)
                             )
                             // Amount badge floats immediately above the bar top
@@ -372,13 +385,14 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text  = dowLabel(bar.dayOfWeek),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) {
-                            barColor
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        // React barLabel: fontSize 10 / lineHeight 14.
+                        fontSize   = 10.sp,
+                        lineHeight = 14.sp,
+                        color = when {
+                            bar.isFuture -> MaterialTheme.colorScheme.outline
+                            isSelected   -> barColor
+                            else         -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
-                        fontSize = 9.sp,
                     )
                 }
             }
@@ -392,20 +406,20 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                 .forEach { (label, color) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-                        Spacer(Modifier.width(3.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 9.sp)
+                            fontSize   = 10.sp,
+                            lineHeight = 14.sp,
+                            color      = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             Spacer(Modifier.weight(1f))
             Text(
                 text  = "Tap bar for details",
-                style = MaterialTheme.typography.labelSmall,
+                fontSize   = 10.sp,
+                lineHeight = 14.sp,
                 color = MaterialTheme.colorScheme.outline,
                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                fontSize = 9.sp,
             )
         }
     }
@@ -433,8 +447,11 @@ private fun ChangeItemRow(icon: String, text: String, sentiment: String) {
         "checkmark-circle-outline" -> Icons.Outlined.CheckCircle
         else                       -> Icons.Outlined.BarChart
     }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(imageVector, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+    Row(
+        modifier              = Modifier.padding(vertical = Spacing.xs),
+        verticalAlignment     = Alignment.CenterVertically,
+    ) {
+        Icon(imageVector, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(Spacing.sm))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
