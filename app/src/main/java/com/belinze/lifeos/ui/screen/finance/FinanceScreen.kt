@@ -215,29 +215,6 @@ fun FinanceScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars),
         ) {
-            // ── SMS import progress banner (mirrors FinanceScreen.tsx smsBanner) ─
-            if (isImporting) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Text(
-                        "Importing messages…",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                }
-            }
-
             // ── Page header ───────────────────────────────────────────────────
             Row(
                 modifier              = Modifier
@@ -517,6 +494,50 @@ fun FinanceScreen(
                                 "SMS permissions not granted — tap to allow",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = SMS_WARNING,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+
+                // ── SMS import status banner ──────────────────────────────────
+                // RFINAL renders this INLINE in the scroll flow — after the permission
+                // banner and before the Transactions header — not as a fixed bar above
+                // the page header. Primary while importing; surfaceVariant for a result.
+                if (smsState.banner != null || isImporting) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.screenHorizontal)
+                                .padding(top = Spacing.sm)
+                                .background(
+                                    if (isImporting) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                )
+                                .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            if (isImporting) {
+                                CircularProgressIndicator(
+                                    modifier    = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color       = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            }
+                            Text(
+                                text     = smsState.banner ?: "Importing messages…",
+                                style    = MaterialTheme.typography.bodyMedium,
+                                color    = if (isImporting) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                maxLines = 2,
                                 modifier = Modifier.weight(1f),
                             )
                         }
