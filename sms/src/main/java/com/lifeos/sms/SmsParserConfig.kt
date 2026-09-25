@@ -374,7 +374,15 @@ object SmsParserConfig {
     @Volatile
     private var activeBundle: List<DetectionRule>? = null
 
-    fun loadBundle(rules: List<DetectionRule>) { activeBundle = rules }
+    fun loadBundle(rules: List<DetectionRule>) {
+        // Never let a malformed or empty bundle disable parsing. activeRules() returns
+        // `activeBundle ?: DETECTION_RULES`, so a zero-length bundle would replace the
+        // built-in rules with nothing: every detection rule stops matching and the
+        // importer silently accepts no messages at all. ParserRuleBundle's KDoc puts
+        // this validation on the caller, so enforce it here rather than trust it.
+        if (rules.isEmpty()) return
+        activeBundle = rules
+    }
 
     fun clearBundle() { activeBundle = null }
 
