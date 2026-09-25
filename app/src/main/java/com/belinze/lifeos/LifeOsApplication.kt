@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.belinze.lifeos.data.datastore.AppPreferences
+import com.belinze.lifeos.data.db.LifeOsDatabase
 import com.belinze.lifeos.services.BudgetAlertService
 import com.belinze.lifeos.services.DarajaEnrichmentService
 import com.belinze.lifeos.services.NotificationSync
@@ -35,6 +36,20 @@ class LifeOsApplication : Application(), Configuration.Provider {
     /** Provided by SmsModule; initialised before any Activity or Worker runs. */
     @Inject
     lateinit var smsService: SmsService
+
+    /**
+     * Injected purely for its side effect. DatabaseModule.provideDatabase() calls
+     * SmsParserDatabase.attach(...), which is how DbWriter obtains a handle to the SAME
+     * Room connection (single-writer architecture).
+     *
+     * That provider is lazy, so without this the SMS parser's database only appears to
+     * exist once something else happens to request Room. In a cold process started by an
+     * SMS broadcast, SmsReceiver could reach DbWriter before that ever happened. Hilt
+     * injects Application fields before onCreate() runs, so this forces the attachment
+     * on every process start.
+     */
+    @Inject
+    lateinit var database: LifeOsDatabase
 
     @Inject
     lateinit var prefs: AppPreferences
