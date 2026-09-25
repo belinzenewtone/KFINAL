@@ -183,27 +183,36 @@ fun AssistantScreen(
         }
 
         // ── Message list ─────────────────────────────────────────────────────
-        LazyColumn(
-            state               = listState,
-            modifier            = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.screenHorizontal),
-            verticalArrangement = Arrangement.spacedBy(Spacing.base),
-            contentPadding      = PaddingValues(top = Spacing.sm, bottom = Spacing.sm),
-        ) {
-            if (state.messages.isEmpty()) {
-                item { AssistantEmptyState() }
-            } else {
+        // RFINAL renders the empty state as a centred view filling the whole message
+        // area (flex: 1, justify/align centre) — NOT as the first row of the list, which
+        // is what made ours sit at the top.
+        if (state.messages.isEmpty()) {
+            Box(
+                modifier         = Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                AssistantEmptyState()
+            }
+        } else {
+            LazyColumn(
+                state               = listState,
+                modifier            = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.screenHorizontal),
+                // RFINAL's list gap (8) plus each bubble's marginBottom (14) = 22.
+                verticalArrangement = Arrangement.spacedBy(22.dp),
+                contentPadding      = PaddingValues(top = Spacing.sm, bottom = Spacing.sm),
+            ) {
                 items(state.messages, key = { it.id }) { message ->
                     ChatBubble(message, onActionPress = ::send)
                 }
-            }
 
-            // Typing indicator
-            if (state.messages.isNotEmpty() && state.isLoading) {
-                item {
-                    TypingIndicator()
+                // Typing indicator
+                if (state.isLoading) {
+                    item {
+                        TypingIndicator()
+                    }
                 }
             }
         }
@@ -222,7 +231,7 @@ fun AssistantScreen(
                     "Try asking:",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = Spacing.xs),
+                    modifier = Modifier.padding(bottom = Spacing.sm),
                 )
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -270,6 +279,9 @@ fun AssistantScreen(
                 onValueChange     = { if (it.length <= 500) inputText = it },
                 modifier          = Modifier.fillMaxWidth(),
                 placeholder       = { Text("Message LifeOS...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                // RFINAL passes editable={!disabled}: the composer keeps its normal
+                // appearance but cannot be typed into while a reply is in flight.
+                readOnly          = state.isLoading,
                 singleLine        = false,
                 maxLines          = 4,
                 keyboardOptions   = KeyboardOptions(imeAction = ImeAction.Send),
@@ -422,6 +434,9 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
                                 message.actions.forEach { action ->
                                     AssistChip(
                                         onClick = { onActionPress(action) },
+                                        // RFINAL's action Chip passes borderRadius.full — a pill.
+                                        // AssistChip's default is an 8dp rounded rect.
+                                        shape   = RoundedCornerShape(percent = 50),
                                         label   = { Text(action, style = MaterialTheme.typography.bodySmall) },
                                         colors  = AssistChipDefaults.assistChipColors(
                                             containerColor = if (isUser) {
