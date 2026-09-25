@@ -98,6 +98,11 @@ fun ExportScreen(
     var passphrase by remember { mutableStateOf("") }
     var selectedDomains by remember { mutableStateOf(PREVIEW_DOMAINS.map { it.key }.toSet()) }
 
+    // RFINAL blocks the export on three conditions before doing any work — most
+    // importantly it refuses to encrypt with an empty or short passphrase. Surfaced
+    // through InlineBanner (KFINAL's error surface) rather than React's modal Alert.
+    var localError by remember { mutableStateOf<String?>(null) }
+
     PageScaffold(
         title = "Export",
         onBack = { navController.popBackStack() },
@@ -108,6 +113,9 @@ fun ExportScreen(
         }
         if (state.lastExport != null) {
             InlineBanner(tone = BannerTone.Success, message = state.lastExport ?: "")
+        }
+        if (localError != null) {
+            InlineBanner(tone = BannerTone.Error, message = localError ?: "")
         }
 
         Column(
@@ -330,6 +338,18 @@ fun ExportScreen(
 
             Button(
                 onClick = {
+                    val trimmed = passphrase.trim()
+                    localError = when {
+                        encryptEnabled && trimmed.isEmpty() ->
+                            "Enter a passphrase to encrypt this export, or turn off encryption."
+                        encryptEnabled && trimmed.length < 6 ->
+                            "Use a passphrase of at least 6 characters for meaningful encryption."
+                        (format == ExportFormat.JSON || format == ExportFormat.PDF) &&
+                            selectedDomains.isEmpty() ->
+                            "Pick at least one data type to include in the export."
+                        else -> null
+                    }
+                    if (localError != null) return@Button
                     val pass = if (encryptEnabled) passphrase else ""
                     when (format) {
                         ExportFormat.JSON -> viewModel.exportJson(

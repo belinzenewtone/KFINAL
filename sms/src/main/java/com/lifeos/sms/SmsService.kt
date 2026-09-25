@@ -326,12 +326,11 @@ class SmsService
 
     /**
      * Mark an audit row as approved after the user taps Approve on an imported_review card.
-     * DbWriter has no dedicated "approved" outcome writer, so we reuse markAuditDismissed —
-     * the outcome becomes 'dismissed' which keeps the card out of the review queue.
-     * This matches React's intent (entry leaves the queue) if not the exact outcome string.
+     * Writes RFINAL's distinct 'imported_review_approved' outcome so an approval is no
+     * longer recorded as a dismissal.
      */
     fun markAuditApproved(auditId: Long) {
-        DbWriter.getInstance(context).markAuditDismissed(listOf(auditId))
+        DbWriter.getInstance(context).markAuditApproved(listOf(auditId))
     }
 
     /**

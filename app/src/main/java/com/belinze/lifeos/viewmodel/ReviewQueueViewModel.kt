@@ -30,14 +30,26 @@ import javax.inject.Inject
 //   but NOT "imported_review_approved" / "dismissed" / "retried"
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Mirror React's outcome.includes() logic for queue membership. */
+/**
+ * Queue membership, aligned with RFINAL's PENDING_OUTCOMES set
+ * ({quarantined, imported_review, batch_pending, pending}) — which is an EXACT match
+ * there, not a substring test.
+ *
+ * KFINAL's writer emits its own vocabulary, so the mapping is explicit:
+ *   quarantined     -> quarantined
+ *   imported_review -> imported_review
+ *   imported_batch  -> batch_pending
+ *   parse_failed:*  -> pending        (prefix match)
+ *
+ * Everything already resolved is excluded by construction — imported_review_approved,
+ * dismissed, retried, duplicate_detected:*, import_failed and fuliza_balance_updated
+ * appear in neither list. The previous substring test additionally matched a bare
+ * "review" outcome, which RFINAL does not treat as pending.
+ */
+private val PENDING_OUTCOMES = setOf("quarantined", "imported_review", "imported_batch")
+
 private fun isPendingOutcome(outcome: String): Boolean =
-    (outcome.contains("quarantin") ||
-     outcome.contains("pending") ||
-     outcome.contains("review")) &&
-    !outcome.contains("approved") &&
-    !outcome.contains("dismissed") &&
-    !outcome.contains("retried")
+    outcome in PENDING_OUTCOMES || outcome.startsWith("parse_failed")
 
 @Immutable
 data class ReviewQueueUiState(

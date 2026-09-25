@@ -780,6 +780,22 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
         )
     }
 
+    /**
+     * Mark audit rows as APPROVED after the user taps Approve on an imported_review card.
+     *
+     * RFINAL records the distinct outcome 'imported_review_approved'. KFINAL previously
+     * reused markAuditDismissed for this, so an approval was written as 'dismissed' and
+     * was indistinguishable from a real dismissal in the audit log.
+     */
+    fun markAuditApproved(ids: List<Long>) {
+        if (ids.isEmpty()) return
+        val placeholders = ids.joinToString(",") { "?" }
+        execSQL(
+            "UPDATE import_audit SET outcome = 'imported_review_approved' WHERE id IN ($placeholders)",
+            ids.map { it.toString() }.toTypedArray()
+        )
+    }
+
     /** Clears all rows from the import audit log. The transactions table is untouched. */
     fun clearAuditLog(): Int {
         return try {
