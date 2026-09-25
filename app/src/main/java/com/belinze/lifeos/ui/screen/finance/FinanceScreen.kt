@@ -150,6 +150,7 @@ fun FinanceScreen(
     val context      = LocalContext.current
     var showImportSmsSheet     by remember { mutableStateOf(false) }
     var showImportCsvSheet     by remember { mutableStateOf(false) }
+    var selectedTransactionId  by remember { mutableStateOf<String?>(null) }
 
     // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
     // from the Budgets/Categorize screens) so the budget alert, budget card, and
@@ -614,16 +615,13 @@ fun FinanceScreen(
                         )
                     }
 
-                    // RFINAL pushes the detail screen; there is no in-place dialog.
-                    // TransactionListItem draws its own bordered card (as in RFINAL),
-                    // so no wrapper container is needed here.
+                    // RFINAL presents the detail as a transparent modal, so the list stays
+                    // visible behind the card. Compose Navigation would replace this
+                    // destination (visible page transition, nothing behind), so the detail
+                    // is rendered in place instead.
                     TransactionListItem(
                         tx      = tx,
-                        onClick = {
-                            navController.navigate(
-                                Route.TRANSACTION_DETAIL.replace("{transactionId}", tx.id)
-                            )
-                        },
+                        onClick = { selectedTransactionId = tx.id },
                     )
                 }
 
@@ -676,6 +674,15 @@ fun FinanceScreen(
             ImportCsvSheet(
                 onDismiss     = { showImportCsvSheet = false },
                 navController = navController,
+            )
+        }
+
+        // Transaction detail floats over the list — no navigation, no page transition.
+        selectedTransactionId?.let { id ->
+            TransactionDetailDialog(
+                transactionId = id,
+                onDismiss     = { selectedTransactionId = null },
+                viewModel     = viewModel,
             )
         }
     }

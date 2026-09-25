@@ -364,6 +364,12 @@ private fun SpendPatternCard(dayBars: List<DayBar>) {
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
                                         .offset(y = -(barHeight + 4.dp))
+                                        // RFINAL's tooltip spans left:-16 .. right:-16, i.e.
+                                        // it is deliberately WIDER than the bar column. Without
+                                        // unbounded width the badge is capped to the 85%-width
+                                        // column (~34dp) and softWrap=false clips the amount
+                                        // text down to a few characters.
+                                        .wrapContentWidth(unbounded = true)
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(barColor)
                                         .padding(horizontal = 5.dp, vertical = 2.dp),
