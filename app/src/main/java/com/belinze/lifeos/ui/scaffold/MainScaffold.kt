@@ -1,11 +1,16 @@
 package com.belinze.lifeos.ui.scaffold
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -126,13 +131,20 @@ fun MainScaffold(
         }
 
         // ── FloatingTabBar — absolutely positioned at bottom ───────────────────
-        FloatingTabBar(
-            selectedTab = selectedTab,
-            onTabSelect = { selectedTab = it },
-            modifier    = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = Spacing.xs),  // slight lift for shadow clearance
-        )
+        // RFINAL hides the tab bar while the keyboard is open (tabBarHideOnKeyboard).
+        val imeVisible = WindowInsets.isImeVisible
+        AnimatedVisibility(
+            visible  = !imeVisible,
+            enter    = fadeIn(),
+            exit     = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            FloatingTabBar(
+                selectedTab = selectedTab,
+                onTabSelect = { selectedTab = it },
+                modifier    = Modifier.padding(bottom = Spacing.xs),  // slight lift for shadow clearance
+            )
+        }
 
         // ── OTA update dialog — single instance, overlaid on all content ─────
         // manualTrigger comes from OtaSharedTrigger so Settings (and any other

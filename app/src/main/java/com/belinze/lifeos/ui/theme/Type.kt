@@ -35,7 +35,7 @@ private val default = FontFamily.Default
  *   titleSmall     → 14sp / lh 18sp / weight 600
  *   bodyLarge      → 15sp / lh 20sp / weight 400
  *   bodyMedium     → 14sp / lh 18sp / weight 400
- *   bodySmall      → 13sp / lh 16sp / weight 400
+ *   bodySmall      → 12sp / lh 16sp / weight 400
  *   labelLarge     → 14sp / lh 18sp / weight 600
  *   labelMedium    → 12sp / lh 16sp / weight 500
  *   labelSmall     → 11sp / lh 14sp / weight 500 / ls +0.08em

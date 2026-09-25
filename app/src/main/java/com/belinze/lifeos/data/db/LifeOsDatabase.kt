@@ -25,6 +25,9 @@ import com.belinze.lifeos.data.db.entity.*
  *  v4 → v5: add `incomes.is_active` (INTEGER NOT NULL DEFAULT 1) so income
  *           sources can be paused/resumed like budgets, bills and recurring
  *           rules already can.
+ *  v5 → v6: rename the assistant conversation id 'main' → 'default' to match
+ *           RFINAL's CONVERSATION_ID, so previously stored chat history stays
+ *           visible after the constant changes.
  */
 @Database(
     entities = [
@@ -49,7 +52,7 @@ import com.belinze.lifeos.data.db.entity.*
         ImportAuditEntity::class,
         SmsIngestQueueEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class LifeOsDatabase : RoomDatabase() {
@@ -204,6 +207,15 @@ abstract class LifeOsDatabase : RoomDatabase() {
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `incomes` ADD COLUMN `is_active` INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
+        // v5 → v6: RFINAL stores the assistant conversation under the id 'default';
+        // KFINAL had used 'main'. Rename existing rows so a user's chat history
+        // survives the constant change instead of silently disappearing.
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE `assistant_messages` SET `conversation_id` = 'default' WHERE `conversation_id` = 'main'")
             }
         }
     }

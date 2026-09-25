@@ -83,7 +83,7 @@ data class AssistantUiState(
     val isOnline:       Boolean          = true,   // local engine is always ready
 )
 
-private const val DEFAULT_CONVERSATION_ID = "main"
+private const val DEFAULT_CONVERSATION_ID = "default"
 
 /** How many recent messages are handed to the engine for follow-up resolution. */
 private const val HISTORY_WINDOW = 10

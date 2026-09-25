@@ -60,14 +60,14 @@ import com.belinze.lifeos.ui.theme.TabBarDimens
 // 1:1 port of src/navigation/FloatingTabBar.tsx.
 //
 // Spec:
-//  ‣ position: absolute, left/right 12dp, height 58dp, borderRadius 24dp, borderWidth 1dp
-//  ‣ Bottom offset: max(insets.bottom, 8dp) + 8dp
+//  ‣ position: absolute, left/right 12dp, height 48dp, borderRadius 24dp, borderWidth 1dp
+//  ‣ Bottom offset: insets.bottom + 4dp
 //  ‣ Shadow elevation 12dp
 //  ‣ Background: surfaceVariant, border: outlineVariant
 //  ‣ Per-tab spring: friction=7, tension=90 → spring(dampingRatio=0.43f, stiffness=375f)
 //  ‣ Pill opacity: tween(100ms) — motion.fast
 //  ‣ Active icon: primary. Inactive: onSurfaceVariant.
-//  ‣ Icon 24dp, label 10sp weight 500
+//  ‣ Icon 20dp, label 10sp weight 500
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum class LifeOsTab(
@@ -111,13 +111,12 @@ fun FloatingTabBar(
     val isDark  = LocalDarkTheme.current
     val primary = MaterialTheme.colorScheme.primary
 
-    // Bottom offset: max(navigationBarHeight, sm) + sm
-    // windowInsetsPadding handles the navigation bar safe area automatically
+    // Bottom offset: insets.bottom + 4dp. windowInsetsPadding handles the nav bar,
+    // and the caller's `padding(bottom = Spacing.xs)` provides RFINAL's +4 lift.
     Box(
         modifier = modifier
             .padding(horizontal = Spacing.screenHorizontal)   // left/right 12dp
             .windowInsetsPadding(WindowInsets.navigationBars) // safe area
-            .padding(bottom = Spacing.sm)                     // +8dp above nav bar
             .shadow(
                 elevation        = 12.dp,
                 shape            = ShapeXl,                   // borderRadius 24dp
@@ -127,7 +126,7 @@ fun FloatingTabBar(
             .clip(ShapeXl)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, ShapeXl)
-            .height(TabBarDimens.height),                      // 58dp
+            .height(TabBarDimens.height),                      // 48dp
     ) {
         Row(
             modifier            = Modifier.fillMaxWidth(),

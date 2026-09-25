@@ -16,7 +16,7 @@ data class AssistantMessageEntity(
     @PrimaryKey
     @ColumnInfo(name = "id")
     val id: String,
-    @ColumnInfo(name = "conversation_id") val conversationId: String = "",
+    @ColumnInfo(name = "conversation_id") val conversationId: String = "default",
     @ColumnInfo(name = "role") val role: String = "",       // "user" | "assistant"
     @ColumnInfo(name = "content") val content: String = "",
     /** JSON array of suggested follow-up action strings */

@@ -14,8 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -113,20 +113,21 @@ fun AssistantScreen(
         }
     }
 
-    // When the keyboard is visible, imePadding() on the Column already lifts everything
-    // above the IME — we must NOT add the static tab-bar offset on top of that or the
-    // input bar ends up TabBarDimens.height above the keyboard (too high).
-    // When the keyboard is hidden, add tab-bar height + a 6 dp hairline gap so the input
-    // bar sits clearly above the floating tab bar without touching it.
-    val imeVisible = WindowInsets.isImeVisible
-    val bottomPad = if (imeVisible) 0.dp else TabBarDimens.height + 6.dp
+    // RFINAL computes the composer's bottom inset explicitly (AssistantScreen.tsx):
+    //   tabBarSafeInset  = max(insets.bottom, sm) + sm + 48 + 2
+    //   inputBottomInset = keyboard open ? keyboardHeight + base + 8 : tabBarSafeInset
+    // The floating tab bar hides while the IME is visible (tabBarHideOnKeyboard), so the
+    // keyboard-open branch only needs the keyboard height plus RFINAL's base+8 clearance.
+    val density        = LocalDensity.current
+    val navBarBottom   = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
+    val imeBottom      = with(density) { WindowInsets.ime.getBottom(density).toDp() }
+    val tabBarSafeInset = maxOf(navBarBottom, Spacing.sm) + Spacing.sm + TabBarDimens.height + 2.dp
+    val inputBottomInset = if (imeBottom > 0.dp) imeBottom + Spacing.base + 8.dp else tabBarSafeInset
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .imePadding()
-            .padding(bottom = bottomPad),
+            .windowInsetsPadding(WindowInsets.statusBars),
     ) {
         // ── Header ────────────────────────────────────────────────────────────
         Row(
@@ -268,9 +269,9 @@ fun AssistantScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(bottom = inputBottomInset)
                 .background(MaterialTheme.colorScheme.surface)
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.xs, bottom = Spacing.sm),
+                .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val canSend = inputText.isNotBlank() && !state.isLoading
