@@ -100,7 +100,9 @@ val LifeOsTypography = Typography(
     bodySmall = TextStyle(
         fontFamily   = default,
         fontWeight   = FontWeight.Normal,
-        fontSize     = 13.sp,
+        // RFINAL uses MD3 bodySmall at 12sp; 13sp made every assistant subtitle,
+        // timestamp, prompt label and empty-state description visibly too large.
+        fontSize     = 12.sp,
         lineHeight   = 16.sp,
         letterSpacing = 0.sp,
     ),
