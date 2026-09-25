@@ -172,7 +172,9 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
         val hash = sha256(body.trim())
         try {
             db.compileStatement(
-                "INSERT OR IGNORE INTO sms_ingest_queue (body, body_hash, sender_address) VALUES (?, ?, ?)"
+                "INSERT OR IGNORE INTO sms_ingest_queue " +
+                    "(body, body_hash, sender_address, received_at, next_retry_at) " +
+                    "VALUES (?, ?, ?, datetime('now'), datetime('now'))"
             ).use { stmt ->
                 stmt.bindString(1, body)
                 stmt.bindString(2, hash)
@@ -194,9 +196,18 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
      * Variant for the inbox reconciliation scan: enqueue ONLY if this body has
      * never been seen by the queue. Returns true when a new row was inserted.
      * Single INSERT OR IGNORE — no follow-up SELECT on the hot no-op path.
+     *
+     * received_at and next_retry_at MUST be supplied explicitly. The schema declares
+     * both nullable with NO default (MIGRATION_2_3 rebuilt the table and dropped the
+     * original DEFAULT (datetime('now'))), and getPendingIngest() filters on
+     * `next_retry_at <= datetime('now')` — which is never true when the column is NULL.
+     * Omitting them produced rows that the sweep could never drain: a permanently stuck
+     * queue, which is why inbox reconciliation found messages and imported nothing.
      */
     private val INGEST_INSERT_SQL =
-        "INSERT OR IGNORE INTO sms_ingest_queue (body, body_hash, sender_address) VALUES (?, ?, ?)"
+        "INSERT OR IGNORE INTO sms_ingest_queue " +
+            "(body, body_hash, sender_address, received_at, next_retry_at) " +
+            "VALUES (?, ?, ?, datetime('now'), datetime('now'))"
 
     fun compileIngestInsertStatement(): SupportSQLiteStatement =
         db.compileStatement(INGEST_INSERT_SQL)
@@ -269,13 +280,28 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
     fun claimIngestRow(id: Long): Boolean {
         if (id < 0) return false
         return try {
-            execSQL(
+            // Accepts 'pending' / 'failed' AND a stale 'processing' row. Nothing else in
+            // the codebase ever moves a row out of 'processing', so without the stale
+            // case a row that reached 'processing' and then lost its worker (process
+            // killed between claim and markIngestDone) could never be reclaimed — it was
+            // surfaced by getPendingIngest() every run and refused by every claim.
+            //
+            // executeUpdateDelete() reports THIS statement's row count. The previous
+            // SELECT changes() probe was a second acquisition of Room's pooled
+            // connection, so it could observe another thread's UPDATE (false positive →
+            // two workers on one row) or a secondary connection (false negative).
+            db.compileStatement(
                 """UPDATE sms_ingest_queue
                    SET status = 'processing', claimed_at = datetime('now')
-                   WHERE id = ? AND status IN ('pending', 'failed')""",
-                arrayOf(id.toString())
-            )
-            rawQuery("SELECT changes()", null).use { c -> c.moveToFirst() && c.getInt(0) == 1 }
+                   WHERE id = ?
+                     AND (
+                       status IN ('pending', 'failed')
+                       OR (status = 'processing' AND claimed_at < datetime('now', '-5 minutes'))
+                     )"""
+            ).use { stmt ->
+                stmt.bindLong(1, id)
+                stmt.executeUpdateDelete() == 1
+            }
         } catch (e: Exception) {
             Log.w(TAG, "claimIngestRow failed: ${e.message}")
             false
@@ -307,7 +333,11 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
             rawQuery(
                 """SELECT id, body, sender_address FROM sms_ingest_queue
                    WHERE (
-                     status IN ('pending', 'failed') AND next_retry_at <= datetime('now')
+                     status IN ('pending', 'failed')
+                     -- COALESCE also rescues rows written before the timestamp columns
+                     -- were populated at all (next_retry_at was NULL, so they could
+                     -- never be selected). NULL <= datetime('now') is NULL, not true.
+                     AND COALESCE(next_retry_at, received_at, '0000-00-00') <= datetime('now')
                    ) OR (
                      status = 'processing' AND claimed_at < datetime('now', '-5 minutes')
                    )
