@@ -211,6 +211,9 @@ fun FinanceScreen(
     val weekExpense  = state.weekExpense
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Declared at screen level because the period picker sheet is rendered as a
+        // sibling of the Column below, not inside it.
+        var periodExpanded by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -270,7 +273,6 @@ fun FinanceScreen(
             // Hoist scroll states so they are never recreated inside LazyColumn item lambdas
             val actionChipsScrollState = rememberScrollState()
             val listState              = rememberLazyListState()
-            var periodExpanded by remember { mutableStateOf(false) }
 
             // RFINAL has no pull-to-refresh here — only the header refresh button.
             LazyColumn(

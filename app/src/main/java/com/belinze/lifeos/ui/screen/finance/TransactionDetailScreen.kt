@@ -35,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -353,7 +352,7 @@ private fun InlineEditPanel(
                     // RFINAL: a flat text button whose label is onSurfaceVariant (not
                     // primary), at the theme's 16dp roundness — not an M3 pill.
                     shape          = RoundedCornerShape(16.dp),
-                    colors         = TextButtonDefaults.textButtonColors(
+                    colors         = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     contentPadding = PaddingValues(horizontal = Spacing.sm),
