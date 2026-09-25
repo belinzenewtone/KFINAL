@@ -52,6 +52,7 @@ import com.belinze.lifeos.ui.theme.ShapePill
 
 enum class AppChipStyle { Solid, Soft, Tinted }
 
+@Suppress("LongParameterList")
 @Composable
 fun AppChip(
     label:             String,

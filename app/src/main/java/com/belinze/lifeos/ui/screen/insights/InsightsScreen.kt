@@ -101,6 +101,7 @@ private val BAD     = Color(0xFFEF4444)
 // Matches AnalyticsSummaryCards.tsx / InsightsTab.tsx SUCCESS constant.
 private val SUCCESS = Color(0xFF4ADE80)
 
+@Suppress("CyclomaticComplexMethod", "LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(
