@@ -15,9 +15,18 @@ interface AssistantDao {
     """)
     suspend fun getHistory(conversationId: String): List<AssistantMessageEntity>
 
+    /**
+     * RFINAL caps the loaded conversation at 100 messages. The inner query takes the
+     * newest 100 (DESC) and the outer re-sorts them oldest-first for display, so a long
+     * conversation loses its oldest messages rather than its most recent ones.
+     */
     @Query("""
-        SELECT * FROM assistant_messages
-        WHERE deleted_at IS NULL AND conversation_id = :conversationId
+        SELECT * FROM (
+            SELECT * FROM assistant_messages
+            WHERE deleted_at IS NULL AND conversation_id = :conversationId
+            ORDER BY created_at DESC
+            LIMIT 100
+        )
         ORDER BY created_at ASC
     """)
     fun observeConversation(conversationId: String): Flow<List<AssistantMessageEntity>>

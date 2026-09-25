@@ -13,6 +13,7 @@ import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.AssistantMessageEntity
 import com.belinze.lifeos.util.currentMonthKey
+import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
 import com.belinze.lifeos.util.nowIso
@@ -511,8 +512,10 @@ class AssistantViewModel
     private suspend fun getGreeting(): EngineResponse {
         val hour  = ZonedDateTime.now(zone).hour
         val greet = if (hour < 12) "Good morning" else if (hour < 17) "Good afternoon" else "Good evening"
+        // RFINAL greets with the profile name exactly as stored. We were truncating to
+        // the first word, so "Jane Wanjiku" was greeted as "Jane".
         val name  = runCatching { appPreferences.state.first().profileName }
-            .getOrNull()?.trim()?.substringBefore(" ")?.takeIf { it.isNotBlank() }
+            .getOrNull()?.trim()?.takeIf { it.isNotBlank() }
         val nameStr = if (name != null) " $name" else ""
         return engineResponse(
             "$greet$nameStr! I can help with your M-Pesa spending, budgets, bills, goals, tasks, and calendar. " +
@@ -1047,9 +1050,14 @@ class AssistantViewModel
         (end.toEpochDay() - start.toEpochDay()).toInt()
     }.getOrDefault(0)
 
-    /** Format as "KES 1,234" */
-    private fun kes(amount: Double): String =
-        "KES ${String.format(Locale.US, "%,.0f", amount)}"
+    /**
+     * Amounts inside assistant replies. RFINAL formats these with
+     * Intl.NumberFormat('en-KE', { currency: 'KES', 2 decimals }) → "KSh 1,234.00".
+     * This was hand-rolled as "KES 1,234" (literal KES, no decimals, US grouping), so
+     * every reply body disagreed with the rest of the app. Delegate to the shared
+     * formatter instead — it renders the same symbol, grouping and 2 decimals.
+     */
+    private fun kes(amount: Double): String = formatCurrency(amount)
 
     /** Check if the string contains any of the given keywords */
     private fun String.containsAny(vararg keywords: String): Boolean =
