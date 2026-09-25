@@ -4,7 +4,9 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferences
+import com.belinze.lifeos.data.db.dao.SmsDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
+import com.belinze.lifeos.data.db.entity.MerchantCategoryEntity
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.ml.TransactionClassifier
 import com.belinze.lifeos.services.BudgetAlertService
@@ -43,6 +45,7 @@ class CategorizeViewModel
     private val classifier: TransactionClassifier,
     private val budgetAlerts: BudgetAlertService,
     private val appPreferences: AppPreferences,
+    private val smsDao:     SmsDao,
 ) : ViewModel() {
     @Immutable
     data class CategorizeUiState(
@@ -95,6 +98,7 @@ class CategorizeViewModel
                 dao.updateCategoryById(id, category, nowIso())
                 _uiState.value = _uiState.value.copy(message = "Saved", isError = false)
                 tx?.let { classifier.recordCorrection(it, category) }
+                tx?.merchant?.let { rememberMerchantCategory(it, category) }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(message = "Failed to save category", isError = true)
                 refresh()
@@ -118,6 +122,7 @@ class CategorizeViewModel
             try {
                 dao.updateCategoryForMerchant(merchant, category, nowIso())
                 txsForML.forEach { classifier.recordCorrection(it, category) }
+                rememberMerchantCategory(merchant, category)
                 // RFINAL re-checks budget thresholds for the assigned category so a
                 // newly-categorised expense can trigger a budget alert immediately.
                 budgetAlerts.checkBudgetThresholds(appPreferences.state.first(), category)
@@ -130,5 +135,36 @@ class CategorizeViewModel
 
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(message = null, isError = false)
+    }
+
+    /**
+     * Persist a learned merchant → category mapping.
+     *
+     * RFINAL keeps this table (MerchantCategoryRepository.setCategory) so future imports
+     * of the same merchant are auto-categorised. KFINAL already READS merchant_categories
+     * — DbWriter consults it on import and DarajaEnrichmentService uses it — but nothing
+     * ever wrote to it from the Categorize screen.
+     */
+    private suspend fun rememberMerchantCategory(merchant: String, category: String) {
+        val key = merchant.trim()
+        if (key.isEmpty()) return
+        val existing = smsDao.getMerchantCategory(key)
+        val ts       = nowIso()
+        smsDao.upsertMerchantCategory(
+            MerchantCategoryEntity(
+                id            = existing?.id ?: java.util.UUID.randomUUID().toString(),
+                merchant      = key,
+                category      = category,
+                confidence    = 1.0,
+                userCorrected = 1,
+                createdAt     = existing?.createdAt ?: ts,
+                updatedAt     = ts,
+                syncState     = "pending",
+                recordSource  = "user",
+                deletedAt     = existing?.deletedAt,
+                revision      = (existing?.revision ?: 0) + 1,
+                userId        = existing?.userId,
+            ),
+        )
     }
 }
