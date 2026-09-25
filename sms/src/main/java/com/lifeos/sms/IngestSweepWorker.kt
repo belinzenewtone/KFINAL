@@ -77,10 +77,16 @@ class IngestSweepWorker(
                     db.markIngestDone(row.id)
                     continue
                 }
-                if (!db.claimIngestRow(row.id)) {
-                    Log.d(TAG, "Skipping already-claimed row ${row.id}")
-                    continue
-                }
+                // Do NOT claim the row here — SmsProcessWorker owns the claim.
+                //
+                // claimIngestRow() only matches status IN ('pending','failed') and
+                // flips it to 'processing'. The sweep claiming first meant the worker
+                // it then enqueued could not claim the same row, so it returned
+                // Result.success() WITHOUT parsing and never marked the row done. The
+                // row then sat in 'processing' until the 5-minute stale reclaim in
+                // getPendingIngest() surfaced it again — repeating the same cycle
+                // forever. Every message that reached the ingestion queue via the
+                // sweep (i.e. every inbox-reconciliation capture) was silently lost.
                 val request = OneTimeWorkRequestBuilder<SmsProcessWorker>()
                     .setInputData(
                         Data.Builder()
