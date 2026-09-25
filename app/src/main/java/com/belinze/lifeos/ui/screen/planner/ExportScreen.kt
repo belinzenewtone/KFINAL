@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Description
@@ -33,6 +34,8 @@ import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +64,7 @@ import com.belinze.lifeos.ui.components.AppChip
 import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.DateField
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -67,6 +72,7 @@ import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ExportFormat
 import com.belinze.lifeos.viewmodel.ExportViewModel
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -104,6 +110,9 @@ fun ExportScreen(
     // importantly it refuses to encrypt with an empty or short passphrase. Surfaced
     // through InlineBanner (KFINAL's error surface) rather than React's modal Alert.
     var localError by remember { mutableStateOf<String?>(null) }
+
+    // Which custom-range field the native date picker is editing ("from"/"to"/null).
+    var pickerTarget by remember { mutableStateOf<String?>(null) }
 
     PageScaffold(
         title = "Export",
@@ -178,27 +187,32 @@ fun ExportScreen(
                     },
                     onDismiss   = { dateWindowSheetOpen = false },
                 )
-                // EX-1: custom date range fields
+                // EX-1: custom date range. RFINAL opens a NATIVE date picker from
+                // "From"/"To" fields with an arrow between them — not free-text input —
+                // and formats the value as "MMM d, yyyy".
                 if (dateWindow == "custom") {
                     Spacer(Modifier.height(Spacing.sm))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        modifier              = Modifier.fillMaxWidth(),
                     ) {
-                        OutlinedTextField(
-                            value = customStart,
-                            onValueChange = { customStart = it },
-                            label = { Text("Start date") },
-                            placeholder = { Text("YYYY-MM-DD") },
-                            singleLine = true,
+                        DateField(
+                            label    = "From",
+                            value    = formatPickerDate(customStart),
+                            onClick  = { pickerTarget = "from" },
                             modifier = Modifier.weight(1f),
                         )
-                        OutlinedTextField(
-                            value = customEnd,
-                            onValueChange = { customEnd = it },
-                            label = { Text("End date") },
-                            placeholder = { Text("YYYY-MM-DD") },
-                            singleLine = true,
+                        Icon(
+                            Icons.Outlined.ArrowForward,
+                            contentDescription = null,
+                            tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        DateField(
+                            label    = "To",
+                            value    = formatPickerDate(customEnd),
+                            onClick  = { pickerTarget = "to" },
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -468,7 +482,48 @@ fun ExportScreen(
 
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))
         }
+
+        // Native date picker for the custom range (RFINAL uses @react-native-community
+        // DateTimePicker with maximumDate = today).
+        val target = pickerTarget
+        if (target != null) {
+            val initialMillis = (if (target == "from") customStart else customEnd)
+                .takeIf { it.isNotBlank() }
+                ?.let { iso ->
+                    runCatching { LocalDate.parse(iso.take(10)).toEpochDay() * 86_400_000L }.getOrNull()
+                }
+            val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+            DatePickerDialog(
+                onDismissRequest = { pickerTarget = null },
+                confirmButton    = {
+                    TextButton(onClick = {
+                        pickerState.selectedDateMillis?.let { millis ->
+                            val iso = java.time.Instant.ofEpochMilli(millis)
+                                .atZone(java.time.ZoneOffset.UTC).toLocalDate().toString()
+                            if (target == "from") customStart = iso else customEnd = iso
+                        }
+                        pickerTarget = null
+                    }) { Text("OK") }
+                },
+                dismissButton    = {
+                    TextButton(onClick = { pickerTarget = null }) { Text("Cancel") }
+                },
+            ) {
+                DatePicker(state = pickerState)
+            }
+        }
     }
+}
+
+/** RFINAL renders the picker value as "MMM d, yyyy"; blank renders as "Select". */
+private fun formatPickerDate(iso: String): String = try {
+    if (iso.isBlank()) {
+        ""
+    } else {
+        LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+    }
+} catch (_: Exception) {
+    iso
 }
 
 @Composable
