@@ -152,6 +152,10 @@ fun FinanceScreen(
     var showImportCsvSheet     by remember { mutableStateOf(false) }
     var selectedTransactionId  by remember { mutableStateOf<String?>(null) }
 
+    // Per-day signed totals shown beside each date header, keyed by "YYYY-MM-DD".
+    // Loaded from SQL for the active filter (see TransactionViewModel.dayNetTotals).
+    var dayNet by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
+
     // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
     // from the Budgets/Categorize screens) so the budget alert, budget card, and
     // uncategorized banner count reflect current data instead of stale values.
@@ -161,6 +165,11 @@ fun FinanceScreen(
             budgetViewModel.load()
             viewModel.refreshMetrics()
         }
+    }
+
+    // Recompute the date-header totals whenever the active date filter changes.
+    LaunchedEffect(activeFilters.startDate, activeFilters.endDate) {
+        dayNet = viewModel.dayNetTotals()
     }
 
     // FI-1: SMS permission check — show banner if READ_SMS not granted
@@ -611,6 +620,7 @@ fun FinanceScreen(
                     if (isFirstOfDay) {
                         DayGroupHeader(
                             dateLabel = formatRelativeDay(currDate),
+                            total     = dayNet[currDate],
                             modifier  = Modifier.padding(top = if (index == 0) 0.dp else Spacing.sm),
                         )
                     }

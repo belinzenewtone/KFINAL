@@ -237,6 +237,20 @@ class TransactionViewModel
         _uiState.update { it.copy(filters = it.filters.copy(startDate = start, endDate = end)) }
     }
 
+    /**
+     * Per-day NET totals for the ACTIVE date filter, used by the Finance list's date
+     * headers (RFINAL shows a signed daily total beside each date label).
+     *
+     * Returns an empty map when the filter is unbounded ("all"), rather than summing a
+     * partial Paging-3 window — that would render confidently wrong numbers.
+     */
+    suspend fun dayNetTotals(): Map<String, Double> {
+        val f     = _uiState.value.filters
+        val start = f.startDate ?: return emptyMap()
+        val end   = f.endDate ?: return emptyMap()
+        return dao.getDayNetTotals(start, end).associate { it.day to it.net }
+    }
+
     fun clearFilters() {
         _uiState.update { it.copy(filters = TransactionFilters()) }
     }

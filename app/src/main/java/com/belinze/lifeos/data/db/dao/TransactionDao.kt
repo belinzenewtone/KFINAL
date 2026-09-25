@@ -273,6 +273,22 @@ interface TransactionDao {
     """)
     suspend fun getDaySpends(startDate: String, endDate: String): List<DaySpend>
 
+    /** Per-day NET totals for completed rows — RFINAL's FinanceScreen dayTotal rule:
+     *  outflows subtract, inflows add, and rows whose status isn't 'completed' are
+     *  skipped. Computed in SQL so the Finance list headers don't have to sum a
+     *  partial Paging-3 window (which would show wrong numbers). */
+    @Query("""
+        SELECT substr(date, 1, 10) AS day,
+               COALESCE(SUM(CASE WHEN transaction_type IN ('expense','transfer','fuliza')
+                                 THEN -amount ELSE amount END), 0.0) AS net
+        FROM transactions
+        WHERE deleted_at IS NULL AND status = 'completed'
+          AND date >= :startDate AND date <= :endDate
+          AND transaction_type IN ('expense','transfer','fuliza','income','receive')
+        GROUP BY day
+    """)
+    suspend fun getDayNetTotals(startDate: String, endDate: String): List<DayNet>
+
     @Query("""
         SELECT COALESCE(SUM(amount), 0.0) FROM transactions
         WHERE date >= :startDate AND date <= :endDate
@@ -484,6 +500,8 @@ data class MerchantTotal(val merchant: String?, val total: Double)
 data class FeeCategoryTotal(val category: String?, val total: Double, val count: Int)
 
 data class DaySpend(val day: String, val total: Double)
+
+data class DayNet(val day: String, val net: Double)
 
 data class BiggestSpend(val merchant: String?, val amount: Double, val date: String)
 

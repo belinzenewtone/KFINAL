@@ -188,7 +188,8 @@ fun DayGroupHeader(
         if (total != null && total != 0.0) {
             val negative = total < 0
             Text(
-                text          = "${if (negative) "-" else "+"}${formatCurrency(kotlin.math.abs(total))}",
+                // RFINAL renders the day total with decimals: 0.
+                text          = "${if (negative) "-" else "+"}${formatCurrency(kotlin.math.abs(total), decimals = 0)}",
                 style         = MaterialTheme.typography.labelMedium,
                 color         = if (negative) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 letterSpacing = 0.3.sp,
