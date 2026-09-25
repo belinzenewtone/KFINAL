@@ -189,13 +189,16 @@ interface TransactionDao {
     """)
     suspend fun getFeeTotal(startDate: String, endDate: String): Double?
 
-    /** Per-category breakdown of the `fee` column — still used by the Analytics tab's
-     *  fee summary, whose RFINAL counterpart has not been verified. Do not repoint. */
+    /** Per-category breakdown of the `fee` column — the Analytics tab's fee summary.
+     *  Its RFINAL counterpart (TransactionRepository.getFeesSummaryInRange's topCategory
+     *  query) is also fee-column based and carries the same `status = 'completed'` filter,
+     *  so this is verified rather than assumed. */
     @Query("""
         SELECT category, SUM(fee) AS total, COUNT(*) AS count
         FROM transactions
         WHERE deleted_at IS NULL
           AND fee IS NOT NULL AND fee > 0
+          AND status = 'completed'
           AND date >= :startDate AND date <= :endDate
         GROUP BY category
         ORDER BY total DESC
@@ -390,7 +393,9 @@ interface TransactionDao {
     """)
     suspend fun getUncategorizedAmountInRange(startDate: String, endDate: String): Double
 
-    /** Fee summary for a date range: sums the per-transaction M-Pesa fee column. */
+    /** Fee summary for a date range: sums the per-transaction M-Pesa fee column.
+     *  Mirrors RFINAL's TransactionRepository.getFeesSummaryInRange, including its
+     *  `status = 'completed'` filter. */
     @Query("""
         SELECT
           COALESCE(SUM(fee), 0.0) AS total,
@@ -399,6 +404,7 @@ interface TransactionDao {
         FROM transactions
         WHERE date >= :startDate AND date <= :endDate
           AND fee IS NOT NULL AND fee > 0
+          AND status = 'completed'
           AND deleted_at IS NULL
     """)
     suspend fun getFeeSummaryInRange(startDate: String, endDate: String): FeeSummary
