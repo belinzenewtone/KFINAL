@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
@@ -47,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -255,23 +257,25 @@ fun ExportScreen(
                         Column(
                             modifier = Modifier
                                 .size(width = 92.dp, height = 92.dp)
+                                // RFINAL previewItem: radius lg (20), a 1dp border in BOTH
+                                // states, fill = domain colour @30 (active) / @15 (inactive),
+                                // and opacity 0.35 while the tile is locked to CSV.
                                 .background(
-                                    if (active) {
-                                        domain.color.copy(alpha = 0x52 / 255f)
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    },
-                                    MaterialTheme.shapes.large,
+                                    domain.color.copy(
+                                        alpha = if (active) 0x30 / 255f else 0x15 / 255f
+                                    ),
+                                    RoundedCornerShape(20.dp),
                                 )
                                 .border(
-                                    width = if (active) 2.dp else 1.dp,
+                                    width = 1.dp,
                                     color = if (active) {
                                         domain.color
                                     } else {
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                                        domain.color.copy(alpha = 0x50 / 255f)
                                     },
-                                    shape = MaterialTheme.shapes.large,
+                                    shape = RoundedCornerShape(20.dp),
                                 )
+                                .alpha(if (locked) 0.35f else 1f)
                                 .then(
                                     if (locked) {
                                         Modifier
@@ -289,16 +293,14 @@ fun ExportScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
+                            // RFINAL previewIcon: a 32dp CIRCLE filled with the domain
+                            // colour at @25.
                             Box(
                                 modifier = Modifier
-                                    .size(30.dp)
+                                    .size(32.dp)
                                     .background(
-                                        if (active) {
-                                            domain.color.copy(alpha = 0x3D / 255f)
-                                        } else {
-                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-                                        },
-                                        MaterialTheme.shapes.medium,
+                                        domain.color.copy(alpha = 0x25 / 255f),
+                                        CircleShape,
                                     ),
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -313,7 +315,7 @@ fun ExportScreen(
                                     else           -> Icons.Outlined.Wallet
                                 }
                                 Icon(domainIcon, contentDescription = null,
-                                    tint = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = domain.color,
                                     modifier = Modifier.size(16.dp))
                             }
                             // EX-2: item count — shown before label (RFINAL: icon → count → label)
@@ -321,15 +323,11 @@ fun ExportScreen(
                             Text(
                                 count?.toString() ?: "—",
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (active) domain.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                             )
                             Text(domain.label, style = MaterialTheme.typography.bodySmall,
-                                color = if (active) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1)
                         }
                     }
