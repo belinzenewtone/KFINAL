@@ -24,8 +24,8 @@ android {
         applicationId = "com.belinze.lifeos.compose"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "1.5.3"
+        versionCode = 20
+        versionName = "1.5.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
