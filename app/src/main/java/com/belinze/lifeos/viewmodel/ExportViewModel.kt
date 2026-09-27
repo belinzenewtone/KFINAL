@@ -89,6 +89,14 @@ class ExportViewModel
         }
     }
 
+    fun clearLastExport() {
+        _uiState.value = _uiState.value.copy(lastExport = null)
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
     fun clearHistory() {
         viewModelScope.launch {
             plannerDao.deleteAllExports()

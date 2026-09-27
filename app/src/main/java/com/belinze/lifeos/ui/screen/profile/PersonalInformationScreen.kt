@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -54,6 +56,7 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.TopBanner
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 
@@ -62,7 +65,7 @@ import com.belinze.lifeos.viewmodel.ProfileViewModel
 // src/screens/profile/PersonalInformationScreen.tsx.
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class InfoField { Name, Email, Username }
+private enum class InfoField { Name, Email, Phone, Username }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +82,7 @@ fun PersonalInformationScreen(
         prefState.profileName.split(" ").firstOrNull() ?: ""
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,6 +160,16 @@ fun PersonalInformationScreen(
                     },
                 )
                 InfoRow(
+                    icon = Icons.Outlined.Phone,
+                    label = "Phone",
+                    value = prefState.profilePhone,
+                    placeholder = "+254 7XX XXX XXX",
+                    onClick = {
+                        editValue = prefState.profilePhone
+                        editing = InfoField.Phone
+                    },
+                )
+                InfoRow(
                     icon = Icons.Outlined.Person,
                     label = "Username",
                     value = displayUsername,
@@ -169,16 +182,20 @@ fun PersonalInformationScreen(
                 )
             }
         }
-    }
 
-    // PI-2: TopBanner outside editing guard so it remains visible after sheet closes
-    TopBanner(
-        visible       = successMsg != null,
-        message       = successMsg ?: "",
-        tone          = BannerTone.Success,
-        onDismiss     = { successMsg = null },
-        autoDismissMs = 2000,
-    )
+        // PI-2: TopBanner overlaid at top so it remains visible after sheet closes
+        TopBanner(
+            visible       = successMsg != null,
+            message       = successMsg ?: "",
+            tone          = BannerTone.Success,
+            onDismiss     = { successMsg = null },
+            autoDismissMs = 2000,
+            modifier      = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = AppBarDimens.height),
+        )
+    }
 
     if (editing != null) {
         ModalBottomSheet(
@@ -214,9 +231,19 @@ fun PersonalInformationScreen(
                             value
                         }
                     },
-                    placeholder = { Text(if (field == InfoField.Email) "your@email.com" else field.name) },
+                    placeholder = {
+                        Text(when (field) {
+                            InfoField.Email -> "your@email.com"
+                            InfoField.Phone -> "+254 7XX XXX XXX"
+                            else -> field.name
+                        })
+                    },
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = if (field == InfoField.Email) KeyboardType.Email else KeyboardType.Text,
+                        keyboardType = when (field) {
+                            InfoField.Email -> KeyboardType.Email
+                            InfoField.Phone -> KeyboardType.Phone
+                            else -> KeyboardType.Text
+                        },
                     ),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
@@ -233,6 +260,12 @@ fun PersonalInformationScreen(
                             InfoField.Email -> {
                                 viewModel.saveEmail(editValue.trim().ifEmpty { null }) {
                                     successMsg = "Email updated"
+                                    editing = null
+                                }
+                            }
+                            InfoField.Phone -> {
+                                viewModel.savePhone(editValue.trim()) {
+                                    successMsg = "Phone updated"
                                     editing = null
                                 }
                             }

@@ -77,6 +77,7 @@ import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.Route
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 import com.belinze.lifeos.viewmodel.SettingsViewModel
@@ -538,6 +539,9 @@ fun ProfileScreen(
         tone          = BannerTone.Success,
         onDismiss     = { successMessage = null },
         autoDismissMs = 3000,
+        modifier      = Modifier
+            .align(Alignment.TopCenter)
+            .padding(top = AppBarDimens.height),
     )
     } // end Box
 }

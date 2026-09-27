@@ -15,9 +15,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -108,6 +112,10 @@ fun TransactionDetailDialog(
             tone = BannerTone.Success,
             onDismiss = { infoMessage = null },
             autoDismissMs = 2500,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = AppBarDimens.height),
         )
         // BoxWithConstraints so the card can cap itself against the REAL available
         // height instead of a hard-coded 520dp: it grows to fit its content (so the
@@ -149,7 +157,7 @@ fun TransactionDetailDialog(
                         val categoryKey = tx.category?.takeIf { it.isNotBlank() } ?: (tx.transactionType ?: "expense")
                         val catColor = categoryColor(categoryKey)
                         val amountColor = when (tx.transactionType) {
-                            "income" -> Color(0xFF34D399)
+                            "income", "receive" -> Color(0xFF34D399)
                             "expense" -> MaterialTheme.colorScheme.error
                             else -> MaterialTheme.colorScheme.onSurface
                         }

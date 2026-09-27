@@ -1,5 +1,6 @@
 package com.belinze.lifeos.ui.screen.finance
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +16,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -188,6 +195,68 @@ fun TransactionFormScreen(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters),
                 modifier = Modifier.fillMaxWidth(),
+            )
+
+            // ── Date picker ──────────────────────────────────────────────────
+            var showDatePicker by remember { mutableStateOf(false) }
+            if (showDatePicker) {
+                val dpState = rememberDatePickerState(
+                    initialSelectedDateMillis = runCatching {
+                        java.time.LocalDate.parse(formState.date.take(10))
+                            .atStartOfDay(java.util.TimeZone.getTimeZone("UTC").toZoneId())
+                            .toInstant().toEpochMilli()
+                    }.getOrNull(),
+                )
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDatePicker = false
+                            dpState.selectedDateMillis?.let { ms ->
+                                val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                                cal.timeInMillis = ms
+                                viewModel.updateFormDate(
+                                    "%04d-%02d-%02d".format(
+                                        cal.get(java.util.Calendar.YEAR),
+                                        cal.get(java.util.Calendar.MONTH) + 1,
+                                        cal.get(java.util.Calendar.DAY_OF_MONTH),
+                                    )
+                                )
+                            }
+                        }) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                    },
+                ) { DatePicker(state = dpState) }
+            }
+            OutlinedTextField(
+                value = formState.date.take(10),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Date") },
+                trailingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true },
+            )
+
+            // ── Description ──────────────────────────────────────────────────
+            OutlinedTextField(
+                value = formState.description,
+                onValueChange = { viewModel.updateFormDescription(it) },
+                label = { Text("Description") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            // ── Notes ────────────────────────────────────────────────────────
+            OutlinedTextField(
+                value = formState.notes,
+                onValueChange = { viewModel.updateFormNotes(it) },
+                label = { Text("Notes (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
             )
 
             var categorySheetOpen by remember { mutableStateOf(false) }

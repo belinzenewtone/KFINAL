@@ -97,9 +97,9 @@ fun TasksScreen(
     val urgent    = remember(active)       { active.filter { it.priority == "high" } }
     val important = remember(active)       { active.filter { it.priority == "medium" } }
     val other     = remember(active)       { active.filter { it.priority == "low" } }
-    val completed = remember(filtered)     { filtered.filter { it.status == "completed" }.take(COMPLETED_LIMIT) }
+    val completed = remember(filtered)     { filtered.filter { it.status == "done" }.take(COMPLETED_LIMIT) }
     val openCount      = remember(state.tasks) { state.tasks.count { it.status == "active" } }
-    val completedCount = remember(state.tasks) { state.tasks.count { it.status == "completed" } }
+    val completedCount = remember(state.tasks) { state.tasks.count { it.status == "done" } }
 
     PageScaffold(
         title = "Tasks",
@@ -312,11 +312,11 @@ private fun TaskCard(
             ) {
                 Box(
                     modifier = Modifier.size(width = 4.dp, height = 32.dp)
-                        .background(if (task.status == "completed") MaterialTheme.colorScheme.outline else color, CircleShape),
+                        .background(if (task.status == "done") MaterialTheme.colorScheme.outline else color, CircleShape),
                 )
                 IconButton(
                     onClick = {
-                        if (task.status == "completed") {
+                        if (task.status == "done") {
                             Haptics.light()
                             viewModel.reopen(task.id)
                         } else {
@@ -327,21 +327,21 @@ private fun TaskCard(
                     modifier = Modifier.size(28.dp),
                 ) {
                     Icon(
-                        if (task.status == "completed") Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                        if (task.status == "done") Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                         contentDescription = null,
-                        tint = if (task.status == "completed") SUCCESS else color,
+                        tint = if (task.status == "done") SUCCESS else color,
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         task.title,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (task.status == "completed") {
+                        color = if (task.status == "done") {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         } else {
                             MaterialTheme.colorScheme.onSurface
                         },
-                        textDecoration = if (task.status == "completed") TextDecoration.LineThrough else TextDecoration.None,
+                        textDecoration = if (task.status == "done") TextDecoration.LineThrough else TextDecoration.None,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

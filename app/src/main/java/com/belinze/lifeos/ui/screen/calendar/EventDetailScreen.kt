@@ -37,7 +37,9 @@ import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventViewModel
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 private val PRIORITY_COLORS = mapOf(
     "low" to Color(0xFF7FC8F8),
@@ -94,6 +96,19 @@ fun EventDetailScreen(
             DetailRow("Repeat", event.repeatRule ?: "none")
             if (event.allDay != 0) DetailRow("All day", "Yes")
 
+            val guests = remember(event.guests) {
+                try {
+                    val arr = org.json.JSONArray(event.guests ?: "[]")
+                    (0 until arr.length()).map { arr.getString(it) }
+                } catch (_: Exception) { emptyList() }
+            }
+            if (guests.isNotEmpty()) {
+                DetailRow("Guests", guests.joinToString(", "))
+            }
+            if (!event.timeZoneId.isNullOrBlank()) {
+                DetailRow("Timezone", event.timeZoneId)
+            }
+
             Button(
                 onClick = { navController.navigate(NavTo.eventForm(event.id, event.type)) },
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.xl),
@@ -137,8 +152,14 @@ private fun DetailRow(label: String, value: String, valueColor: androidx.compose
     }
 }
 
-private fun formatDateTime(iso: String): String = try {
-    LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
-} catch (_: Exception) {
-    iso.take(16)
+private fun formatDateTime(iso: String): String {
+    return try {
+        val odt = OffsetDateTime.parse(iso)
+        odt.format(DateTimeFormatter.ofPattern("EEE, MMM d yyyy · HH:mm", Locale.ENGLISH))
+    } catch (_: Exception) {
+        try {
+            val ldt = LocalDateTime.parse(iso.take(19))
+            ldt.format(DateTimeFormatter.ofPattern("EEE, MMM d yyyy · HH:mm", Locale.ENGLISH))
+        } catch (_: Exception) { iso }
+    }
 }

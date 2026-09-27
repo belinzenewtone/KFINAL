@@ -75,6 +75,7 @@ import androidx.navigation.NavHostController
 import androidx.compose.runtime.LaunchedEffect
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FulizaLimitModal
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.SegmentedControl
 import com.belinze.lifeos.ui.components.SettingsRow
@@ -421,6 +422,9 @@ fun SettingsScreen(
             tone = BannerTone.Success,
             onDismiss = { infoMessage = null },
             autoDismissMs = 3000,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = AppBarDimens.height),
         )
     }
 

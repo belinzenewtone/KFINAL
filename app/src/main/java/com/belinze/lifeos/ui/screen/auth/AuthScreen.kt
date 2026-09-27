@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -45,6 +46,7 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.GlassCardVariant
 import com.belinze.lifeos.ui.components.HeroSurface
 import com.belinze.lifeos.ui.components.TopBanner
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.ShapeLg
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.AppViewModel
@@ -115,8 +117,9 @@ fun AuthScreen(
         return
     }
 
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(bgColor)
             .statusBarsPadding(),
@@ -210,11 +213,17 @@ fun AuthScreen(
         }
     }
 
-    // Top banner for validation errors
+    // Top banner for validation errors — overlaid at top of the Box
     TopBanner(
-        tone      = BannerTone.Error,
-        message   = banner ?: "",
-        visible   = banner != null,
-        onDismiss = { banner = null },
+        tone          = BannerTone.Error,
+        message       = banner ?: "",
+        visible       = banner != null,
+        onDismiss     = { banner = null },
+        autoDismissMs = 3000,
+        modifier      = Modifier
+            .align(Alignment.TopCenter)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(top = AppBarDimens.height),
     )
+    } // end Box
 }

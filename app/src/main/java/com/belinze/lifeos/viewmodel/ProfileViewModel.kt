@@ -182,6 +182,23 @@ class ProfileViewModel
         }
     }
 
+    /** Save only the phone field. */
+    fun savePhone(phone: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                appPreferences.update {
+                    if (phone.isBlank()) {
+                        it.remove(PreferenceKeys.PROFILE_PHONE)
+                    } else {
+                        it[PreferenceKeys.PROFILE_PHONE] = phone
+                    }
+                }
+                onSuccess()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     /** Remove the profile photo (Profile hero photo sheet). */
     fun removeProfilePhoto(onSuccess: () -> Unit) {
         viewModelScope.launch {

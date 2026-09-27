@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.EventDao
 import com.belinze.lifeos.data.db.entity.EventEntity
+import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -102,6 +103,7 @@ class EventViewModel
     @Inject
     constructor(
     private val dao: EventDao,
+    private val scheduler: NotificationScheduler,
 ) : ViewModel() {
     private val _uiState   = MutableStateFlow(EventUiState())
     val uiState: StateFlow<EventUiState> = _uiState.asStateFlow()
@@ -314,6 +316,15 @@ class EventViewModel
                 val existing = form.id?.let { dao.getById(it) }
                 val entity   = formStateToEntity(form, existing)
                 dao.insert(entity)
+                scheduler.scheduleEventReminders(
+                    eventId  = entity.id,
+                    title    = entity.title,
+                    eventDateIso = entity.date,
+                    offsetsMin   = parseJsonIntArray(entity.reminderOffsets),
+                    alarm        = entity.alarmEnabled != 0,
+                    type         = entity.type,
+                    reminderTimeOfDayMinutes = entity.reminderTimeOfDayMinutes,
+                )
                 loadNextEvent()
                 Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
@@ -327,6 +338,7 @@ class EventViewModel
     fun softDelete(id: String) {
         viewModelScope.launch {
             dao.softDelete(id, nowIso())
+            scheduler.cancelEventReminders(id)
             Haptics.warning()
             loadNextEvent()
         }

@@ -33,7 +33,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +92,9 @@ fun HomeScreen(
 
     // Spend metrics for Today and Week — sourced from ViewModel-computed totals
     // (accurate across all data, not just the current paging window).
+    var errorBanner by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(txState.error) { if (txState.error != null) errorBanner = txState.error }
+
     val todayCash = txState.todayExpense
     val weekCash  = txState.weekExpense
 
@@ -207,10 +213,12 @@ fun HomeScreen(
 
         // Error banner — overlaid so it doesn't shift content
         TopBanner(
-            visible  = txState.error != null,
-            message  = txState.error ?: "",
-            tone     = BannerTone.Error,
-            modifier = Modifier
+            visible       = errorBanner != null,
+            message       = errorBanner ?: "",
+            tone          = BannerTone.Error,
+            onDismiss     = { errorBanner = null },
+            autoDismissMs = 3000,
+            modifier      = Modifier
                 .align(Alignment.TopCenter)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(top = AppBarDimens.height),

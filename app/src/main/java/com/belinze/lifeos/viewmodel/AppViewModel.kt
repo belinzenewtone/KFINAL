@@ -7,6 +7,7 @@ import com.belinze.lifeos.data.datastore.AppPreferenceState
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
 import com.belinze.lifeos.services.BudgetAlertService
+import com.belinze.lifeos.services.NotificationSync
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,7 @@ class AppViewModel
     constructor(
     private val appPreferences: AppPreferences,
     private val budgetAlertService: BudgetAlertService,
+    private val notificationSync: NotificationSync,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
@@ -63,6 +65,7 @@ class AppViewModel
         viewModelScope.launch {
             runCatching {
                 val state = appPreferences.state.first()
+                notificationSync.syncAll(state)
                 budgetAlertService.checkAllBudgetThresholds(state)
             }
         }

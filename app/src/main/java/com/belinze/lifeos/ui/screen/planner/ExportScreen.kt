@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -113,6 +114,26 @@ fun ExportScreen(
 
     // Which custom-range field the native date picker is editing ("from"/"to"/null).
     var pickerTarget by remember { mutableStateOf<String?>(null) }
+
+    // Auto-clear ViewModel banners after 3 s so they don't persist indefinitely
+    LaunchedEffect(state.lastExport) {
+        if (state.lastExport != null) {
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearLastExport()
+        }
+    }
+    LaunchedEffect(state.error) {
+        if (state.error != null) {
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearError()
+        }
+    }
+    LaunchedEffect(localError) {
+        if (localError != null) {
+            kotlinx.coroutines.delay(3000)
+            localError = null
+        }
+    }
 
     PageScaffold(
         title = "Export",

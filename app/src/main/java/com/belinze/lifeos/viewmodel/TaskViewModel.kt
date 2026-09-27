@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.entity.TaskEntity
+import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +41,7 @@ data class TaskUiState(
     val isLoading:  Boolean                    = true,
     val tasks:      ImmutableList<TaskEntity>  = persistentListOf(),
     val upcoming:   ImmutableList<TaskEntity>  = persistentListOf(),  // Home widget feed
-    val filter:     TaskFilter        = TaskFilter.Active,
+    val filter:     TaskFilter        = TaskFilter.All,
     val sort:       TaskSort          = TaskSort.Deadline,
     val pendingCount: Int             = 0,
     val dueTodayCount: Int            = 0,
@@ -68,6 +69,7 @@ class TaskViewModel
     @Inject
     constructor(
     private val dao: TaskDao,
+    private val scheduler: NotificationScheduler,
 ) : ViewModel() {
     private val _uiState   = MutableStateFlow(TaskUiState())
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
@@ -95,7 +97,7 @@ class TaskViewModel
         val filtered = when (_uiState.value.filter) {
             TaskFilter.All       -> all
             TaskFilter.Active    -> all.filter { it.status == "active" }
-            TaskFilter.Completed -> all.filter { it.status == "completed" }
+            TaskFilter.Completed -> all.filter { it.status == "done" }
             TaskFilter.Overdue   -> all.filter {
                 it.status == "active" && it.deadline != null && it.deadline < nowIso
             }
@@ -179,6 +181,15 @@ class TaskViewModel
 
     fun toggleAlarm(v: Boolean) = _formState.update { it.copy(alarmEnabled = v) }
 
+    private fun parseJsonOffsets(raw: String?): List<Int> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return try {
+            val cleaned = raw.trim().removePrefix("[").removeSuffix("]")
+            if (cleaned.isBlank()) emptyList()
+            else cleaned.split(",").mapNotNull { it.trim().toIntOrNull() }
+        } catch (_: Exception) { emptyList() }
+    }
+
     fun saveForm(onSuccess: () -> Unit) {
         val form = _formState.value
         if (form.title.isBlank()) {
@@ -205,6 +216,17 @@ class TaskViewModel
                     updatedAt    = nowIso(),
                 )
                 dao.insert(entity)
+                if (entity.deadline != null) {
+                    scheduler.scheduleTaskReminders(
+                        taskId      = entity.id,
+                        title       = entity.title,
+                        deadlineIso = entity.deadline,
+                        offsetsMin  = parseJsonOffsets(entity.reminderOffsets),
+                        alarm       = entity.alarmEnabled != 0,
+                    )
+                } else {
+                    scheduler.cancelTaskReminders(entity.id)
+                }
                 loadPendingCount()
                 Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
@@ -218,7 +240,8 @@ class TaskViewModel
     fun complete(id: String) {
         viewModelScope.launch {
             val entity = dao.getById(id) ?: return@launch
-            dao.update(entity.copy(status = "completed", updatedAt = nowIso()))
+            dao.update(entity.copy(status = "done", updatedAt = nowIso()))
+            scheduler.cancelTaskReminders(id)
             Haptics.success()
             loadPendingCount()
         }
@@ -236,6 +259,7 @@ class TaskViewModel
     fun softDelete(id: String) {
         viewModelScope.launch {
             dao.softDelete(id, nowIso())
+            scheduler.cancelTaskReminders(id)
             Haptics.warning()
             loadPendingCount()
         }

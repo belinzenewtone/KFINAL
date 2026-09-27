@@ -79,6 +79,7 @@ data class BillFormState(
     val isActive:    Boolean  = true,
     val isSaving:    Boolean  = false,
     val error:       String?  = null,
+    val lastPaidAt:  String?  = null,
 )
 
 @Immutable
@@ -344,6 +345,7 @@ class PlannerViewModel
                     category = e.cycle ?: "bills", frequency = e.cycle ?: "monthly",
                     nextDueDate = e.nextDueDate ?: nowIso(), notes = e.notes ?: "",
                     isPaid = e.paidStatus != 0, isActive = e.isActive != 0,
+                    lastPaidAt = e.lastPaidAt,
                 )
                 }
             }
@@ -369,7 +371,7 @@ class PlannerViewModel
                     nextDueDate = form.nextDueDate,
                     notes = form.notes.ifBlank { null },
                     paidStatus = if (form.isPaid) 1 else 0,
-                    lastPaidAt = if (form.isPaid) nowIso() else null,
+                    lastPaidAt = if (form.isPaid) (form.lastPaidAt ?: nowIso()) else null,
                     isActive = if (form.isActive) 1 else 0, updatedAt = nowIso(),
                 )
                 plannerDao.insertBill(e)

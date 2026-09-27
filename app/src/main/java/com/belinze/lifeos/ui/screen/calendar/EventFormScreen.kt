@@ -42,6 +42,7 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventFormState
 import com.belinze.lifeos.viewmodel.EventViewModel
@@ -229,10 +230,14 @@ fun EventFormScreen(
         }
 
         TopBanner(
-            visible   = successMsg != null,
-            message   = successMsg ?: "",
-            tone      = BannerTone.Success,
-            onDismiss = { successMsg = null },
+            visible       = successMsg != null,
+            message       = successMsg ?: "",
+            tone          = BannerTone.Success,
+            onDismiss     = { successMsg = null },
+            autoDismissMs = 3000,
+            modifier      = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = AppBarDimens.height),
         )
     }
 

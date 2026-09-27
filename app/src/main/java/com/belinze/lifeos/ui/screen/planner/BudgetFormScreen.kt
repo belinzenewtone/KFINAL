@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -270,10 +274,15 @@ fun BudgetFormScreen(
 
         // CC-3: success banner (outside PageScaffold so it overlays)
         TopBanner(
-            visible   = successMsg != null,
-            message   = successMsg ?: "",
-            tone      = BannerTone.Success,
-            onDismiss = { successMsg = null },
+            visible       = successMsg != null,
+            message       = successMsg ?: "",
+            tone          = BannerTone.Success,
+            onDismiss     = { successMsg = null },
+            autoDismissMs = 3000,
+            modifier      = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = AppBarDimens.height),
         )
     }
 

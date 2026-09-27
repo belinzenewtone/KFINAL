@@ -51,8 +51,8 @@ class NotificationSync
         val enabled = prefState.notificationsEnabled
 
         // ── Daily digest ─────────────────────────────────────────────────
-        if (enabled && prefState.notifDailyDigest) {
-            scheduler.scheduleDailyDigest("06:30")
+        if (enabled && prefState.dailyDigestMorningSummary) {
+            scheduler.scheduleDailyDigest(prefState.dailyDigestDeliveryTime)
         } else {
             scheduler.cancelDailyDigest()
         }

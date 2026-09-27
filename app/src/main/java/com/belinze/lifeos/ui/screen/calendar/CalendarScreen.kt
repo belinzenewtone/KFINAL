@@ -147,7 +147,7 @@ fun CalendarScreen(
         eventViewModel.loadCalendarMonth(yearMonth)
     }
 
-    val headerSubtitle = today.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
+    val headerSubtitle = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
     val selectedDateLabel = remember(selectedDate) {
         runCatching {
             LocalDate.parse(selectedDate).format(DateTimeFormatter.ofPattern("EEEE, MMM dd", Locale.ENGLISH))
