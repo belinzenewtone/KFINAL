@@ -25,7 +25,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.InlineBanner
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.ShapeSm
 import com.belinze.lifeos.ui.theme.Spacing
@@ -85,10 +87,11 @@ fun WeekReviewScreen(
                 }
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize().padding(Spacing.screenHorizontal),
-                    contentAlignment = Alignment.Center) {
-                    Text(state.error!!, color = MaterialTheme.colorScheme.error)
-                }
+                InlineBanner(
+                    message  = state.error!!,
+                    tone     = BannerTone.Error,
+                    modifier = Modifier.padding(Spacing.screenHorizontal),
+                )
             }
             else -> {
                 PullToRefreshBox(

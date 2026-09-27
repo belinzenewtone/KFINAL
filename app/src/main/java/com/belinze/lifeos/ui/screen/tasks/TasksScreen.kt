@@ -58,8 +58,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.TaskEntity
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
@@ -79,6 +81,7 @@ fun TasksScreen(
     var query by remember { mutableStateOf("") }
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
     var taskToDelete by remember { mutableStateOf<TaskEntity?>(null) }
+    var banner by remember { mutableStateOf<String?>(null) }
 
     val filtered = remember(state.tasks, query) {
         if (query.isBlank()) {
@@ -103,6 +106,15 @@ fun TasksScreen(
         subtitle = "$openCount open · $completedCount completed",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(Route.TASK_FORM) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add task", tint = MaterialTheme.colorScheme.onSurface)
@@ -206,6 +218,7 @@ fun TasksScreen(
                 TextButton(onClick = {
                     Haptics.light()
                     viewModel.softDelete(task.id)
+                    banner = "\"${task.title}\" deleted"
                     taskToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },

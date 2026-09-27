@@ -46,8 +46,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -79,6 +81,7 @@ fun IncomeScreen(
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var incomeToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var banner by remember { mutableStateOf<String?>(null) }
 
     if (incomeToDelete != null) {
         val (deleteId, deleteSource) = incomeToDelete!!
@@ -89,6 +92,7 @@ fun IncomeScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteIncome(deleteId)
+                    banner = "$deleteSource deleted"
                     incomeToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
@@ -107,7 +111,16 @@ fun IncomeScreen(
         title = "Income",
         subtitle = "${incomes.size} entr${if (incomes.size == 1) "y" else "ies"} tracked",
         onBack = { navController.popBackStack() },
-        scrollable = false, // LazyColumn below provides its own scrolling
+        scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.incomeForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add income", tint = MaterialTheme.colorScheme.primary)

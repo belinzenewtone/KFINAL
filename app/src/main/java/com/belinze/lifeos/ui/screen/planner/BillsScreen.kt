@@ -26,17 +26,16 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -86,21 +85,22 @@ fun BillsScreen(
     }
 
     val activeBills = remember(state.bills) { state.bills.filter { it.isActive != 0 } }
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(banner) {
-        banner?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
-            banner = null
-        }
-    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Recurring Obligations",
         title = "Bills",
         subtitle = "${activeBills.size} active bill${if (activeBills.size == 1) "" else "s"}",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.billForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add bill", tint = MaterialTheme.colorScheme.primary)
@@ -144,11 +144,6 @@ fun BillsScreen(
             }
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
-    )
-    } // Box
 }
 
 @Composable

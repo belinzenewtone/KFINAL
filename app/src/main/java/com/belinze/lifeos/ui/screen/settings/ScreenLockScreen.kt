@@ -1,6 +1,5 @@
 package com.belinze.lifeos.ui.screen.settings
 
-import android.widget.Toast
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricPrompt
@@ -95,6 +94,7 @@ fun ScreenLockScreen(
     var confirmPin       by remember { mutableStateOf("") }
     var currentPin       by remember { mutableStateOf("") }
     var message          by remember { mutableStateOf<String?>(null) }
+    var bioError         by remember { mutableStateOf<String?>(null) }
     var error            by remember { mutableStateOf<String?>(null) }
     // Tracks that the user flipped PIN lock ON but hasn't saved a PIN yet —
     // prevents enabling the lock before any PIN is stored.
@@ -114,12 +114,12 @@ fun ScreenLockScreen(
                 if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                     errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON
                 ) {
-                    Toast.makeText(context, errString, Toast.LENGTH_SHORT).show()
+                    bioError = errString.toString()
                 }
             }
 
             override fun onAuthenticationFailed() {
-                Toast.makeText(context, "Not recognised — try again", Toast.LENGTH_SHORT).show()
+                bioError = "Not recognised — try again"
             }
         }
         val info = BiometricPrompt.PromptInfo.Builder()
@@ -142,6 +142,13 @@ fun ScreenLockScreen(
                 tone          = BannerTone.Success,
                 onDismiss     = { message = null },
                 autoDismissMs = 2500,
+            )
+            TopBanner(
+                visible       = bioError != null,
+                message       = bioError ?: "",
+                tone          = BannerTone.Error,
+                onDismiss     = { bioError = null },
+                autoDismissMs = 3000,
             )
         },
     ) {

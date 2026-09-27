@@ -2,7 +2,6 @@ package com.belinze.lifeos.ui.screen.auth
 
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.widget.Toast
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
@@ -127,13 +126,13 @@ fun AppLockScreen(
                 checkingBio = false
                 if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                     errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
-                        Toast.makeText(context, errString, Toast.LENGTH_SHORT).show()
+                        errorMsg = errString.toString()
                     }
             }
 
             override fun onAuthenticationFailed() {
                 checkingBio = false
-                Toast.makeText(context, "Authentication failed", Toast.LENGTH_SHORT).show()
+                errorMsg = "Authentication failed — try again"
             }
         }
         val promptInfo = BiometricPrompt.PromptInfo.Builder()

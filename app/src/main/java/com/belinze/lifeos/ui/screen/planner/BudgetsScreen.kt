@@ -49,8 +49,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
@@ -81,6 +83,7 @@ fun BudgetsScreen(
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var budgetToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var banner by remember { mutableStateOf<String?>(null) }
 
     if (budgetToDelete != null) {
         val (deleteId, deleteCategory) = budgetToDelete!!
@@ -91,6 +94,7 @@ fun BudgetsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.softDelete(deleteId)
+                    banner = "$deleteCategory budget deleted"
                     budgetToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
@@ -113,7 +117,16 @@ fun BudgetsScreen(
         eyebrow = "Spending guardrails",
         title = "Budgets",
         onBack = { navController.popBackStack() },
-        scrollable = false, // LazyColumn below provides its own scrolling
+        scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.budgetForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add budget", tint = MaterialTheme.colorScheme.primary)

@@ -21,8 +21,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +28,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -60,23 +60,31 @@ fun CategorizeScreen(
     viewModel:     CategorizeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    var infoMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
 
     LaunchedEffect(state.message) {
         if (state.message != null) {
-            snackbarHostState.showSnackbar(state.message!!)
+            infoMessage = state.message
             viewModel.clearMessage()
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Finance",
         title = "Categorize",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = infoMessage != null,
+                message = infoMessage ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { infoMessage = null },
+                autoDismissMs = 3000,
+            )
+        },
     ) {
         if (state.isLoading) {
             Box(
@@ -134,11 +142,6 @@ fun CategorizeScreen(
             }
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
-    )
-    } // Box
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

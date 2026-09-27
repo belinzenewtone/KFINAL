@@ -21,8 +21,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,6 +30,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.TopBanner
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -74,7 +75,7 @@ fun TransactionFormScreen(
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !transactionId.isNullOrEmpty()
     val scope  = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    var infoMessage by remember { mutableStateOf<String?>(null) }
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -100,10 +101,19 @@ fun TransactionFormScreen(
         viewModel.openForm(transactionId?.ifEmpty { null })
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         title = if (isEdit) "Edit Transaction" else "Add Transaction",
         onBack = { navController.popBackStack() },
+        scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = infoMessage != null,
+                message = infoMessage ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { infoMessage = null },
+                autoDismissMs = 1500,
+            )
+        },
         actions = {
             if (isEdit) {
                 TextButton(onClick = { showDeleteConfirm = true }) {
@@ -111,7 +121,6 @@ fun TransactionFormScreen(
                 }
             }
         },
-        scrollable = false,
     ) {
         Column(
             modifier = Modifier
@@ -235,7 +244,8 @@ fun TransactionFormScreen(
                 onClick  = {
                     viewModel.saveForm {
                         scope.launch {
-                            snackbarHostState.showSnackbar(if (isEdit) "Transaction updated" else "Transaction saved")
+                            infoMessage = if (isEdit) "Transaction updated" else "Transaction saved"
+                            delay(1500)
                             navController.popBackStack()
                         }
                     }
@@ -260,9 +270,4 @@ fun TransactionFormScreen(
             Spacer(Modifier.height(Spacing.bottomNavSafeArea))
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
-    )
-    } // Box
 }

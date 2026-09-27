@@ -30,11 +30,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,13 +73,6 @@ fun GoalsScreen(
     var logGoalId by remember { mutableStateOf<String?>(null) }
     var logAmount by remember { mutableStateOf("") }
     var goalToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(banner) {
-        banner?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
-            banner = null
-        }
-    }
 
     if (goalToDelete != null) {
         val (deleteId, deleteTitle) = goalToDelete!!
@@ -101,13 +94,21 @@ fun GoalsScreen(
 
     val activeGoals = remember(state.goals) { state.goals.filter { it.status == "active" } }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Personal Growth",
         title = "Goals",
         subtitle = "${activeGoals.size} active goal${if (activeGoals.size == 1) "" else "s"}",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.goalForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add goal", tint = MaterialTheme.colorScheme.primary)
@@ -156,11 +157,6 @@ fun GoalsScreen(
             }
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
-    )
-    } // Box
 
     if (logGoalId != null) {
         val goal = state.goals.firstOrNull { it.id == logGoalId }

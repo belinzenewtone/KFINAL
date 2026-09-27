@@ -52,9 +52,11 @@ import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.AppSegmentedControl
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.components.SegmentOption
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
@@ -94,16 +96,19 @@ fun TransactionDetailDialog(
     val tx = selectedTx?.takeIf { it.id == transactionId }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
     LaunchedEffect(transactionId) { viewModel.loadTransaction(transactionId) }
 
-    // Ordinary screen content, deliberately NOT a Dialog. Compose Navigation already
-    // replaces the previous destination, so the Dialog never produced RFINAL's
-    // "previous screen visible behind" effect — it only hosted a second window, and
-    // nesting a ModalBottomSheet (the Category/Status pickers below) inside a Dialog
-    // is fragile. Same visual result, one less window.
     Box(modifier = Modifier.fillMaxSize()) {
+        TopBanner(
+            visible = infoMessage != null,
+            message = infoMessage ?: "",
+            tone = BannerTone.Success,
+            onDismiss = { infoMessage = null },
+            autoDismissMs = 2500,
+        )
         // BoxWithConstraints so the card can cap itself against the REAL available
         // height instead of a hard-coded 520dp: it grows to fit its content (so the
         // edit panel extends naturally, like RFINAL) and only starts scrolling once
@@ -202,7 +207,7 @@ fun TransactionDetailDialog(
                                     viewModel     = viewModel,
                                     transactionId = transactionId,
                                     onCancel      = { isEditing = false },
-                                    onSaved       = { isEditing = false },
+                                    onSaved       = { isEditing = false; infoMessage = "Changes saved" },
                                 )
                             } else {
                                 Row(

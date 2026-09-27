@@ -37,8 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
@@ -57,10 +59,21 @@ fun TaskDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val task = remember(uiState.tasks, taskId) { uiState.tasks.find { it.id == taskId } }
     var showDelete by remember { mutableStateOf(false) }
+    var banner by remember { mutableStateOf<String?>(null) }
 
     PageScaffold(
         title = "Task",
         onBack = { navController.popBackStack() },
+        scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 2000,
+            )
+        },
         actions = {
             if (task != null) {
                 IconButton(onClick = { showDelete = true }) {
@@ -68,7 +81,6 @@ fun TaskDetailScreen(
                 }
             }
         },
-        scrollable = false,
     ) {
         if (task == null) {
             Box(modifier = Modifier.fillMaxWidth().padding(Spacing.x2l), contentAlignment = Alignment.Center) {
@@ -128,7 +140,13 @@ fun TaskDetailScreen(
 
             Button(
                 onClick = {
-                    if (isCompleted) viewModel.reopen(task.id) else viewModel.complete(task.id)
+                    if (isCompleted) {
+                        viewModel.reopen(task.id)
+                        banner = "Task reopened"
+                    } else {
+                        viewModel.complete(task.id)
+                        banner = "Task completed"
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.base),
                 colors = ButtonDefaults.buttonColors(

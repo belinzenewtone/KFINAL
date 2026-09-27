@@ -21,9 +21,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -104,21 +104,21 @@ fun RecurringScreen(
         )
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(banner) {
-        banner?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
-            banner = null
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Automation",
         title = "Recurring",
         subtitle = "Subscriptions and repeating items",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.recurringForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add rule", tint = MaterialTheme.colorScheme.primary)
@@ -227,11 +227,6 @@ fun RecurringScreen(
             }
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
-    )
-    } // Box
 }
 
 private fun formatDate(iso: String?): String = try {

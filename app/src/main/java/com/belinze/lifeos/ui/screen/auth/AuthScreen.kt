@@ -212,7 +212,7 @@ fun AuthScreen(
 
     // Top banner for validation errors
     TopBanner(
-        tone      = BannerTone.Info,
+        tone      = BannerTone.Error,
         message   = banner ?: "",
         visible   = banner != null,
         onDismiss = { banner = null },

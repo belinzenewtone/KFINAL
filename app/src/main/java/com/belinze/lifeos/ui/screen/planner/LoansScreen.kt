@@ -25,11 +25,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,25 +95,26 @@ fun LoansScreen(
     var payLoanId by remember { mutableStateOf<String?>(null) }
     var payAmount by remember { mutableStateOf("") }
     var banner by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(banner) {
-        banner?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
-            banner = null
-        }
-    }
 
     val openLoans      = remember(state.loans) { state.loans.filter { it.status == "active" } }
     val closedLoans    = remember(state.loans) { state.loans.filter { it.status != "active" }.take(10) }
     val netOutstanding = remember(openLoans)   { openLoans.sumOf { it.drawAmountKes - it.totalRepaidKes } }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     PageScaffold(
         eyebrow = "Finance Tools",
         title = "Loans & Fuliza",
         subtitle = "Track outstanding draws and repayment history",
         onBack = { navController.popBackStack() },
         scrollable = false,
+        topBanner = {
+            TopBanner(
+                visible = banner != null,
+                message = banner ?: "",
+                tone = BannerTone.Success,
+                onDismiss = { banner = null },
+                autoDismissMs = 3000,
+            )
+        },
         actions = {
             IconButton(onClick = { navController.navigate(NavTo.loanForm()) }) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add loan", tint = MaterialTheme.colorScheme.primary)
@@ -195,11 +196,6 @@ fun LoansScreen(
             }
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier  = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg),
-    )
-    } // Box
 
     if (payLoanId != null) {
         val loan = state.loans.firstOrNull { it.id == payLoanId }
