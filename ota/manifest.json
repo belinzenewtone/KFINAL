@@ -2,10 +2,10 @@
     "version_code":  18,
     "version_name":  "1.5.2",
     "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.5.2/lifeos-release.apk",
-    "apk_sha256":  null,
+    "apk_sha256":  "413e9cbbb881923e412f90718d6758c9382449a0d1607b41743ab4a9a7475ba6",
     "mandatory":  false,
     "title":  "LifeOS 1.5.2",
-    "message":  "UI polish, parity improvements across hub screens, and OTA update flow wired.",
-    "changelog":  "- Learning, Goals, Income, Tasks, Finance screens fully polished\n- Warning color standardized (#FBBF24) across all screens\n- Icons aligned to outlined style throughout\n- Haptic feedback on all interactive actions\n- OTA update check and dialog fully wired",
+    "message":  "A new version of LifeOS is available. Tap Download to get it.",
+    "changelog":  "",
     "website_url":  "https://github.com/belinzenewtone/KFINAL/releases"
 }
