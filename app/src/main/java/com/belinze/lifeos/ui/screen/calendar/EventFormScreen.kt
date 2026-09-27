@@ -1217,12 +1217,12 @@ private fun PriorityRow(
     ) {
         PRIORITY_OPTIONS.forEach { (value, label) ->
             val isSelected = value == selected
-            val color      = PRIORITY_COLORS[value] ?: MaterialTheme.colorScheme.primary
+            val primary    = MaterialTheme.colorScheme.primary
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (isSelected) color else color.copy(alpha = 0.15f))
+                    .background(if (isSelected) primary else primary.copy(alpha = 0.15f))
                     .clickable { onSelect(value) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
@@ -1231,7 +1231,7 @@ private fun PriorityRow(
                     text       = label,
                     style      = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color      = if (isSelected) Color.White else color,
+                    color      = if (isSelected) MaterialTheme.colorScheme.onPrimary else primary,
                 )
             }
         }
