@@ -26,6 +26,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
+import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -189,9 +191,10 @@ fun NotificationsScreen(
                     label = "Delivery time",
                     value = formatTime(settings.dailyDigestDeliveryTime),
                     showChevron = true,
-                    onPress = { showTimePicker = true },
+                    onPress = { if (settings.dailyDigestMorningSummary) showTimePicker = true },
                     disabled = !settings.dailyDigestMorningSummary,
                     isLast = true,
+                    modifier = Modifier.alpha(if (settings.dailyDigestMorningSummary) 1f else 0.38f),
                 )
             }
 
@@ -239,9 +242,12 @@ private fun AlertLevelStepper(
     onCommit:   (Int) -> Unit,
     isLast:     Boolean = false,
 ) {
-    // Local drag state: keeps the thumb responsive without writing to the
-    // ViewModel (and triggering recomposition of the whole card) on every frame.
-    var draft by remember(savedValue) { mutableFloatStateOf(savedValue.toFloat()) }
+    // Snap savedValue to nearest 10 so the thumb always starts on a valid step.
+    val snapped = ((savedValue + 5) / 10) * 10
+    // Local draft — does NOT key on savedValue so committing doesn't re-init
+    // the float mid-gesture and cause a visual jump in the thumb position.
+    var draft by remember { mutableFloatStateOf(snapped.toFloat()) }
+    val display = (draft / 10).roundToInt() * 10  // always a multiple of 10
 
     Row(
         modifier = Modifier
@@ -259,15 +265,15 @@ private fun AlertLevelStepper(
             modifier = Modifier.weight(1f),
         )
         Slider(
-            value                = draft,
-            onValueChange        = { draft = it },          // local state only — no recompose above
-            onValueChangeFinished = { onCommit(draft.toInt()) },   // write ViewModel when thumb released
-            valueRange           = 0f..100f,
-            steps                = 9,
-            modifier             = Modifier.weight(2f),
+            value             = draft,
+            onValueChange     = { draft = it },
+            onValueChangeFinished = { onCommit(display) },
+            valueRange        = 0f..100f,
+            steps             = 9,          // 11 stops: 0,10,20…100
+            modifier          = Modifier.weight(2f),
         )
         Text(
-            "${draft.toInt()}%",
+            "$display%",
             style    = MaterialTheme.typography.bodyMedium,
             color    = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = Spacing.sm),

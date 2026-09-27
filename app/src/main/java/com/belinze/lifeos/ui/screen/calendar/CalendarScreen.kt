@@ -223,13 +223,7 @@ fun CalendarScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = {
-                    when (selectedTab) {
-                        CalendarTab.Tasks    -> navController.navigate(NavTo.eventForm(type = "task"))
-                        CalendarTab.Events   -> navController.navigate(NavTo.eventForm(type = "event"))
-                        CalendarTab.Calendar -> addMenuOpen = true
-                    }
-                }) {
+                IconButton(onClick = { addMenuOpen = true }) {
                     Icon(
                         Icons.Outlined.Add,
                         contentDescription = "Add",

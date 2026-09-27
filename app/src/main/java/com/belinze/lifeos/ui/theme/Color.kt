@@ -6,6 +6,7 @@ import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Business
+import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Home
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Savings
@@ -116,7 +118,33 @@ val CategoryColors: Map<String, Color> = mapOf(
     "transfer"      to Color(0xFF60A5FA),
     "fuliza"        to Color(0xFFFB923C),
     "withdrawal"    to Color(0xFFF87171),
-    "uncategorized" to Color(0xFF6B7280),
+    "uncategorized"   to Color(0xFF6B7280),
+    // Common M-Pesa aliases
+    "personal care"   to Color(0xFFF472B6),
+    "food & drinks"   to Color(0xFFF59E0B),
+    "food and drinks" to Color(0xFFF59E0B),
+    "eating out"      to Color(0xFFF59E0B),
+    "data"            to Color(0xFF06B6D4),
+    "internet"        to Color(0xFF06B6D4),
+    "bills"           to Color(0xFF8B5CF6),
+    "bill payment"    to Color(0xFF8B5CF6),
+    "paybill"         to Color(0xFF8B5CF6),
+    "buy goods"       to Color(0xFFD946EF),
+    "till"            to Color(0xFFD946EF),
+    "send money"      to Color(0xFF60A5FA),
+    "cash withdrawal" to Color(0xFFF87171),
+    "atm"             to Color(0xFFF87171),
+    "deposit"         to Color(0xFF22C55E),
+    "salary"          to Color(0xFF34D399),
+    "business"        to Color(0xFF14B8A6),
+    "clothing"        to Color(0xFFD946EF),
+    "travel"          to Color(0xFF3B82F6),
+    "medical"         to Color(0xFFF97316),
+    "pharmacy"        to Color(0xFFF97316),
+    "charity"         to Color(0xFFF472B6),
+    "donation"        to Color(0xFFF472B6),
+    "tax"             to Color(0xFF94A3B8),
+    "government"      to Color(0xFF94A3B8),
 )
 
 fun categoryColor(category: String): Color =
@@ -144,12 +172,42 @@ private val CategoryIcons: Map<String, ImageVector> by lazy {
         "loans"         to Icons.Outlined.Payments,
         "insurance"     to Icons.Outlined.VerifiedUser,
         "miscellaneous" to Icons.Outlined.MoreHoriz,
-        "uncategorized" to Icons.Outlined.HelpOutline,
-        "income"        to Icons.Outlined.ArrowDownward,
-        "expense"       to Icons.Outlined.ArrowUpward,
-        "transfer"      to Icons.Outlined.SwapHoriz,
-        "fuliza"        to Icons.Outlined.Payments,
-        "withdrawal"    to Icons.Outlined.ArrowUpward,
+        "uncategorized"   to Icons.Outlined.HelpOutline,
+        "income"          to Icons.Outlined.ArrowDownward,
+        "expense"         to Icons.Outlined.ArrowUpward,
+        "transfer"        to Icons.Outlined.SwapHoriz,
+        "fuliza"          to Icons.Outlined.Payments,
+        "withdrawal"      to Icons.Outlined.ArrowUpward,
+        // Common M-Pesa / SMS-parsed category aliases
+        "personal care"   to Icons.Outlined.AutoAwesome,
+        "food & drinks"   to Icons.Outlined.Restaurant,
+        "food and drinks" to Icons.Outlined.Restaurant,
+        "eating out"      to Icons.Outlined.Restaurant,
+        "data"            to Icons.Outlined.PhoneAndroid,
+        "internet"        to Icons.Outlined.PhoneAndroid,
+        "bills"           to Icons.Outlined.Bolt,
+        "bill payment"    to Icons.Outlined.Bolt,
+        "paybill"         to Icons.Outlined.Bolt,
+        "buy goods"       to Icons.Outlined.ShoppingBag,
+        "till"            to Icons.Outlined.ShoppingBag,
+        "send money"      to Icons.Outlined.SwapHoriz,
+        "cash withdrawal" to Icons.Outlined.ArrowUpward,
+        "atm"             to Icons.Outlined.ArrowUpward,
+        "deposit"         to Icons.Outlined.Savings,
+        "salary"          to Icons.Outlined.ArrowDownward,
+        "business"        to Icons.Outlined.TrendingUp,
+        "mpesa"           to Icons.Outlined.PhoneAndroid,
+        "lipa na mpesa"   to Icons.Outlined.PhoneAndroid,
+        "clothing"        to Icons.Outlined.ShoppingBag,
+        "travel"          to Icons.Outlined.DirectionsCar,
+        "hotel"           to Icons.Outlined.Home,
+        "medical"         to Icons.Outlined.MedicalServices,
+        "pharmacy"        to Icons.Outlined.MedicalServices,
+        "gym"             to Icons.Outlined.MedicalServices,
+        "charity"         to Icons.Outlined.CardGiftcard,
+        "donation"        to Icons.Outlined.CardGiftcard,
+        "tax"             to Icons.Outlined.Receipt,
+        "government"      to Icons.Outlined.Receipt,
     )
 }
 
