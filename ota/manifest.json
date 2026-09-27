@@ -1,10 +1,10 @@
 {
-    "version_code":  18,
-    "version_name":  "1.5.2",
-    "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.5.2/lifeos-release.apk",
-    "apk_sha256":  "413e9cbbb881923e412f90718d6758c9382449a0d1607b41743ab4a9a7475ba6",
+    "version_code":  19,
+    "version_name":  "1.5.3",
+    "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.5.3/lifeos-release.apk",
+    "apk_sha256":  "8fcba76ae925369af368474b8b6c0404d9f267d07bef39fcbe8432b968edc13f",
     "mandatory":  false,
-    "title":  "LifeOS 1.5.2",
+    "title":  "LifeOS 1.5.3",
     "message":  "A new version of LifeOS is available. Tap Download to get it.",
     "changelog":  "",
     "website_url":  "https://github.com/belinzenewtone/KFINAL/releases"
