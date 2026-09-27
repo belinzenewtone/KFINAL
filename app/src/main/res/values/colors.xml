@@ -7,4 +7,6 @@
 <resources>
     <!-- bgPrimary dark — matches Color.kt BgPrimary -->
     <color name="bg_primary">#FF0B0E14</color>
+    <!-- bgPrimary light — matches Color.kt BgPrimaryLight -->
+    <color name="bg_primary_light">#FFF8FAFC</color>
 </resources>

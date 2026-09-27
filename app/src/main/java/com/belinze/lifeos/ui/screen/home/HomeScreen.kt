@@ -49,6 +49,7 @@ import com.belinze.lifeos.ui.components.FrostCardGlow
 import com.belinze.lifeos.ui.components.ShimmerLoadingState
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.Route
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.EventViewModel
@@ -100,7 +101,7 @@ fun HomeScreen(
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -211,7 +212,8 @@ fun HomeScreen(
             tone     = BannerTone.Error,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .windowInsetsPadding(WindowInsets.statusBars),
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = AppBarDimens.height),
         )
     }
 }

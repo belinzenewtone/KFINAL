@@ -51,58 +51,65 @@ fun GlassCard(
     val primary = MaterialTheme.colorScheme.primary
 
     // ── Layer 1: gradient background ─────────────────────────────────────────
-    val gradient: Brush = if (isDark) {
-        Brush.linearGradient(
-            colors = listOf(Color(0xFF101014), Color(0xFF0E1B2E), Color(0xFF101014)),
-            start  = Offset.Zero,
-            end    = Offset.Infinite,
-        )
-    } else {
-        Brush.linearGradient(
-            colors = listOf(Color(0xFFFFFFFF), Color(0xFFEFF6FF), Color(0xFFFFFFFF)),
-            start  = Offset.Zero,
-            end    = Offset.Infinite,
-        )
+    // remember() so the Brush instance is stable across recompositions —
+    // a new Brush on every frame causes drawBehind to redraw unnecessarily,
+    // which makes the card background visibly shift during child state changes.
+    val gradient: Brush = remember(isDark) {
+        if (isDark) {
+            Brush.linearGradient(
+                colors = listOf(Color(0xFF101014), Color(0xFF0E1B2E), Color(0xFF101014)),
+                start  = Offset.Zero,
+                end    = Offset.Infinite,
+            )
+        } else {
+            Brush.linearGradient(
+                colors = listOf(Color(0xFFFFFFFF), Color(0xFFEFF6FF), Color(0xFFFFFFFF)),
+                start  = Offset.Zero,
+                end    = Offset.Infinite,
+            )
+        }
     }
 
     // ── Layer 2: tint overlay ─────────────────────────────────────────────────
-    // React: accent primary22; elevated rgba(40,47,60,.60) dark / rgba(226,232,240,.60)
-    // light; default rgba(30,35,45,.55) dark / rgba(241,245,249,.55) light.
-    val tintColor: Color = when (variant) {
-        GlassCardVariant.Accent   -> primary.copy(alpha = 0x22 / 255f)
-        GlassCardVariant.Elevated -> if (isDark) {
-            Color(0xFF282F3C).copy(alpha = 0.60f)
-        } else {
-            Color(0xFFE2E8F0).copy(alpha = 0.60f)
-        }
-        GlassCardVariant.Default  -> if (isDark) {
-            Color(0xFF1E232D).copy(alpha = 0.55f)
-        } else {
-            Color(0xFFF1F5F9).copy(alpha = 0.55f)
+    val tintColor: Color = remember(isDark, variant, primary) {
+        when (variant) {
+            GlassCardVariant.Accent   -> primary.copy(alpha = 0x22 / 255f)
+            GlassCardVariant.Elevated -> if (isDark) {
+                Color(0xFF282F3C).copy(alpha = 0.60f)
+            } else {
+                Color(0xFFE2E8F0).copy(alpha = 0.60f)
+            }
+            GlassCardVariant.Default  -> if (isDark) {
+                Color(0xFF1E232D).copy(alpha = 0.55f)
+            } else {
+                Color(0xFFF1F5F9).copy(alpha = 0.55f)
+            }
         }
     }
 
     // ── Layer 3: frost film ───────────────────────────────────────────────────
-    val frostColor: Color = if (isDark) {
-        Color(0xFF14161C).copy(alpha = 0.45f)
-    } else {
-        Color(0xFFF8FAFC).copy(alpha = 0.50f)
+    val frostColor: Color = remember(isDark) {
+        if (isDark) {
+            Color(0xFF14161C).copy(alpha = 0.45f)
+        } else {
+            Color(0xFFF8FAFC).copy(alpha = 0.50f)
+        }
     }
 
     // ── Layer 4: hairline border ──────────────────────────────────────────────
-    // React: accent primary33; elevated white 12% dark / black 10% light;
-    // default white 8% dark / black 7% light.
-    val hairlineColor: Color = when (variant) {
-        GlassCardVariant.Accent   -> primary.copy(alpha = 0x33 / 255f)
-        GlassCardVariant.Elevated -> if (isDark) {
-            Color.White.copy(alpha = 0.12f)
-        } else {
-            Color.Black.copy(alpha = 0.10f)
-        }
-        GlassCardVariant.Default  -> if (isDark) {
-            Color.White.copy(alpha = 0.08f)
-        } else {
-            Color.Black.copy(alpha = 0.07f)
+    val hairlineColor: Color = remember(isDark, variant, primary) {
+        when (variant) {
+            GlassCardVariant.Accent   -> primary.copy(alpha = 0x33 / 255f)
+            GlassCardVariant.Elevated -> if (isDark) {
+                Color.White.copy(alpha = 0.12f)
+            } else {
+                Color.Black.copy(alpha = 0.10f)
+            }
+            GlassCardVariant.Default  -> if (isDark) {
+                Color.White.copy(alpha = 0.08f)
+            } else {
+                Color.Black.copy(alpha = 0.07f)
+            }
         }
     }
 

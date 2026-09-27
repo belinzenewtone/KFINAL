@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Night-mode overrides. The base theme in values/themes.xml sets the light-mode
+  window background; this file sets it to the dark variant so there is no
+  white flash before Compose renders in dark mode.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.LifeOS" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bg_primary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+    </style>
+</resources>
