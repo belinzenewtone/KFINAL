@@ -60,6 +60,7 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.belinze.lifeos.util.Haptics
 import java.util.Calendar
 import java.util.TimeZone
 
