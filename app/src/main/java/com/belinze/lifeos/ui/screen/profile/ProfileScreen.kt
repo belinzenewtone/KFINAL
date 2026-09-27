@@ -89,7 +89,7 @@ import java.util.Locale
 // ─────────────────────────────────────────────────────────────────────────────
 
 private const val USERNAME_MAX = 8
-private val WARNING = Color(0xFFF5CB5C)
+private val WARNING = Color(0xFFFBBF24)
 
 private data class ToolItem(
     val label: String,

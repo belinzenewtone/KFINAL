@@ -137,7 +137,7 @@ fun RecurringScreen(
                     color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(Spacing.xs))
                 Text("Add a rule to automate subscriptions, bills, or repeating tasks.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {

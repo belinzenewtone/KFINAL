@@ -344,7 +344,7 @@ fun FinanceScreen(
                         val accentColor = if (isOver) {
                             MaterialTheme.colorScheme.error
                         } else {
-                            Color(0xFFF5CB5C)
+                            Color(0xFFFBBF24)
                         }
                         Row(
                             modifier = Modifier
@@ -479,7 +479,7 @@ fun FinanceScreen(
                 // ── FI-1: SMS permission banner — between search and list ────────
                 if (!smsGranted) {
                     item {
-                        val SMS_WARNING = Color(0xFFF5CB5C)
+                        val SMS_WARNING = Color(0xFFFBBF24)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

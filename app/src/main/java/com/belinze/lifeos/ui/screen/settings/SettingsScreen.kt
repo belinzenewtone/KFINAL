@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.PowerManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Radio
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -43,10 +45,13 @@ import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
@@ -67,7 +72,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.belinze.lifeos.core.update.OtaSharedTrigger
+import androidx.compose.runtime.LaunchedEffect
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FulizaLimitModal
 import com.belinze.lifeos.ui.components.GlassCard
@@ -84,7 +89,7 @@ import com.belinze.lifeos.viewmodel.SettingsViewModel
 
 private const val APP_NAME = "LifeOS"
 private val APP_VERSION get() = com.belinze.lifeos.BuildConfig.VERSION_NAME
-private val WARNING = Color(0xFFF5CB5C)
+private val WARNING = Color(0xFFFBBF24)
 
 @Composable
 fun SettingsScreen(
@@ -101,7 +106,17 @@ fun SettingsScreen(
     var smsGranted by remember { mutableStateOf(viewModel.hasSmsPermissions()) }
     // ST-2: track permission-request-in-flight
     var smsRequesting by remember { mutableStateOf(false) }
-    // OTA checks are handled by the single OtaUpdatePromptHost in MainScaffold.
+    // ── OTA check result → Settings banner ───────────────────────────────────
+    // SettingsViewModel.checkForOtaUpdate() sets otaMessage when the check
+    // completes. We consume it into the existing infoMessage banner and clear
+    // it immediately so a recomposition doesn't repeat the message.
+    val otaMessage by viewModel.otaMessage.collectAsStateWithLifecycle()
+    LaunchedEffect(otaMessage) {
+        otaMessage?.let {
+            infoMessage = it
+            viewModel.clearOtaMessage()
+        }
+    }
 
     // ST-4: re-check SMS permission on every lifecycle resume
     DisposableEffect(lifecycleOwner) {
@@ -358,14 +373,44 @@ fun SettingsScreen(
 
             SectionLabel("App Updates")
             GlassCard {
-                SettingsRow(
-                    icon        = Icons.Outlined.Refresh,
-                    label       = "Check for Updates",
-                    value       = "v$APP_VERSION",
-                    showChevron = true,
-                    isLast      = true,
-                    onPress     = { OtaSharedTrigger.requestCheck() },
-                )
+                val otaChecking        by viewModel.otaChecking.collectAsStateWithLifecycle()
+                val otaUpdateAvailable by viewModel.otaUpdateAvailable.collectAsStateWithLifecycle()
+                Row(
+                    modifier                = Modifier.fillMaxWidth(),
+                    horizontalArrangement   = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    OutlinedButton(
+                        onClick  = { if (!otaChecking) viewModel.checkForOtaUpdate() },
+                        enabled  = !otaChecking,
+                        modifier = Modifier.weight(1f),
+                        colors   = ButtonDefaults.outlinedButtonColors(
+                            contentColor         = MaterialTheme.colorScheme.onSurface,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        ),
+                        border   = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        if (otaChecking) {
+                            CircularProgressIndicator(
+                                modifier    = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color       = MaterialTheme.colorScheme.onSurface,
+                            )
+                        } else {
+                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(Modifier.width(Spacing.sm))
+                        Text("Check")
+                    }
+                    Button(
+                        onClick  = { viewModel.triggerDownload() },
+                        enabled  = otaUpdateAvailable,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(Spacing.sm))
+                        Text("Download")
+                    }
+                }
             }
         }
 
@@ -438,32 +483,41 @@ private fun SectionLabel(label: String) {
 }
 
 // ST-2: requesting param shows "Requesting…" and hides chevron while in-flight
+// ST-2 / InlineAlert parity: shape = borderRadius.xl (24dp), padding 10/14,
+// bg = WARNING@5%, border = WARNING@16%, icon in 32×32 badge@10%.
 @Composable
 private fun PermissionBanner(onClick: () -> Unit, requesting: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = Spacing.sm)
-            .background(WARNING.copy(alpha = 0x20 / 255f), RoundedCornerShape(20.dp))
-            .border(1.dp, WARNING, RoundedCornerShape(20.dp))
+            .background(WARNING.copy(alpha = 0x0D / 255f), RoundedCornerShape(24.dp))
+            .border(1.dp, WARNING.copy(alpha = 0x28 / 255f), RoundedCornerShape(24.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = WARNING.copy(alpha = 0.2f)),
-                onClick = { if (!requesting) onClick() },
+                indication        = ripple(color = WARNING.copy(alpha = 0.12f)),
+                onClick           = { if (!requesting) onClick() },
             )
-            .padding(Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        if (requesting) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = WARNING)
-        } else {
-            Icon(Icons.Outlined.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(18.dp))
+        Box(
+            modifier           = Modifier
+                .size(32.dp)
+                .background(WARNING.copy(alpha = 0x1A / 255f), RoundedCornerShape(10.dp)),
+            contentAlignment   = Alignment.Center,
+        ) {
+            if (requesting) {
+                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = WARNING)
+            } else {
+                Icon(Icons.Outlined.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(16.dp))
+            }
         }
         Text(
-            text = if (requesting) "Requesting…" else "SMS permissions not granted — tap to allow",
-            style = MaterialTheme.typography.bodyMedium,
-            color = WARNING,
+            text     = if (requesting) "Requesting SMS access…" else "SMS permissions not granted — tap to allow",
+            style    = MaterialTheme.typography.labelLarge,
+            color    = WARNING,
             maxLines = 2,
             modifier = Modifier.weight(1f),
         )
@@ -471,8 +525,8 @@ private fun PermissionBanner(onClick: () -> Unit, requesting: Boolean = false) {
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = WARNING,
-                modifier = Modifier.size(16.dp),
+                tint               = WARNING.copy(alpha = 0x99 / 255f),
+                modifier           = Modifier.size(14.dp),
             )
         }
     }

@@ -3,6 +3,7 @@ package com.belinze.lifeos.core.update.presentation
 import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,6 +15,7 @@ import com.belinze.lifeos.BuildConfig
 import com.belinze.lifeos.core.update.OtaCheckResult
 import com.belinze.lifeos.core.update.OtaDownloadResult
 import com.belinze.lifeos.core.update.OtaInstallResult
+import com.belinze.lifeos.core.update.OtaSharedTrigger
 import com.belinze.lifeos.core.update.OtaUpdateManager
 import com.belinze.lifeos.core.update.OtaUpdateManifest
 import kotlinx.coroutines.launch
@@ -21,30 +23,34 @@ import kotlinx.coroutines.launch
 // ─────────────────────────────────────────────────────────────────────────────
 // OtaUpdatePromptHost
 //
-// Exact port of the reference Android implementation.
-// Adaptations:
-//  • Uses BuildConfig.OTA_MANIFEST_URL instead of SharedBuildConfig
-//  • Resolves appName / versionName from LocalContext.current (no injected helper)
-//  • Handles install via OtaUpdateManager.launchInstaller() (no platform wrapper)
+// Owns the full OTA dialog flow for the entire app:
+//
+//  Auto-check (LaunchedEffect(Unit)):
+//    • Runs once per composition lifetime — fires on first mount, never again
+//      for the same composition instance.
+//    • hasCheckedThisSession (rememberSaveable) prevents a re-check when the
+//      Compose tree is recreated by a config change, predictive-back gesture,
+//      or OPlus/ColorOS activity restart.
+//    • Silent — shows nothing unless an update is found.
+//
+//  Manual check (Settings → SettingsViewModel.checkForOtaUpdate):
+//    • SettingsViewModel runs the network call independently; if an update is
+//      found it calls OtaSharedTrigger.emitManifest().
+//    • This composable observes pendingManifest and shows the dialog when it
+//      becomes non-null — so the dialog always renders in the same host,
+//      regardless of whether the check was automatic or manual.
+//
+// The "Checking…" spinner / "You're up to date" alert were removed — the
+// spinner is now shown inline on the Settings row and the "up to date" result
+// is shown in the Settings banner, not as a global dialog.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Drop-in composable that manages the full OTA flow:
- *  1. On first composition, silently checks for a new version.
- *  2. If [OtaCheckResult.UpdateAvailable], shows [OtaUpdateDialog].
- *  3. Download progress, cancellation, install handoff are fully handled here.
- *
- * @param shouldCheckForUpdates Set to false to suppress the check entirely
+ * @param shouldCheckForUpdates Set to false to suppress the auto-check
  *   (e.g. while the app is locked or during onboarding).
- * @param manualTrigger Pass an incrementing Int to force a new check regardless
- *   of [OtaPromptUiState.hasCheckedThisSession] — used by "Check for updates"
- *   in Settings.
  */
 @Composable
-fun OtaUpdatePromptHost(
-    shouldCheckForUpdates: Boolean,
-    manualTrigger:         Int = 0,
-) {
+fun OtaUpdatePromptHost(shouldCheckForUpdates: Boolean) {
     if (!shouldCheckForUpdates) return
 
     val context = LocalContext.current
@@ -65,30 +71,22 @@ fun OtaUpdatePromptHost(
     var uiState by rememberSaveable(stateSaver = OtaPromptUiState.Saver) {
         mutableStateOf(OtaPromptUiState())
     }
-    var activeManifest     by remember { mutableStateOf<OtaUpdateManifest?>(null) }
-    var downloadedApkPath  by remember { mutableStateOf<String?>(null) }
+    var activeManifest    by remember { mutableStateOf<OtaUpdateManifest?>(null) }
+    var downloadedApkPath by remember { mutableStateOf<String?>(null) }
 
-    // True when the user presses back on the "Checking…" dialog — suppresses
-    // the update popup for that check run so the dismissal feels final.
-    var userCancelledCheck by remember { mutableStateOf(false) }
-
-    // ── Auto-check on first entry (or on manual trigger) ─────────────────────
-    LaunchedEffect(manualTrigger) {
-        val isManual = manualTrigger > 0
-        if (!isManual && uiState.hasCheckedThisSession) return@LaunchedEffect
-
-        userCancelledCheck = false
-        uiState = uiState.copy(isChecking = true)
+    // ── Auto-check: once per session ──────────────────────────────────────────
+    // LaunchedEffect(Unit) fires exactly once per composition lifetime — it will
+    // NOT re-fire on recompositions, config changes, or back-gesture previews.
+    // hasCheckedThisSession (rememberSaveable) adds a second guard so that even
+    // if the activity is fully recreated (OPlus kill-and-restart) we skip the
+    // check if it already ran earlier this process instance.
+    LaunchedEffect(Unit) {
+        if (uiState.hasCheckedThisSession) return@LaunchedEffect
         val result = runCatching {
             OtaUpdateManager.checkForUpdate(context, BuildConfig.OTA_MANIFEST_URL)
         }.getOrElse { OtaCheckResult.Error(it.message ?: "Update check failed.") }
-
-        uiState = uiState.copy(isChecking = false, hasCheckedThisSession = true)
-
-        // If the user dismissed the checking spinner, skip the update popup for
-        // this run — pressing back felt intentional, don't interrupt them anyway.
-        if (!userCancelledCheck &&
-            result is OtaCheckResult.UpdateAvailable &&
+        uiState = uiState.copy(hasCheckedThisSession = true)
+        if (result is OtaCheckResult.UpdateAvailable &&
             result.manifest.versionCode > uiState.skippedVersionCode
         ) {
             activeManifest = result.manifest
@@ -96,15 +94,31 @@ fun OtaUpdatePromptHost(
         }
     }
 
-    // ── "Checking…" spinner dialog ────────────────────────────────────────────
-    if (uiState.isChecking) {
-        OtaCheckingDialog(
-            appName = appName,
-            onDismissRequest = {
-                userCancelledCheck = true
-                uiState = uiState.copy(isChecking = false)
-            },
-        )
+    // ── Manual check result from Settings (respects skip) ────────────────────
+    // SettingsViewModel calls OtaSharedTrigger.emitManifest() when a manual
+    // check finds an update. We consume it here and clear the trigger so it
+    // cannot re-fire on recomposition.
+    val pendingManifest by OtaSharedTrigger.pendingManifest.collectAsState()
+    LaunchedEffect(pendingManifest) {
+        val manifest = pendingManifest ?: return@LaunchedEffect
+        if (manifest.versionCode > uiState.skippedVersionCode) {
+            activeManifest = manifest
+            uiState = uiState.copy(showDialog = true)
+        }
+        // Always clear so a recomposition doesn't re-show the dialog.
+        OtaSharedTrigger.clearManifest()
+    }
+
+    // ── "Download" button from Settings (bypasses skip) ───────────────────────
+    // SettingsViewModel calls OtaSharedTrigger.emitForceManifest() when the
+    // user taps "Download" after a check confirmed an available update. We show
+    // the dialog unconditionally — the user explicitly asked to download.
+    val forceManifest by OtaSharedTrigger.forceManifest.collectAsState()
+    LaunchedEffect(forceManifest) {
+        val manifest = forceManifest ?: return@LaunchedEffect
+        activeManifest = manifest
+        uiState = uiState.copy(showDialog = true)
+        OtaSharedTrigger.clearForceManifest()
     }
 
     // ── Main update dialog ────────────────────────────────────────────────────
@@ -122,14 +136,15 @@ fun OtaUpdatePromptHost(
                     onDismiss = {
                         uiState        = uiState.dismissForVersion(manifest.versionCode)
                         activeManifest = null
+                        OtaSharedTrigger.clearManifest()
                     },
                     onLater = {
                         uiState        = uiState.dismissForVersion(manifest.versionCode)
                         activeManifest = null
+                        OtaSharedTrigger.clearManifest()
                     },
                     onPrimaryAction = {
                         if (hasDownloadedApk) {
-                            // APK already downloaded — launch installer
                             val path = downloadedApkPath ?: return@OtaDialogCallbacks
                             val apkUri = try {
                                 android.net.Uri.parse(path)
@@ -144,7 +159,6 @@ fun OtaUpdatePromptHost(
                                 )
                             }
                         } else {
-                            // Start download
                             scope.launch {
                                 uiState = uiState.copy(isDownloading = true, downloadFailed = false)
                                 val dlResult = OtaUpdateManager.downloadUpdate(
@@ -174,7 +188,7 @@ fun OtaUpdatePromptHost(
                                     }
                                     is OtaDownloadResult.Error -> {
                                         uiState = uiState.copy(
-                                            isDownloading = false,
+                                            isDownloading  = false,
                                             downloadFailed = true,
                                         )
                                     }

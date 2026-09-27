@@ -7,11 +7,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -292,6 +295,7 @@ fun IncomeFormScreen(
 
                 Button(
                     onClick = {
+                        Haptics.light()
                         // CC-3: banner + delayed navigation
                         viewModel.saveIncome {
                             successMsg = if (isEdit) "Income updated" else "Income added"
@@ -304,15 +308,17 @@ fun IncomeFormScreen(
                     enabled = !form.isSaving,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(
-                        if (form.isSaving) {
-                            "Saving…"
-                        } else if (isEdit) {
-                            "Update Income"
-                        } else {
-                            "Add Income"
-                        },
-                    )
+                    if (form.isSaving) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color       = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(Modifier.width(Spacing.xs))
+                        Text("Saving…")
+                    } else {
+                        Text(if (isEdit) "Update Income" else "Add Income")
+                    }
                 }
             }
 

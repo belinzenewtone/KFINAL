@@ -1,15 +1,24 @@
 package com.belinze.lifeos.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.belinze.lifeos.BuildConfig
+import com.belinze.lifeos.core.update.OtaCheckResult
+import com.belinze.lifeos.core.update.OtaSharedTrigger
+import com.belinze.lifeos.core.update.OtaUpdateManager
+import com.belinze.lifeos.core.update.OtaUpdateManifest
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
 import com.belinze.lifeos.data.db.LifeOsDatabase
 import com.belinze.lifeos.util.Haptics
 import com.lifeos.sms.SmsService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +41,7 @@ class SettingsViewModel
     private val prefs: AppPreferences,
     private val db: LifeOsDatabase,
     private val smsService: SmsService,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
     /** The full prefs snapshot, shared with AppViewModel but scoped here. */
     val settings: StateFlow<com.belinze.lifeos.data.datastore.AppPreferenceState> =
@@ -142,6 +152,75 @@ class SettingsViewModel
     fun setCalendarSwipe(v: Boolean) = update { it[PreferenceKeys.CALENDAR_SWIPE] = v }
 
     fun setDefaultCategory(v: String) = update { it[PreferenceKeys.DEFAULT_TX_CATEGORY] = v }
+
+    // ── OTA update check ──────────────────────────────────────────────────────
+
+    private val _otaChecking = MutableStateFlow(false)
+    /** True while a manual "Check for Updates" network request is in flight. */
+    val otaChecking: StateFlow<Boolean> = _otaChecking.asStateFlow()
+
+    private val _otaUpdateAvailable = MutableStateFlow(false)
+    /** True after a check confirms an update is available — enables the Download button. */
+    val otaUpdateAvailable: StateFlow<Boolean> = _otaUpdateAvailable.asStateFlow()
+
+    /** The manifest from the last successful check — handed to OtaSharedTrigger on Download. */
+    private var _cachedManifest: OtaUpdateManifest? = null
+
+    private val _otaMessage = MutableStateFlow<String?>(null)
+    /**
+     * Result of the last manual check — consumed once by [SettingsScreen] via
+     * a [LaunchedEffect] and then cleared with [clearOtaMessage].
+     */
+    val otaMessage: StateFlow<String?> = _otaMessage.asStateFlow()
+
+    /**
+     * Runs a manual OTA check. The spinner state is broadcast via [otaChecking]
+     * so the Settings row can show "Checking…". If an update is found, the
+     * manifest is handed to [OtaSharedTrigger] so [OtaUpdatePromptHost] shows
+     * the global update dialog. The text result (up-to-date / error) is exposed
+     * via [otaMessage] for the Settings banner.
+     */
+    fun checkForOtaUpdate() {
+        if (_otaChecking.value) return
+        viewModelScope.launch {
+            _otaChecking.value = true
+            OtaSharedTrigger.setChecking(true)
+            _otaMessage.value = null
+
+            val result = runCatching {
+                OtaUpdateManager.checkForUpdate(context, BuildConfig.OTA_MANIFEST_URL)
+            }.getOrElse { OtaCheckResult.Error(it.message ?: "Check failed") }
+
+            _otaChecking.value = false
+            OtaSharedTrigger.setChecking(false)
+
+            _otaMessage.value = when (result) {
+                is OtaCheckResult.UpdateAvailable -> {
+                    _cachedManifest = result.manifest
+                    _otaUpdateAvailable.value = true
+                    OtaSharedTrigger.emitManifest(result.manifest)
+                    "Update v${result.manifest.versionName ?: result.manifest.versionCode} is available"
+                }
+                OtaCheckResult.UpToDate, OtaCheckResult.NotConfigured ->
+                    "LifeOS is up to date (v${BuildConfig.VERSION_NAME})"
+                is OtaCheckResult.Error ->
+                    "Update check failed: ${result.message}"
+            }
+        }
+    }
+
+    /** Called by [SettingsScreen] after consuming [otaMessage] into its banner. */
+    fun clearOtaMessage() { _otaMessage.value = null }
+
+    /**
+     * Called when the user taps "Download" in Settings. Re-emits the cached
+     * manifest via [OtaSharedTrigger.emitForceManifest] which bypasses the
+     * skippedVersionCode guard so the dialog always shows.
+     */
+    fun triggerDownload() {
+        val manifest = _cachedManifest ?: return
+        OtaSharedTrigger.emitForceManifest(manifest)
+    }
 
     // ─── Danger zone ───────────────────────────────────────────────────────────
 

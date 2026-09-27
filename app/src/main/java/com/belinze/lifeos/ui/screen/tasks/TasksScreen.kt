@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
@@ -61,6 +62,7 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.TaskViewModel
 
 private val SUCCESS = Color(0xFF4ADE80)
@@ -128,7 +130,7 @@ fun TasksScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.x4l),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Outlined.CheckCircle, contentDescription = null,
+                Icon(Icons.Outlined.TaskAlt, contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(36.dp))
                 Spacer(Modifier.height(Spacing.base))
                 Text("No tasks found", style = MaterialTheme.typography.bodyMedium,
@@ -202,6 +204,7 @@ fun TasksScreen(
             text  = { Text("Remove \"${task.title}\"?") },
             confirmButton = {
                 TextButton(onClick = {
+                    Haptics.light()
                     viewModel.softDelete(task.id)
                     taskToDelete = null
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
@@ -216,7 +219,7 @@ fun TasksScreen(
 @Composable
 private fun PrioritySectionHeader(title: String, color: Color, count: Int) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
+        modifier = Modifier.fillMaxWidth().padding(top = Spacing.base, bottom = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
@@ -301,8 +304,10 @@ private fun TaskCard(
                 IconButton(
                     onClick = {
                         if (task.status == "completed") {
+                            Haptics.light()
                             viewModel.reopen(task.id)
                         } else {
+                            Haptics.success()
                             viewModel.complete(task.id)
                         }
                     },

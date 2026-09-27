@@ -22,8 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -63,9 +63,9 @@ import com.belinze.lifeos.viewmodel.LearningViewModel
 private val CATEGORIES = listOf("All", "Finance", "Technology", "Health", "Leadership", "Mindfulness", "Career")
 
 private val CATEGORY_COLORS = mapOf(
-    "Finance"     to Color(0xFFF5CB5C),
+    "Finance"     to Color(0xFFFBBF24),
     "Technology"  to Color(0xFF7FC8F8),
-    "Health"      to Color(0xFF7BC47B),
+    "Health"      to Color(0xFF4ADE80),
     "Leadership"  to Color(0xFFD0BCFF),
     "Mindfulness" to Color(0xFFF2B8B5),
     "Career"      to Color(0xFF67D4E0),
@@ -150,7 +150,7 @@ fun LearningScreen(
                             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                         ) {
                             Icon(
-                                Icons.Outlined.Info,
+                                Icons.Outlined.School,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(48.dp),
@@ -374,7 +374,7 @@ private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit) {
                 }
                 if (completed) {
                     Icon(Icons.Outlined.CheckCircle, contentDescription = null,
-                        tint = Color(0xFF7BC47B), modifier = Modifier.size(22.dp))
+                        tint = Color(0xFF4ADE80), modifier = Modifier.size(22.dp))
                 }
             }
             if (!session.description.isNullOrBlank()) {
@@ -383,23 +383,20 @@ private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit) {
             }
             Spacer(Modifier.height(Spacing.sm))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Outlined.Schedule, contentDescription = null,
+                Icon(Icons.Outlined.Timer, contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
                 Text("${session.durationMinutes} min", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            // LE-5: action chip — toggles completion in both directions
-            Spacer(Modifier.height(4.dp))
-            AssistChip(
-                onClick = onTap,
-                label = {
-                    Text(
-                        if (completed) "Mark Incomplete" else "Mark Complete",
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                },
-            )
+            // LE-5: action chip — only shown for non-completed sessions ("Start")
+            if (!completed) {
+                Spacer(Modifier.height(4.dp))
+                AssistChip(
+                    onClick = onTap,
+                    label = { Text("Start", style = MaterialTheme.typography.labelSmall) },
+                )
+            }
         } // end Column padding
     }
 }
@@ -409,7 +406,7 @@ private fun LearningProgressBar(progress: Float) {
     // LE-9: dynamic color — green ≥80%, yellow ≥40%, red <40%
     val barColor = when {
         progress >= 0.80f -> Color(0xFF7BC47B)   // green
-        progress >= 0.40f -> Color(0xFFF5CB5C)   // yellow
+        progress >= 0.40f -> Color(0xFFFBBF24)   // yellow
         else              -> Color(0xFFEF4444)    // red
     }
     Box(

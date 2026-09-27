@@ -17,8 +17,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Payments
+import com.belinze.lifeos.util.Haptics
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -149,7 +150,7 @@ fun IncomeScreen(
                             modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Outlined.AttachMoney, contentDescription = null,
+                            Icon(Icons.Outlined.Payments, contentDescription = null,
                                 tint = SUCCESS, modifier = Modifier.size(26.dp))
                         }
                         Spacer(Modifier.height(Spacing.sm))
@@ -214,7 +215,7 @@ fun IncomeScreen(
                             )
                             Switch(
                                 checked = isActive,
-                                onCheckedChange = { viewModel.setIncomeActive(income.id, it) },
+                                onCheckedChange = { v -> Haptics.light(); viewModel.setIncomeActive(income.id, v) },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
                                     checkedTrackColor    = MaterialTheme.colorScheme.primary,

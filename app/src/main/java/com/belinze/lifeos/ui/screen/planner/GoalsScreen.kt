@@ -18,11 +18,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -123,7 +123,7 @@ fun GoalsScreen(
                     modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Flag, contentDescription = null,
+                    Icon(Icons.Outlined.Flag, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
                 Spacer(Modifier.height(Spacing.base))
@@ -194,18 +194,14 @@ fun GoalsScreen(
                         TextButton(onClick = { logGoalId = null; logAmount = "" }) { Text("Cancel") }
                         TextButton(onClick = {
                             val delta = logAmount.toDoubleOrNull() ?: 0.0
-                            if (delta > 0) {
-                                val next = (goal.currentValue + delta).coerceAtMost(goal.targetValue)
-                                val reached = next >= goal.targetValue
-                                viewModel.logGoalProgress(goal.id, delta)
-                                banner = if (reached) {
-                                    "Goal reached: ${goal.title} 🎉"
-                                } else {
-                                    "Logged ${formatCurrency(delta)} · ${goal.title}"
-                                }
-                            } else {
+                            if (delta <= 0) {
                                 banner = "Enter a positive amount"
+                                return@TextButton
                             }
+                            val next = (goal.currentValue + delta).coerceAtMost(goal.targetValue)
+                            val reached = next >= goal.targetValue
+                            viewModel.logGoalProgress(goal.id, delta)
+                            banner = if (reached) "Goal reached: ${goal.title} 🎉" else "Logged ${formatCurrency(delta)} · ${goal.title}"
                             logGoalId = null
                             logAmount = ""
                         }) { Text("Log") }
@@ -276,11 +272,11 @@ private fun GoalCard(
             Spacer(Modifier.weight(1f))
             if (!isCompleted) {
                 IconButton(onClick = onLogProgress, modifier = Modifier.size(30.dp)) {
-                    Icon(Icons.Filled.AddCircle, contentDescription = "Log progress",
+                    Icon(Icons.Outlined.AddCircle, contentDescription = "Log progress",
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                 }
                 IconButton(onClick = onComplete, modifier = Modifier.size(30.dp)) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = "Mark complete",
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = "Mark complete",
                         tint = SUCCESS, modifier = Modifier.size(22.dp))
                 }
             }

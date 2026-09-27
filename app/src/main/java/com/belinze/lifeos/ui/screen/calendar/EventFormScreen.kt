@@ -95,7 +95,7 @@ private val PRIORITY_OPTIONS = listOf(
 
 private val PRIORITY_COLORS = mapOf(
     "low"    to Color(0xFF4B9EF4),
-    "medium" to Color(0xFFF5CB5C),
+    "medium" to Color(0xFFFBBF24),
     "high"   to Color(0xFFE57373),
 )
 

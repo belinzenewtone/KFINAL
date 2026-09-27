@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -73,9 +74,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
-import com.belinze.lifeos.ui.components.AppSegmentedControl
 import com.belinze.lifeos.ui.components.GlassCard
-import com.belinze.lifeos.ui.components.SegmentOption
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatLocationFirst
@@ -97,7 +96,7 @@ import java.util.Locale
 private enum class CalendarTab { Calendar, Tasks, Events }
 
 private val SUCCESS = Color(0xFF7BC47B)
-private val WARNING = Color(0xFFF5CB5C)
+private val WARNING = Color(0xFFFBBF24)
 private val BIRTHDAY = Color(0xFFEC4899)
 private val ANNIVERSARY = Color(0xFF22C55E)
 
@@ -239,99 +238,96 @@ fun CalendarScreen(
                 }
             }
 
-            // RFINAL uses its own pill track (common/SegmentedControl.tsx) here,
-            // not Material's segmented buttons.
-            AppSegmentedControl(
-                options     = CalendarTab.values().map { SegmentOption(key = it.name, label = it.name) },
-                selectedKey = selectedTab.name,
-                onSelect    = { key ->
-                    CalendarTab.values().firstOrNull { it.name == key }?.let { selectedTab = it }
-                },
-                modifier    = Modifier
+            // Pill tab bar — matches KOTLIN CMP TabBar exactly
+            CalendarPillTabBar(
+                selected = selectedTab,
+                onSelect = { selectedTab = it },
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs),
             )
 
             Spacer(Modifier.height(Spacing.xs))
 
-            // ── Month navigation — always visible, regardless of tab ───────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            // ── Month card — mirrors KOTLIN CMP's CalendarMonthCard ───────────
+            GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.screenHorizontal),
             ) {
-                IconButton(onClick = {
-                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
-                }) {
-                    Icon(Icons.Outlined.ChevronLeft, contentDescription = "Previous month",
-                        tint = MaterialTheme.colorScheme.onSurface)
-                }
-                Text(
-                    yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                IconButton(onClick = {
-                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                }) {
-                    Icon(Icons.Outlined.ChevronRight, contentDescription = "Next month",
-                        tint = MaterialTheme.colorScheme.onSurface)
-                }
-            }
-
-            // CA-4: Today button — sits tight against the month/year row above
-            // with a uniform 4dp gap on both sides, only when not on current month.
-            if (!isCurrentMonth) {
+                // Month header row
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 0.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(
-                        onClick = {
-                            scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
-                            selectedDate = today.toString()
-                        },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                        modifier = Modifier.height(32.dp),
-                    ) {
-                        Text("Today", color = MaterialTheme.colorScheme.primary)
+                    IconButton(onClick = {
+                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+                    }) {
+                        Icon(Icons.Outlined.ChevronLeft, contentDescription = "Previous month",
+                            tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        if (!isCurrentMonth) {
+                            TextButton(onClick = {
+                                scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
+                                selectedDate = today.toString()
+                            }) {
+                                Text(
+                                    "Today",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            }
+                        }
+                    }
+                    IconButton(onClick = {
+                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                    }) {
+                        Icon(Icons.Outlined.ChevronRight, contentDescription = "Next month",
+                            tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
-            }
 
-            // Weekday header
-            Row(modifier = Modifier.fillMaxWidth()) {
-                listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { label ->
-                    Text(
-                        text = label,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium,
+                Spacer(Modifier.height(8.dp))
+
+                // Weekday header
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { label ->
+                        Text(
+                            text = label,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+
+                // Smooth month paging — userScrollEnabled respects the Settings toggle.
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth(),
+                    beyondViewportPageCount = 1,
+                    userScrollEnabled = calendarSwipeEnabled,
+                ) { page ->
+                    val pageMonth = YearMonth.now().plusMonths(page.toLong() - PAGER_CENTER)
+                    MonthGrid(
+                        yearMonth    = pageMonth,
+                        today        = today,
+                        selectedDate = selectedDate,
+                        eventsByDate = eventState.eventsByDate,
+                        onDayClick   = { selectedDate = it },
+                        modifier     = Modifier.fillMaxWidth(),
                     )
                 }
-            }
-            Spacer(Modifier.height(4.dp))
-
-            // Smooth month paging — userScrollEnabled respects the Settings toggle.
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth(),
-                beyondViewportPageCount = 1,
-                userScrollEnabled = calendarSwipeEnabled,
-            ) { page ->
-                val pageMonth = YearMonth.now().plusMonths(page.toLong() - PAGER_CENTER)
-                MonthGrid(
-                    yearMonth    = pageMonth,
-                    today        = today,
-                    selectedDate = selectedDate,
-                    eventsByDate = eventState.eventsByDate,
-                    onDayClick   = { selectedDate = it },
-                    modifier     = Modifier.fillMaxWidth(),
-                )
             }
 
             Spacer(Modifier.height(Spacing.base))
@@ -339,6 +335,7 @@ fun CalendarScreen(
                 selectedDateLabel,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
             )
             Spacer(Modifier.height(Spacing.sm))
 
@@ -839,8 +836,8 @@ private fun DayCell(
             .background(
                 when {
                     isSelected -> primary
-                    isToday -> primary.copy(alpha = 0.15f)
-                    else -> Color.Transparent
+                    isToday    -> primary
+                    else       -> Color.Transparent
                 },
                 androidx.compose.foundation.shape.CircleShape,
             )
@@ -854,8 +851,8 @@ private fun DayCell(
             fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
             color = when {
                 isSelected -> MaterialTheme.colorScheme.onPrimary
-                isToday -> primary
-                else -> MaterialTheme.colorScheme.onSurface
+                isToday    -> MaterialTheme.colorScheme.onPrimary
+                else       -> MaterialTheme.colorScheme.onSurface
             },
         )
         // CA-2: colored dots for each event type present on this day
@@ -893,6 +890,48 @@ private fun formatCalendarEventSubtitle(iso: String, type: String, location: Str
         append(datePart)
         formatLocationFirst(location)?.let { append(" · $it") }
         append(" · $typeLabel")
+    }
+}
+
+@Composable
+private fun CalendarPillTabBar(
+    selected: CalendarTab,
+    onSelect: (CalendarTab) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        CalendarTab.values().forEach { tab ->
+            val isSelected = tab == selected
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onSelect(tab) },
+                    )
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = tab.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

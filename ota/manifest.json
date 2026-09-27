@@ -1,11 +1,11 @@
 {
-    "version_code":  3,
-    "version_name":  "1.2.0",
-    "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.2.0/lifeos-release.apk",
-    "apk_sha256":  "d5b3274eb39519552799cde3924bcc1d8bd6f9efb74481d68b53766399af2c4f",
+    "version_code":  18,
+    "version_name":  "1.5.2",
+    "apk_url":  "https://github.com/belinzenewtone/KFINAL/releases/download/v1.5.2/lifeos-release.apk",
+    "apk_sha256":  null,
     "mandatory":  false,
-    "title":  "LifeOS 1.2.0",
-    "message":  "Bug fixes and improvements: export sharing, planner confirmations, recurring form, and more.",
-    "changelog":  "- Export now shares file immediately after writing\n- Date window filtering in all export types\n- Delete confirmations across Planner screens\n- Recurring rules: amount is now optional\n- CSV import: file picker now shows all files\n- SMS access banner no longer fires on every screen open\n- Various UI and data accuracy fixes",
+    "title":  "LifeOS 1.5.2",
+    "message":  "UI polish, parity improvements across hub screens, and OTA update flow wired.",
+    "changelog":  "- Learning, Goals, Income, Tasks, Finance screens fully polished\n- Warning color standardized (#FBBF24) across all screens\n- Icons aligned to outlined style throughout\n- Haptic feedback on all interactive actions\n- OTA update check and dialog fully wired",
     "website_url":  "https://github.com/belinzenewtone/KFINAL/releases"
 }

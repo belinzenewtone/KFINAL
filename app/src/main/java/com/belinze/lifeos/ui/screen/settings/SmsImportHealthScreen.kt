@@ -46,7 +46,7 @@ import java.util.Locale
 // SmsImportHealthScreen — revamped for clarity and reduced clutter
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val WARNING_COLOR = Color(0xFFF5CB5C)
+private val WARNING_COLOR = Color(0xFFFBBF24)
 private val FULIZA_COLOR  = Color(0xFFFB923C)
 
 @Composable

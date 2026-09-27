@@ -273,7 +273,7 @@ private fun EntryCard(
             Text(
                 text  = "Already in your ledger",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFF5CB5C),
+                color = Color(0xFFFBBF24),
             )
         }
 
@@ -338,7 +338,7 @@ private fun EntryCard(
 private fun OutcomeChip(outcome: String) {
     val (label, color) = when {
         outcome.contains("quarantin") -> "Quarantined" to MaterialTheme.colorScheme.error
-        outcome.contains("review")    -> "Review"      to Color(0xFFF5CB5C)
+        outcome.contains("review")    -> "Review"      to Color(0xFFFBBF24)
         outcome == "batch_pending"    -> "Pending"     to MaterialTheme.colorScheme.primary
         else                          -> "Pending"     to MaterialTheme.colorScheme.primary
     }
