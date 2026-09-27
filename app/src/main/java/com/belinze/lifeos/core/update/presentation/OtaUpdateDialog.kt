@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,13 +38,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.graphics.drawable.toBitmap
 import com.belinze.lifeos.core.update.OtaUpdateManifest
 import java.util.Locale
 import kotlin.math.log10
@@ -130,8 +132,12 @@ private fun OtaDialogHeader(
     canClose:           Boolean,
     onClose:            () -> Unit,
 ) {
-    val context    = LocalContext.current
-    val appIconRes = context.applicationInfo.icon
+    val context = LocalContext.current
+    val appIconBitmap = remember {
+        runCatching {
+            context.packageManager.getApplicationIcon(context.packageName).toBitmap().asImageBitmap()
+        }.getOrNull()
+    }
 
     Row(
         modifier            = Modifier.fillMaxWidth(),
@@ -145,12 +151,12 @@ private fun OtaDialogHeader(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment  = Alignment.Center,
         ) {
-            if (appIconRes != 0) {
+            if (appIconBitmap != null) {
                 Image(
-                    painter           = painterResource(id = appIconRes),
+                    bitmap             = appIconBitmap,
                     contentDescription = "$appName icon",
-                    contentScale      = ContentScale.Crop,
-                    modifier          = Modifier.fillMaxWidth(),
+                    contentScale       = ContentScale.Crop,
+                    modifier           = Modifier.fillMaxWidth(),
                 )
             } else {
                 Icon(
