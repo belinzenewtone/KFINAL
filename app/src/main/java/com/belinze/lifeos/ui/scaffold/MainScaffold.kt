@@ -1,8 +1,11 @@
 package com.belinze.lifeos.ui.scaffold
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -120,12 +123,20 @@ fun MainScaffold(
 
     Box(modifier = modifier.fillMaxSize()) {
         // ── Tab content (fills the full screen) ───────────────────────────────
-        when (selectedTab) {
-            LifeOsTab.Home      -> HomeTabContent(navController)
-            LifeOsTab.Finance   -> FinanceTabContent(navController)
-            LifeOsTab.Calendar  -> CalendarTabContent(navController)
-            LifeOsTab.Assistant -> AssistantTabContent(navController)
-            LifeOsTab.Profile   -> ProfileTabContent(navController, appViewModel)
+        AnimatedContent(
+            targetState    = selectedTab,
+            transitionSpec = {
+                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+            },
+            label = "tab_switch",
+        ) { tab ->
+            when (tab) {
+                LifeOsTab.Home      -> HomeTabContent(navController)
+                LifeOsTab.Finance   -> FinanceTabContent(navController)
+                LifeOsTab.Calendar  -> CalendarTabContent(navController)
+                LifeOsTab.Assistant -> AssistantTabContent(navController)
+                LifeOsTab.Profile   -> ProfileTabContent(navController, appViewModel)
+            }
         }
 
         // ── FloatingTabBar — absolutely positioned at bottom ───────────────────
