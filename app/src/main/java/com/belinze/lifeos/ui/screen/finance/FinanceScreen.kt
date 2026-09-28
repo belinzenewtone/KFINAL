@@ -79,8 +79,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
-import androidx.paging.LoadState
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.BannerTone
@@ -131,9 +129,8 @@ fun FinanceScreen(
     val budgetState  by budgetViewModel.uiState.collectAsStateWithLifecycle()
     val plannerState by plannerViewModel.uiState.collectAsStateWithLifecycle()
 
-    // ── Paging 3 — collect once per composition; survives config changes via
-    // cachedIn(viewModelScope). refresh() / retry() are called directly on this.
-    val pagingItems = viewModel.pagedTransactions.collectAsLazyPagingItems()
+    // ── Transaction list — collected from the ViewModel's StateFlow (replaces Paging 3).
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     // ── Derived state slices — each only re-triggers its readers when the
     // specific field actually changes (structural equality via data class ==).
@@ -240,7 +237,7 @@ fun FinanceScreen(
                     maxLines = 1,
                 )
                 IconButton(onClick = {
-                    pagingItems.refresh()
+                    viewModel.reloadTransactions()
                     viewModel.refreshMetrics()
                     budgetViewModel.load()
                 }) {
@@ -575,7 +572,7 @@ fun FinanceScreen(
                             maxLines = 1,
                         )
                         Text(
-                            text     = pagingItems.itemCount.toString(),
+                            text     = transactions.size.toString(),
                             style    = MaterialTheme.typography.bodyMedium,
                             color    = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -583,8 +580,8 @@ fun FinanceScreen(
                     }
                 }
 
-                // RFINAL renders no loading skeleton — only the empty state.
-                if (pagingItems.itemCount == 0 && pagingItems.loadState.refresh !is LoadState.Loading) {
+                // Show empty state when the list has no items.
+                if (transactions.isEmpty()) {
                     item {
                         Box(
                             modifier         = Modifier
@@ -601,19 +598,14 @@ fun FinanceScreen(
                     }
                 }
 
-                // ── Paging 3 transaction list ─────────────────────────────────
-                //
-                // Each transaction is its own bordered card (RFINAL parity).
-                // Date grouping: peek(index-1) to show a date header above the
-                // first item of each day. peek(index+1) is NOT used so there's
-                // no bounds-check hazard and no adaptive corner logic needed.
+                // ── Transaction list — date-grouped, replaces Paging 3 ────────
                 items(
-                    count = pagingItems.itemCount,
-                    key   = { index -> pagingItems.peek(index)?.id ?: index },
+                    count = transactions.size,
+                    key   = { index -> transactions[index].id },
                 ) { index ->
-                    val tx = pagingItems[index] ?: return@items
+                    val tx = transactions[index]
 
-                    val prevDate     = if (index > 0) pagingItems.peek(index - 1)?.date?.take(10) else null
+                    val prevDate     = if (index > 0) transactions[index - 1].date?.take(10) else null
                     val currDate     = tx.date?.take(10) ?: ""
                     val isFirstOfDay = prevDate != currDate
 
@@ -625,17 +617,18 @@ fun FinanceScreen(
                         )
                     }
 
-                    // RFINAL presents the detail as a transparent modal, so the list stays
-                    // visible behind the card. Compose Navigation would replace this
-                    // destination (visible page transition, nothing behind), so the detail
-                    // is rendered in place instead.
                     TransactionListItem(
                         tx      = tx,
                         onClick = { selectedTransactionId = tx.id },
                     )
+
+                    // Load more when approaching the end of the loaded list.
+                    if (index == transactions.size - 5) {
+                        viewModel.loadNextPage()
+                    }
                 }
 
-                // RFINAL renders no load-more spinner; Paging 3 appends silently.
+                // Bottom-of-list sentinel (no spinner needed — loads silently).
 
                 // Bottom nav clearance
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }

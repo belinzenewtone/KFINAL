@@ -1,0 +1,38 @@
+CREATE TABLE IF NOT EXISTS recurring_rules (
+    id            TEXT    NOT NULL PRIMARY KEY,
+    title         TEXT    NOT NULL DEFAULT '',
+    type          TEXT,
+    cadence       TEXT,
+    next_run_at   TEXT,
+    amount        REAL,
+    category      TEXT,
+    enabled       INTEGER NOT NULL DEFAULT 1,
+    created_at    TEXT,
+    updated_at    TEXT,
+    sync_state    TEXT,
+    record_source TEXT,
+    deleted_at    TEXT,
+    revision      INTEGER NOT NULL DEFAULT 1,
+    user_id       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS index_recurring_rules_next_run_at ON recurring_rules (next_run_at);
+
+getActiveRules:
+SELECT * FROM recurring_rules WHERE deleted_at IS NULL AND enabled = 1 ORDER BY next_run_at ASC;
+
+getAllRules:
+SELECT * FROM recurring_rules WHERE deleted_at IS NULL ORDER BY created_at DESC;
+
+getRuleById:
+SELECT * FROM recurring_rules WHERE id = :id AND deleted_at IS NULL;
+
+insertOrReplace:
+INSERT OR REPLACE INTO recurring_rules (id, title, type, cadence, next_run_at, amount, category, enabled, created_at, updated_at, sync_state, record_source, deleted_at, revision, user_id)
+VALUES (:id, :title, :type, :cadence, :nextRunAt, :amount, :category, :enabled, :createdAt, :updatedAt, :syncState, :recordSource, :deletedAt, :revision, :userId);
+
+softDelete:
+UPDATE recurring_rules SET deleted_at = :ts WHERE id = :id;
+
+deleteAll:
+DELETE FROM recurring_rules;

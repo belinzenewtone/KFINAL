@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS app_settings (
+    key   TEXT NOT NULL PRIMARY KEY,
+    value TEXT
+);
+
+getSetting:
+SELECT * FROM app_settings WHERE key = :key;
+
+getAllSettings:
+SELECT * FROM app_settings;
+
+upsert:
+INSERT OR REPLACE INTO app_settings (key, value) VALUES (:key, :value);
+
+deleteSetting:
+DELETE FROM app_settings WHERE key = :key;
+
+deleteAll:
+DELETE FROM app_settings;

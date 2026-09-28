@@ -1,8 +1,9 @@
 package com.belinze.lifeos.di
 
 import com.belinze.lifeos.data.datastore.AppPreferences
+import com.belinze.lifeos.data.db.AppDatabase
+import com.belinze.lifeos.data.db.DatabaseDriverFactory
 import com.belinze.lifeos.data.db.LifeOsDatabase
-import com.belinze.lifeos.data.db.LifeOsDatabaseProvider
 import com.belinze.lifeos.data.db.dao.AssistantDao
 import com.belinze.lifeos.data.db.dao.BudgetDao
 import com.belinze.lifeos.data.db.dao.EventDao
@@ -13,6 +14,16 @@ import com.belinze.lifeos.data.db.dao.SmsDao
 import com.belinze.lifeos.data.db.dao.SmsPipelineDao
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
+import com.belinze.lifeos.data.db.dao.impl.AssistantDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.BudgetDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.EventDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.IncomeDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.LearningSessionDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.PlannerDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.SmsDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.SmsPipelineDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.TaskDaoImpl
+import com.belinze.lifeos.data.db.dao.impl.TransactionDaoImpl
 import com.belinze.lifeos.ml.TransactionClassifier
 import com.belinze.lifeos.services.BudgetAlertService
 import com.belinze.lifeos.services.DarajaEnrichmentService
@@ -50,23 +61,52 @@ import org.koin.dsl.module
 val appModule = module {
 
     // ── Database ──────────────────────────────────────────────────────────────
+    single<DatabaseDriverFactory> { DatabaseDriverFactory(androidContext()) }
+
     single<LifeOsDatabase> {
-        val db = LifeOsDatabaseProvider.get(androidContext())
-        SmsParserDatabase.attach { db.openHelper.writableDatabase }
+        val factory = get<DatabaseDriverFactory>()
+        val db = LifeOsDatabase(factory.createDriver())
+        SmsParserDatabase.attach { factory.writableDatabase() }
         db
     }
 
+    single<AppDatabase> {
+        AppDatabase(get<LifeOsDatabase>(), get<DatabaseDriverFactory>())
+    }
+
     // ── DAOs ──────────────────────────────────────────────────────────────────
-    single<TransactionDao>    { get<LifeOsDatabase>().transactionDao() }
-    single<TaskDao>           { get<LifeOsDatabase>().taskDao() }
-    single<EventDao>          { get<LifeOsDatabase>().eventDao() }
-    single<BudgetDao>         { get<LifeOsDatabase>().budgetDao() }
-    single<IncomeDao>         { get<LifeOsDatabase>().incomeDao() }
-    single<PlannerDao>        { get<LifeOsDatabase>().plannerDao() }
-    single<AssistantDao>      { get<LifeOsDatabase>().assistantDao() }
-    single<SmsDao>            { get<LifeOsDatabase>().smsDao() }
-    single<LearningSessionDao>{ get<LifeOsDatabase>().learningSessionDao() }
-    single<SmsPipelineDao>    { get<LifeOsDatabase>().smsPipelineDao() }
+    single<TransactionDao>     { TransactionDaoImpl(get<LifeOsDatabase>().transactionQueries) }
+    single<TaskDao>            { TaskDaoImpl(get<LifeOsDatabase>().taskQueries) }
+    single<EventDao>           { EventDaoImpl(get<LifeOsDatabase>().eventQueries) }
+    single<BudgetDao>          { BudgetDaoImpl(get<LifeOsDatabase>().budgetQueries) }
+    single<IncomeDao>          { IncomeDaoImpl(get<LifeOsDatabase>().incomeQueries) }
+    single<AssistantDao>       { AssistantDaoImpl(get<LifeOsDatabase>().assistantMessageQueries) }
+    single<LearningSessionDao> { LearningSessionDaoImpl(get<LifeOsDatabase>().learningSessionQueries) }
+    single<PlannerDao> {
+        val db = get<LifeOsDatabase>()
+        PlannerDaoImpl(
+            ruleQ   = db.recurringRuleQueries,
+            billQ   = db.billQueries,
+            goalQ   = db.goalQueries,
+            loanQ   = db.fulizaLoanQueries,
+            exportQ = db.exportQueries,
+        )
+    }
+    single<SmsDao> {
+        val db = get<LifeOsDatabase>()
+        SmsDaoImpl(
+            merchantQ = db.merchantCategoryQueries,
+            paybillQ  = db.paybillRegistryQueries,
+            mlQ       = db.mlTrainingSampleQueries,
+        )
+    }
+    single<SmsPipelineDao> {
+        val db = get<LifeOsDatabase>()
+        SmsPipelineDaoImpl(
+            queueQ = db.smsIngestQueueQueries,
+            auditQ = db.importAuditQueries,
+        )
+    }
 
     // ── DataStore ─────────────────────────────────────────────────────────────
     single<AppPreferences> { AppPreferences(androidContext()) }

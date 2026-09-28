@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS ml_training_samples (
+    id          INTEGER NOT NULL PRIMARY KEY,
+    features    TEXT    NOT NULL,
+    label       TEXT    NOT NULL,
+    recorded_at TEXT
+);
+
+insertSample:
+INSERT INTO ml_training_samples (features, label, recorded_at)
+VALUES (:features, :label, :recordedAt);
+
+countSamples:
+SELECT COUNT(*) FROM ml_training_samples;
+
+getSamples:
+SELECT * FROM ml_training_samples ORDER BY recorded_at DESC LIMIT :limit;
+
+deleteAll:
+DELETE FROM ml_training_samples;

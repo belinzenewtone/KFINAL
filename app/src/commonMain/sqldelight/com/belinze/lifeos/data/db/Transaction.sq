@@ -1,0 +1,368 @@
+CREATE TABLE IF NOT EXISTS transactions (
+    id                  TEXT    NOT NULL PRIMARY KEY,
+    amount              REAL    NOT NULL DEFAULT 0.0,
+    merchant            TEXT,
+    category            TEXT,
+    date                TEXT,
+    source              TEXT,
+    transaction_type    TEXT,
+    mpesa_code          TEXT,
+    source_hash         TEXT,
+    raw_sms             TEXT,
+    description         TEXT,
+    notes               TEXT,
+    balance_after       REAL,
+    fee                 REAL,
+    status              TEXT    NOT NULL DEFAULT 'completed',
+    created_at          TEXT,
+    updated_at          TEXT,
+    sync_state          TEXT    NOT NULL DEFAULT 'pending',
+    record_source       TEXT    NOT NULL DEFAULT 'manual',
+    deleted_at          TEXT,
+    revision            INTEGER NOT NULL DEFAULT 1,
+    user_id             TEXT,
+    inferred_category   INTEGER NOT NULL DEFAULT 0,
+    inference_source    TEXT,
+    semantic_hash       TEXT,
+    institution_id      TEXT    NOT NULL DEFAULT 'mpesa',
+    external_ref        TEXT,
+    currency            TEXT    NOT NULL DEFAULT 'KES',
+    raw_sender          TEXT    NOT NULL DEFAULT ''
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_mpesa_code ON transactions (mpesa_code);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_inst_ext_ref ON transactions (institution_id, external_ref);
+CREATE INDEX IF NOT EXISTS index_transactions_date ON transactions (date);
+CREATE INDEX IF NOT EXISTS index_transactions_category ON transactions (category);
+CREATE INDEX IF NOT EXISTS index_transactions_merchant ON transactions (merchant);
+CREATE INDEX IF NOT EXISTS index_transactions_source_hash ON transactions (source_hash);
+CREATE INDEX IF NOT EXISTS index_transactions_semantic_hash ON transactions (semantic_hash);
+CREATE INDEX IF NOT EXISTS index_transactions_deleted_at ON transactions (deleted_at);
+CREATE INDEX IF NOT EXISTS index_transactions_institution_id_date ON transactions (institution_id, date);
+CREATE INDEX IF NOT EXISTS index_transactions_institution_id_category ON transactions (institution_id, category);
+CREATE INDEX IF NOT EXISTS index_transactions_category_date ON transactions (category, date);
+CREATE INDEX IF NOT EXISTS index_transactions_transaction_type_date ON transactions (transaction_type, date);
+CREATE INDEX IF NOT EXISTS index_transactions_status_date ON transactions (status, date);
+CREATE INDEX IF NOT EXISTS index_transactions_amount_merchant_date ON transactions (amount, merchant, date);
+
+getPage:
+SELECT * FROM transactions
+WHERE deleted_at IS NULL
+ORDER BY date DESC
+LIMIT :limit OFFSET :offset;
+
+getFiltered:
+SELECT * FROM transactions
+WHERE deleted_at IS NULL
+  AND (:search = '' OR merchant LIKE '%' || :search || '%' OR description LIKE '%' || :search || '%' OR mpesa_code LIKE '%' || :search || '%')
+  AND (:category = 'all' OR category = :category)
+  AND (:type IS NULL OR transaction_type = :type)
+  AND (:status IS NULL OR status = :status)
+  AND (:startDate IS NULL OR date >= :startDate)
+  AND (:endDate IS NULL OR date <= :endDate)
+ORDER BY date DESC
+LIMIT :limit OFFSET :offset;
+
+getById:
+SELECT * FROM transactions WHERE id = :id AND deleted_at IS NULL;
+
+getByMerchant:
+SELECT * FROM transactions
+WHERE merchant = :merchant AND deleted_at IS NULL
+ORDER BY date DESC;
+
+getRecent:
+SELECT * FROM transactions
+WHERE deleted_at IS NULL
+  AND status = 'completed'
+  AND transaction_type NOT IN ('topup')
+ORDER BY date DESC
+LIMIT 5;
+
+getMonthTotals:
+SELECT
+  SUM(CASE WHEN transaction_type = 'receive'  THEN amount ELSE 0 END) AS income,
+  SUM(CASE WHEN transaction_type IN ('expense','transfer','fuliza') THEN amount ELSE 0 END) AS expense
+FROM transactions
+WHERE deleted_at IS NULL
+  AND date LIKE :monthPrefix || '%'
+  AND status = 'completed';
+
+getCategoryTotals:
+SELECT category, SUM(amount) AS total
+FROM transactions
+WHERE deleted_at IS NULL
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND date >= :startDate AND date <= :endDate
+  AND status = 'completed'
+GROUP BY category
+ORDER BY total DESC;
+
+getExpenseCategoryTotals:
+SELECT category, COALESCE(SUM(amount), 0.0) AS total
+FROM transactions
+WHERE deleted_at IS NULL
+  AND transaction_type = 'expense'
+  AND status = 'completed'
+  AND date >= :startDate AND date <= :endDate
+GROUP BY category
+ORDER BY total DESC;
+
+getTopMerchants:
+SELECT merchant, SUM(amount) AS total
+FROM transactions
+WHERE deleted_at IS NULL
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND date >= :startDate AND date <= :endDate
+  AND status = 'completed'
+  AND merchant IS NOT NULL AND merchant != ''
+GROUP BY merchant
+ORDER BY total DESC
+LIMIT :limit;
+
+countUncategorized:
+SELECT COUNT(*) FROM transactions
+WHERE deleted_at IS NULL
+  AND (category IS NULL OR category = 'uncategorized');
+
+sumUncategorizedAmount:
+SELECT COALESCE(SUM(ABS(amount)), 0.0) FROM transactions
+WHERE deleted_at IS NULL
+  AND (category IS NULL OR category = 'uncategorized');
+
+getUncategorized:
+SELECT * FROM transactions
+WHERE deleted_at IS NULL
+  AND (category IS NULL OR category = 'uncategorized')
+ORDER BY date DESC;
+
+updateCategoryForMerchant:
+UPDATE transactions
+SET category = :category, updated_at = :ts
+WHERE deleted_at IS NULL
+  AND merchant = :merchant
+  AND (category IS NULL OR category = '' OR category = 'uncategorized');
+
+updateCategoryById:
+UPDATE transactions
+SET category = :category, updated_at = :ts
+WHERE id = :id;
+
+getFeeTotal:
+SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+WHERE deleted_at IS NULL
+  AND date >= :startDate AND date <= :endDate
+  AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE');
+
+getFeeByCategory:
+SELECT category, SUM(fee) AS total, COUNT(*) AS count
+FROM transactions
+WHERE deleted_at IS NULL
+  AND fee IS NOT NULL AND fee > 0
+  AND status = 'completed'
+  AND date >= :startDate AND date <= :endDate
+GROUP BY category
+ORDER BY total DESC;
+
+getChargesByCategory:
+SELECT category, COALESCE(SUM(amount), 0.0) AS total, COUNT(*) AS count
+FROM transactions
+WHERE deleted_at IS NULL
+  AND date >= :startDate AND date <= :endDate
+  AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
+GROUP BY category
+ORDER BY total DESC;
+
+getFeeTransactions:
+SELECT * FROM transactions
+WHERE deleted_at IS NULL
+  AND date >= :startDate AND date <= :endDate
+  AND UPPER(category) IN ('AIRTIME','FULIZA','WITHDRAWAL','SUBSCRIPTION','FEE')
+ORDER BY date DESC
+LIMIT 20;
+
+observeRecent:
+SELECT * FROM transactions
+WHERE deleted_at IS NULL
+ORDER BY date DESC
+LIMIT 50;
+
+insertOrReplace:
+INSERT OR REPLACE INTO transactions (id, amount, merchant, category, date, source, transaction_type, mpesa_code, source_hash, raw_sms, description, notes, balance_after, fee, status, created_at, updated_at, sync_state, record_source, deleted_at, revision, user_id, inferred_category, inference_source, semantic_hash, institution_id, external_ref, currency, raw_sender)
+VALUES (:id, :amount, :merchant, :category, :date, :source, :transactionType, :mpesaCode, :sourceHash, :rawSms, :description, :notes, :balanceAfter, :fee, :status, :createdAt, :updatedAt, :syncState, :recordSource, :deletedAt, :revision, :userId, :inferredCategory, :inferenceSource, :semanticHash, :institutionId, :externalRef, :currency, :rawSender);
+
+softDelete:
+UPDATE transactions SET deleted_at = :timestamp WHERE id = :id;
+
+countPendingReview:
+SELECT COUNT(*) FROM transactions WHERE deleted_at IS NULL AND status = 'review';
+
+getDaySpends:
+SELECT substr(date, 1, 10) AS day, COALESCE(SUM(amount), 0) AS total
+FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL
+GROUP BY day ORDER BY day;
+
+getDayNetTotals:
+SELECT substr(date, 1, 10) AS day,
+       COALESCE(SUM(CASE WHEN transaction_type IN ('expense','transfer','fuliza')
+                         THEN -amount ELSE amount END), 0.0) AS net
+FROM transactions
+WHERE deleted_at IS NULL AND status = 'completed'
+  AND date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza','income','receive')
+GROUP BY day;
+
+getSpendTotalInRange:
+SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+getTopCategoryInRange:
+SELECT category FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL
+GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1;
+
+countUncategorizedInRange:
+SELECT COUNT(*) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND (category IS NULL OR category = '' OR category = 'uncategorized')
+  AND deleted_at IS NULL;
+
+countFulizaInRange:
+SELECT COUNT(*) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type = 'fuliza'
+  AND status = 'completed' AND deleted_at IS NULL;
+
+getIncomeTotalInRange:
+SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('income','receive')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+countSpendTransactions:
+SELECT COUNT(*) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+countActiveDays:
+SELECT COUNT(DISTINCT substr(date, 1, 10)) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+getFulizaTotalInRange:
+SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type = 'fuliza'
+  AND status = 'completed' AND deleted_at IS NULL;
+
+countFulizaTransactions:
+SELECT COUNT(*) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type = 'fuliza'
+  AND status = 'completed' AND deleted_at IS NULL;
+
+getBiggestSpend:
+SELECT merchant, amount, date FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL
+ORDER BY amount DESC LIMIT 1;
+
+getMinTransactionDate:
+SELECT MIN(date) FROM transactions WHERE deleted_at IS NULL;
+
+getFeeTotalInRange:
+SELECT COALESCE(SUM(fee), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND fee > 0 AND status = 'completed' AND deleted_at IS NULL;
+
+getAverageTransactionInRange:
+SELECT COALESCE(AVG(amount), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+getIncomeInRange:
+SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND transaction_type IN ('income','receive')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+getUncategorizedAmountInRange:
+SELECT COALESCE(SUM(amount), 0.0) FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND (category IS NULL OR category = '' OR category = 'uncategorized')
+  AND deleted_at IS NULL;
+
+getFeeSummaryInRange:
+SELECT
+  COALESCE(SUM(fee), 0.0) AS total,
+  COALESCE(AVG(fee), 0.0) AS avgFee,
+  COUNT(*) AS txCount
+FROM transactions
+WHERE date >= :startDate AND date <= :endDate
+  AND fee IS NOT NULL AND fee > 0
+  AND status = 'completed'
+  AND deleted_at IS NULL;
+
+getByMpesaCode:
+SELECT * FROM transactions WHERE mpesa_code = :code AND deleted_at IS NULL LIMIT 1;
+
+updateStatusByMpesaCode:
+UPDATE transactions SET status = :status, updated_at = :ts WHERE mpesa_code = :code AND deleted_at IS NULL;
+
+updateStatusAndSyncStateByMpesaCode:
+UPDATE transactions SET status = :status, sync_state = :syncState, updated_at = :ts WHERE mpesa_code = :code AND deleted_at IS NULL;
+
+getMonthlyTotalsRange:
+SELECT
+  strftime('%Y-%m', date) AS month_key,
+  COALESCE(SUM(CASE WHEN transaction_type IN ('expense','transfer','fuliza') THEN amount ELSE 0 END), 0.0) AS expense,
+  COALESCE(SUM(CASE WHEN transaction_type IN ('income','receive') THEN amount ELSE 0 END), 0.0) AS income,
+  COUNT(CASE WHEN transaction_type IN ('expense','transfer','fuliza') THEN 1 END) AS tx_count
+FROM transactions
+WHERE date >= :sixMonthsAgo AND status = 'completed' AND deleted_at IS NULL
+GROUP BY month_key
+ORDER BY month_key ASC;
+
+getMonthlyCategoryBreakdown:
+SELECT
+  strftime('%Y-%m', date) AS month_key,
+  category,
+  COALESCE(SUM(amount), 0.0) AS total
+FROM transactions
+WHERE date >= :sixMonthsAgo AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL
+GROUP BY month_key, category
+ORDER BY month_key ASC, total DESC;
+
+getIncomeDates:
+SELECT date(date) AS dt
+FROM transactions
+WHERE transaction_type IN ('income','receive') AND status = 'completed' AND deleted_at IS NULL
+  AND date >= :sixMonthsAgo
+ORDER BY date DESC LIMIT 12;
+
+getSizeBreakdown:
+SELECT
+  COUNT(CASE WHEN amount < 500 THEN 1 END) AS micro_count,
+  COUNT(CASE WHEN amount >= 500 AND amount < 2000 THEN 1 END) AS medium_count,
+  COUNT(CASE WHEN amount >= 2000 THEN 1 END) AS large_count,
+  COALESCE(SUM(CASE WHEN amount < 500 THEN amount ELSE 0 END), 0.0) AS micro_total,
+  COALESCE(SUM(CASE WHEN amount >= 500 AND amount < 2000 THEN amount ELSE 0 END), 0.0) AS medium_total,
+  COALESCE(SUM(CASE WHEN amount >= 2000 THEN amount ELSE 0 END), 0.0) AS large_total
+FROM transactions
+WHERE date >= :sixMonthsAgo AND transaction_type IN ('expense','transfer','fuliza')
+  AND status = 'completed' AND deleted_at IS NULL;
+
+deleteAll:
+DELETE FROM transactions;

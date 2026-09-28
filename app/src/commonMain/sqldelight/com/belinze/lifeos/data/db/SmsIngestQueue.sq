@@ -1,0 +1,54 @@
+CREATE TABLE IF NOT EXISTS sms_ingest_queue (
+    id             INTEGER NOT NULL PRIMARY KEY,
+    body           TEXT    NOT NULL,
+    body_hash      TEXT    NOT NULL,
+    status         TEXT    NOT NULL DEFAULT 'pending',
+    attempts       INTEGER NOT NULL DEFAULT 0,
+    last_error     TEXT,
+    received_at    TEXT,
+    next_retry_at  TEXT,
+    claimed_at     TEXT,
+    sender_address TEXT    NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS index_sms_ingest_queue_status_next_retry_at ON sms_ingest_queue (status, next_retry_at);
+CREATE INDEX IF NOT EXISTS index_sms_ingest_queue_status_claimed_at ON sms_ingest_queue (status, claimed_at);
+CREATE UNIQUE INDEX IF NOT EXISTS index_sms_ingest_queue_body_hash ON sms_ingest_queue (body_hash);
+
+enqueue:
+INSERT OR IGNORE INTO sms_ingest_queue (body, body_hash, status, attempts, last_error, received_at, next_retry_at, claimed_at, sender_address)
+VALUES (:body, :bodyHash, :status, :attempts, :lastError, :receivedAt, :nextRetryAt, :claimedAt, :senderAddress);
+
+byId:
+SELECT * FROM sms_ingest_queue WHERE id = :id;
+
+pending:
+SELECT * FROM sms_ingest_queue
+WHERE status = 'pending' AND next_retry_at <= :nowIso
+ORDER BY received_at
+LIMIT :limit;
+
+claim:
+UPDATE sms_ingest_queue SET status = 'processing', claimed_at = :nowIso
+WHERE id = :id AND status IN ('pending', 'failed');
+
+markDone:
+UPDATE sms_ingest_queue SET status = 'done', last_error = NULL, claimed_at = NULL WHERE id = :id;
+
+markFailed:
+UPDATE sms_ingest_queue
+SET attempts = attempts + 1, status = :status, last_error = :error,
+    next_retry_at = :retryAt, claimed_at = NULL
+WHERE id = :id;
+
+requeueFailed:
+UPDATE sms_ingest_queue SET status = 'pending' WHERE status = 'failed';
+
+countByStatus:
+SELECT COUNT(*) FROM sms_ingest_queue WHERE status = :status;
+
+deleteAll:
+DELETE FROM sms_ingest_queue;
+
+lastInsertRowId:
+SELECT last_insert_rowid();

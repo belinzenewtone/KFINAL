@@ -1,0 +1,47 @@
+CREATE TABLE IF NOT EXISTS learning_sessions (
+    id               TEXT    NOT NULL PRIMARY KEY,
+    title            TEXT    NOT NULL DEFAULT '',
+    category         TEXT    NOT NULL DEFAULT 'General',
+    description      TEXT,
+    duration_minutes INTEGER NOT NULL DEFAULT 0,
+    is_completed     INTEGER NOT NULL DEFAULT 0,
+    logged_at        TEXT,
+    created_at       TEXT,
+    updated_at       TEXT,
+    deleted_at       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS index_learning_sessions_category ON learning_sessions (category);
+CREATE INDEX IF NOT EXISTS index_learning_sessions_logged_at ON learning_sessions (logged_at);
+CREATE INDEX IF NOT EXISTS index_learning_sessions_is_completed ON learning_sessions (is_completed);
+
+observeAll:
+SELECT * FROM learning_sessions WHERE deleted_at IS NULL ORDER BY created_at DESC;
+
+observeByCategory:
+SELECT * FROM learning_sessions
+WHERE deleted_at IS NULL AND (:category IS NULL OR category = :category)
+ORDER BY created_at DESC;
+
+observeMonthlyMinutes:
+SELECT IFNULL(SUM(duration_minutes), 0)
+FROM learning_sessions
+WHERE deleted_at IS NULL
+  AND is_completed = 1
+  AND strftime('%Y-%m', logged_at) = strftime('%Y-%m', 'now');
+
+insertOrReplace:
+INSERT OR REPLACE INTO learning_sessions (id, title, category, description, duration_minutes, is_completed, logged_at, created_at, updated_at, deleted_at)
+VALUES (:id, :title, :category, :description, :durationMinutes, :isCompleted, :loggedAt, :createdAt, :updatedAt, :deletedAt);
+
+setCompleted:
+UPDATE learning_sessions SET is_completed = :done WHERE id = :id;
+
+softDelete:
+UPDATE learning_sessions SET deleted_at = :now WHERE id = :id;
+
+getById:
+SELECT * FROM learning_sessions WHERE id = :id AND deleted_at IS NULL LIMIT 1;
+
+deleteAll:
+DELETE FROM learning_sessions;

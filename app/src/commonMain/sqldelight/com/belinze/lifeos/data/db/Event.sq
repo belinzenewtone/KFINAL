@@ -1,0 +1,71 @@
+CREATE TABLE IF NOT EXISTS events (
+    id                          TEXT    NOT NULL PRIMARY KEY,
+    title                       TEXT    NOT NULL DEFAULT '',
+    description                 TEXT,
+    date                        TEXT    NOT NULL DEFAULT '',
+    end_date                    TEXT,
+    type                        TEXT    NOT NULL DEFAULT 'event',
+    kind                        TEXT    NOT NULL DEFAULT 'other',
+    importance                  TEXT    NOT NULL DEFAULT 'medium',
+    status                      TEXT    NOT NULL DEFAULT 'active',
+    has_reminder                INTEGER NOT NULL DEFAULT 0,
+    reminder_minutes_before     INTEGER,
+    reminder_offsets            TEXT,
+    reminder_time_of_day_minutes INTEGER,
+    all_day                     INTEGER NOT NULL DEFAULT 0,
+    repeat_rule                 TEXT    NOT NULL DEFAULT 'none',
+    repeat_end_date             TEXT,
+    location                    TEXT,
+    guests                      TEXT,
+    time_zone_id                TEXT    NOT NULL DEFAULT 'UTC',
+    alarm_enabled               INTEGER NOT NULL DEFAULT 0,
+    created_at                  TEXT,
+    updated_at                  TEXT,
+    sync_state                  TEXT,
+    record_source               TEXT,
+    deleted_at                  TEXT,
+    revision                    INTEGER NOT NULL DEFAULT 1,
+    user_id                     TEXT
+);
+
+CREATE INDEX IF NOT EXISTS index_events_date ON events (date);
+CREATE INDEX IF NOT EXISTS index_events_deleted_at ON events (deleted_at);
+
+getFrom:
+SELECT * FROM events
+WHERE deleted_at IS NULL AND date >= :fromDate
+ORDER BY date ASC;
+
+getAll:
+SELECT * FROM events WHERE deleted_at IS NULL ORDER BY date ASC;
+
+getById:
+SELECT * FROM events WHERE id = :id AND deleted_at IS NULL;
+
+search:
+SELECT * FROM events
+WHERE deleted_at IS NULL AND (title LIKE '%' || :q || '%' OR location LIKE '%' || :q || '%')
+ORDER BY date ASC LIMIT :limit;
+
+getInRange:
+SELECT * FROM events
+WHERE deleted_at IS NULL AND date >= :startDate AND date <= :endDate
+ORDER BY date ASC;
+
+getNextUpcoming:
+SELECT * FROM events
+WHERE deleted_at IS NULL AND date >= :today AND status = 'active'
+ORDER BY date ASC LIMIT 1;
+
+observeAll:
+SELECT * FROM events WHERE deleted_at IS NULL ORDER BY date ASC;
+
+insertOrReplace:
+INSERT OR REPLACE INTO events (id, title, description, date, end_date, type, kind, importance, status, has_reminder, reminder_minutes_before, reminder_offsets, reminder_time_of_day_minutes, all_day, repeat_rule, repeat_end_date, location, guests, time_zone_id, alarm_enabled, created_at, updated_at, sync_state, record_source, deleted_at, revision, user_id)
+VALUES (:id, :title, :description, :date, :endDate, :type, :kind, :importance, :status, :hasReminder, :reminderMinutesBefore, :reminderOffsets, :reminderTimeOfDayMinutes, :allDay, :repeatRule, :repeatEndDate, :location, :guests, :timeZoneId, :alarmEnabled, :createdAt, :updatedAt, :syncState, :recordSource, :deletedAt, :revision, :userId);
+
+softDelete:
+UPDATE events SET deleted_at = :timestamp WHERE id = :id;
+
+deleteAll:
+DELETE FROM events;

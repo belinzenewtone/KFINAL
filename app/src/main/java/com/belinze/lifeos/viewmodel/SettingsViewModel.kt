@@ -10,7 +10,7 @@ import com.belinze.lifeos.core.update.OtaUpdateManager
 import com.belinze.lifeos.core.update.OtaUpdateManifest
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
-import com.belinze.lifeos.data.db.LifeOsDatabase
+import com.belinze.lifeos.data.db.AppDatabase
 import com.belinze.lifeos.util.Haptics
 import com.lifeos.sms.SmsService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel
 constructor(
     private val prefs: AppPreferences,
-    private val db: LifeOsDatabase,
+    private val db: AppDatabase,
     private val smsService: SmsService,
     private val context: Context,
 ) : ViewModel() {

@@ -1,0 +1,33 @@
+CREATE TABLE IF NOT EXISTS fuliza_loans (
+    id                  TEXT    NOT NULL PRIMARY KEY,
+    draw_code           TEXT,
+    draw_amount_kes     REAL    NOT NULL DEFAULT 0.0,
+    total_repaid_kes    REAL    NOT NULL DEFAULT 0.0,
+    status              TEXT    NOT NULL DEFAULT 'active',
+    draw_date           TEXT,
+    last_repayment_date TEXT,
+    created_at          TEXT,
+    updated_at          TEXT,
+    user_id             TEXT
+);
+
+CREATE INDEX IF NOT EXISTS index_fuliza_loans_status ON fuliza_loans (status);
+
+getActiveLoans:
+SELECT * FROM fuliza_loans WHERE status = 'active' ORDER BY draw_date DESC;
+
+getAllLoans:
+SELECT * FROM fuliza_loans ORDER BY draw_date DESC;
+
+getLoanById:
+SELECT * FROM fuliza_loans WHERE id = :id;
+
+insertOrReplace:
+INSERT OR REPLACE INTO fuliza_loans (id, draw_code, draw_amount_kes, total_repaid_kes, status, draw_date, last_repayment_date, created_at, updated_at, user_id)
+VALUES (:id, :drawCode, :drawAmountKes, :totalRepaidKes, :status, :drawDate, :lastRepaymentDate, :createdAt, :updatedAt, :userId);
+
+hardDelete:
+DELETE FROM fuliza_loans WHERE id = :id;
+
+deleteAll:
+DELETE FROM fuliza_loans;

@@ -1,70 +1,35 @@
 package com.belinze.lifeos.data.db.dao
 
-import androidx.room.*
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import kotlinx.coroutines.flow.Flow
-
-@Dao
 interface TaskDao {
-    @Query("SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY deadline ASC, created_at DESC")
-    suspend fun getAll(): List<TaskEntity>
+        suspend fun getAll(): List<TaskEntity>
 
-    @Query("""
-        SELECT * FROM tasks
-        WHERE deleted_at IS NULL AND status = 'active'
-          AND deadline IS NOT NULL AND deadline <= :dueBefore
-        ORDER BY deadline ASC
-        LIMIT :limit
-    """)
-    suspend fun getUpcoming(dueBefore: String, limit: Int): List<TaskEntity>
+        suspend fun getUpcoming(dueBefore: String, limit: Int): List<TaskEntity>
 
-    @Query("SELECT COUNT(*) FROM tasks WHERE deleted_at IS NULL AND status = 'active'")
-    suspend fun countPending(): Int
+        suspend fun countPending(): Int
 
     /** Count active tasks with deadline within [startOfDay]..[endOfDay] (ISO date-time strings). */
-    @Query("""
-        SELECT COUNT(*) FROM tasks
-        WHERE deleted_at IS NULL AND status = 'active'
-          AND deadline IS NOT NULL
-          AND deadline >= :startOfDay AND deadline <= :endOfDay
-    """)
-    suspend fun countDueToday(startOfDay: String, endOfDay: String): Int
+        suspend fun countDueToday(startOfDay: String, endOfDay: String): Int
 
-    @Query("SELECT * FROM tasks WHERE id = :id AND deleted_at IS NULL")
-    suspend fun getById(id: String): TaskEntity?
+        suspend fun getById(id: String): TaskEntity?
 
-    @Query("SELECT * FROM tasks WHERE deleted_at IS NULL AND (title LIKE '%' || :q || '%' OR description LIKE '%' || :q || '%') ORDER BY deadline ASC LIMIT :limit")
-    suspend fun search(q: String, limit: Int): List<TaskEntity>
+        suspend fun search(q: String, limit: Int): List<TaskEntity>
 
-    @Query("SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY deadline ASC")
-    fun observeAll(): Flow<List<TaskEntity>>
+        fun observeAll(): Flow<List<TaskEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(task: TaskEntity)
+        suspend fun insert(task: TaskEntity)
 
-    @Update
-    suspend fun update(task: TaskEntity)
+        suspend fun update(task: TaskEntity)
 
-    @Query("UPDATE tasks SET deleted_at = :timestamp WHERE id = :id")
-    suspend fun softDelete(id: String, timestamp: String)
+        suspend fun softDelete(id: String, timestamp: String)
 
     /** Count tasks completed (status='done') on or after [since] (ISO date-time string).
      *  Falls back to updated_at when completed_at was never stamped — mirrors the
      *  WeekReviewScreen.tsx query. */
-    @Query("""
-        SELECT COUNT(*) FROM tasks
-        WHERE deleted_at IS NULL
-          AND status = 'done'
-          AND (completed_at >= :since OR (completed_at IS NULL AND updated_at >= :since))
-    """)
-    suspend fun countCompletedSince(since: String): Int
+        suspend fun countCompletedSince(since: String): Int
 
     /** Count every outstanding (not-done) task. WeekReviewScreen.tsx counts all pending
      *  tasks — it is deliberately NOT scoped to the current week. */
-    @Query("""
-        SELECT COUNT(*) FROM tasks
-        WHERE deleted_at IS NULL
-          AND status != 'done'
-    """)
-    suspend fun countAllPending(): Int
+        suspend fun countAllPending(): Int
 }

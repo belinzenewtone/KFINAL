@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)   // JetBrains CMP Gradle plugin
     alias(libs.plugins.kotlin.compose)           // Compose compiler plugin (all targets)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.sqldelight)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
 }
@@ -75,6 +76,10 @@ kotlin {
 
             // Coroutines core (KMP artifact); android adds the Android dispatcher
             implementation(libs.coroutines.core)
+
+            // SQLDelight — KMP database layer (replaces Room, Phase 4)
+            implementation(libs.sqldelight.coroutines)
+            implementation(libs.sqldelight.runtime)
         }
 
         // Keep Java/Kotlin sources in src/main/java until Phase 5 migration
@@ -99,14 +104,11 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
 
-            // Room (stays here until Phase 4 SQLDelight migration)
-            implementation(libs.room.runtime)
-            implementation(libs.room.ktx)
-            implementation(libs.room.paging)
+            // SQLDelight Android driver (Phase 4 — Room removed)
+            implementation(libs.sqldelight.android.driver)
 
-            // Paging 3
-            implementation(libs.paging.runtime)
-            implementation(libs.paging.compose)
+            // SQLite framework — provides FrameworkSQLiteOpenHelperFactory for DatabaseDriverFactory
+            implementation(libs.androidx.sqlite.framework)
 
             // DataStore
             implementation(libs.datastore)
@@ -219,10 +221,16 @@ android {
     }
 }
 
-// KSP — Room schema export
-ksp {
-    // Export Room schemas for migration review/testing (Phase 4 hardening).
-    arg("room.schemaLocation", "$projectDir/schemas")
+// ─────────────────────────────────────────────────────────────────────────────
+// SQLDelight database configuration (Phase 4 — replaces Room)
+// ─────────────────────────────────────────────────────────────────────────────
+sqldelight {
+    databases {
+        create("LifeOsDatabase") {
+            packageName.set("com.belinze.lifeos.data.db")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,9 +239,6 @@ ksp {
 dependencies {
     // Core library desugaring — AGP-level, not a KMP source-set dep
     coreLibraryDesugaring(libs.desugar)
-
-    // KSP for Room — must target the Android compilation specifically in KMP
-    add("kspAndroid", libs.room.compiler)
 
     // Debug-only Compose tooling (build-type variant — not expressible in KMP source sets)
     debugImplementation(libs.compose.ui.tooling)

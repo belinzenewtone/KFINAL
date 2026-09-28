@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS import_audit (
+    id             INTEGER NOT NULL PRIMARY KEY,
+    mpesa_code     TEXT,
+    raw_message    TEXT,
+    amount         REAL,
+    merchant       TEXT,
+    outcome        TEXT,
+    failure_reason TEXT,
+    confidence     TEXT,
+    created_at     TEXT
+);
+
+CREATE INDEX IF NOT EXISTS index_import_audit_outcome ON import_audit (outcome);
+CREATE INDEX IF NOT EXISTS index_import_audit_created_at ON import_audit (created_at);
+
+insertAudit:
+INSERT INTO import_audit (mpesa_code, raw_message, amount, merchant, outcome, failure_reason, confidence, created_at)
+VALUES (:mpesaCode, :rawMessage, :amount, :merchant, :outcome, :failureReason, :confidence, :createdAt);
+
+recentAudit:
+SELECT * FROM import_audit ORDER BY id DESC LIMIT :limit;
+
+countByOutcome:
+SELECT COUNT(*) FROM import_audit WHERE outcome = :outcome;
+
+deleteAll:
+DELETE FROM import_audit;
+
+lastInsertRowId:
+SELECT last_insert_rowid();

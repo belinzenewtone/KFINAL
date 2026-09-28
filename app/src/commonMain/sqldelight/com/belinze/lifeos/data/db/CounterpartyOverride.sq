@@ -1,0 +1,26 @@
+CREATE TABLE IF NOT EXISTS counterparty_overrides (
+    id           TEXT NOT NULL PRIMARY KEY,
+    phone_hash   TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    created_at   TEXT,
+    updated_at   TEXT,
+    user_id      TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS index_counterparty_overrides_phone_hash ON counterparty_overrides (phone_hash);
+
+getByPhoneHash:
+SELECT * FROM counterparty_overrides WHERE phone_hash = :phoneHash;
+
+getAll:
+SELECT * FROM counterparty_overrides;
+
+upsert:
+INSERT OR REPLACE INTO counterparty_overrides (id, phone_hash, display_name, created_at, updated_at, user_id)
+VALUES (:id, :phoneHash, :displayName, :createdAt, :updatedAt, :userId);
+
+delete:
+DELETE FROM counterparty_overrides WHERE id = :id;
+
+deleteAll:
+DELETE FROM counterparty_overrides;

@@ -45,8 +45,8 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
-    // Room — DbWriter.kt uses SupportSQLiteDatabase, resolved by the app module's Room instance
-    implementation(libs.room.runtime)
+    // SupportSQLiteDatabase (DbWriter.kt), provided without Room via androidx.sqlite
+    implementation(libs.androidx.sqlite)
 
     // WorkManager — SmsImportWorker, SmsProcessWorker, IngestSweepWorker
     implementation(libs.workmanager)

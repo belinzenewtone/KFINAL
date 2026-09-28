@@ -1,0 +1,24 @@
+CREATE TABLE IF NOT EXISTS exports (
+    id           TEXT    NOT NULL PRIMARY KEY,
+    file_path    TEXT,
+    file_size    INTEGER,
+    format       TEXT,
+    created_at   TEXT,
+    record_count INTEGER
+);
+
+getAllExports:
+SELECT * FROM exports ORDER BY created_at DESC;
+
+insertOrReplace:
+INSERT OR REPLACE INTO exports (id, file_path, file_size, format, created_at, record_count)
+VALUES (:id, :filePath, :fileSize, :format, :createdAt, :recordCount);
+
+deleteExport:
+DELETE FROM exports WHERE id = :id;
+
+deleteAllExports:
+DELETE FROM exports;
+
+deleteAll:
+DELETE FROM exports;

@@ -3,7 +3,7 @@ package com.belinze.lifeos.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.belinze.lifeos.data.db.LifeOsDatabase
+import com.belinze.lifeos.data.db.AppDatabase
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.lifeos.sms.SmsService
 import kotlinx.collections.immutable.ImmutableList
@@ -34,7 +34,7 @@ class SmsImportHealthViewModel
 constructor(
     private val smsService:     SmsService,
     private val transactionDao: TransactionDao,
-    private val database:       LifeOsDatabase,
+    private val database:       AppDatabase,
 ) : ViewModel() {
     // ─── Receiver status ──────────────────────────────────────────────────────
 

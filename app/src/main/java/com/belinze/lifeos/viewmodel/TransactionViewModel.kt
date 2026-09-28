@@ -3,10 +3,6 @@ package com.belinze.lifeos.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.MonthTotals
 import com.belinze.lifeos.data.db.dao.TransactionDao
@@ -135,51 +131,60 @@ constructor(
 
     // monthKey is computed per-call inside loadMetrics() to stay accurate across month boundaries
 
-    // ─── Paging 3 ─────────────────────────────────────────────────────────────
+    // ─── Paginated list (manual pagination replacing Paging 3) ───────────────
     //
-    // flatMapLatest on _uiState.filters creates a new Pager every time the
-    // filters change. The 300 ms debounce prevents a flood of Pager creations
-    // during fast typing in the search field.
-    //
-    // Room's InvalidationTracker invalidates the current PagingSource on every
-    // write to the `transactions` table, so insert / update / softDelete all
-    // trigger an automatic list refresh — no explicit reload() needed.
-    //
-    // cachedIn(viewModelScope) retains the in-memory page cache across
-    // screen recompositions and config changes.
-    val pagedTransactions: Flow<PagingData<TransactionEntity>> = _uiState
-        .map { it.filters }
-        .distinctUntilChanged()
-        .debounce(300)
-        .flatMapLatest { filters ->
-            Pager(
-                config = PagingConfig(
-                    pageSize           = PAGE_SIZE,
-                    enablePlaceholders = false,
-                    prefetchDistance   = PAGE_SIZE / 2,
-                ),
-            ) {
-                dao.getFilteredPaged(
-                    search    = filters.search,
-                    category  = filters.category,
-                    type      = filters.type,
-                    status    = filters.status,
-                    startDate = filters.startDate,
-                    endDate   = filters.endDate,
-                )
-            }.flow
+    // SQLDelight does not have InvalidationTracker integration. Callers trigger
+    // a refresh via [reloadTransactions] after writes, and the filter flatMapLatest
+    // resets the list automatically on every filter change.
+    private val _transactions = MutableStateFlow<List<TransactionEntity>>(emptyList())
+    val transactions: StateFlow<List<TransactionEntity>> = _transactions.asStateFlow()
+
+    private var currentOffset = 0
+
+    fun reloadTransactions() {
+        viewModelScope.launch {
+            val f = _uiState.value.filters
+            currentOffset = 0
+            _transactions.value = dao.getFiltered(
+                search    = f.search,
+                category  = f.category,
+                type      = f.type,
+                status    = f.status,
+                startDate = f.startDate,
+                endDate   = f.endDate,
+                limit     = PAGE_SIZE,
+                offset    = 0,
+            )
         }
-        .cachedIn(viewModelScope)
+    }
+
+    fun loadNextPage() {
+        viewModelScope.launch {
+            val f = _uiState.value.filters
+            currentOffset += PAGE_SIZE
+            val page = dao.getFiltered(
+                search    = f.search,
+                category  = f.category,
+                type      = f.type,
+                status    = f.status,
+                startDate = f.startDate,
+                endDate   = f.endDate,
+                limit     = PAGE_SIZE,
+                offset    = currentOffset,
+            )
+            _transactions.update { it + page }
+        }
+    }
 
     init {
         loadMetrics()
+        reloadTransactions()
 
-        // Refresh analytics automatically when the SMS parser inserts a new
-        // transaction. Room's InvalidationTracker already handles list refresh —
-        // only the metric numbers (hero card, insights row) need a manual nudge.
+        // Refresh list and analytics when the SMS parser inserts a new transaction.
         viewModelScope.launch {
             SmsEventBus.newTransaction.collect { event ->
                 loadMetrics()
+                reloadTransactions()
                 // Heads-up notification for the auto-imported transaction, gated by
                 // the user's notification preferences. Skip Fuliza fee/charge notices —
                 // they are service debits, not user-initiated transactions (mirrors RN).
@@ -207,8 +212,10 @@ constructor(
     // Each setter updates _uiState.filters; the pagedTransactions flatMapLatest
     // reacts automatically — no explicit reload() call needed.
 
-    fun setSearch(q: String) =
+    fun setSearch(q: String) {
         _uiState.update { it.copy(filters = it.filters.copy(search = q)) }
+        reloadTransactions()
+    }
 
     fun setPeriod(period: String) {
         val zone = TimeZone.currentSystemDefault()
@@ -231,18 +238,22 @@ constructor(
         _uiState.update {
             it.copy(filters = it.filters.copy(period = period, startDate = start, endDate = end))
         }
+        reloadTransactions()
     }
 
     fun setCategory(cat: String) {
         _uiState.update { it.copy(filters = it.filters.copy(category = cat)) }
+        reloadTransactions()
     }
 
     fun setType(type: String?) {
         _uiState.update { it.copy(filters = it.filters.copy(type = type)) }
+        reloadTransactions()
     }
 
     fun setDateRange(start: String?, end: String?) {
         _uiState.update { it.copy(filters = it.filters.copy(startDate = start, endDate = end)) }
+        reloadTransactions()
     }
 
     /**
@@ -261,6 +272,7 @@ constructor(
 
     fun clearFilters() {
         _uiState.update { it.copy(filters = TransactionFilters()) }
+        reloadTransactions()
     }
 
     // ─── Analytics ────────────────────────────────────────────────────────────
@@ -428,8 +440,7 @@ constructor(
                     updatedAt       = nowIso(),
                 )
                 dao.insert(entity)
-                // Room's InvalidationTracker auto-invalidates the PagingSource on
-                // this write — list refreshes without an explicit reload() call.
+                reloadTransactions()
                 refreshMetrics()
                 Haptics.success()
                 _formState.update { it.copy(isSaving = false) }
@@ -451,7 +462,7 @@ constructor(
         viewModelScope.launch {
             dao.softDelete(id, nowIso())
             Haptics.warning()
-            // Room's InvalidationTracker auto-invalidates the PagingSource.
+            reloadTransactions()
             refreshMetrics()
         }
     }
@@ -461,7 +472,7 @@ constructor(
             val entity = dao.getById(id) ?: return@launch
             dao.update(entity.copy(category = category, updatedAt = nowIso()))
             Haptics.light()
-            // Room's InvalidationTracker auto-invalidates the PagingSource.
+            reloadTransactions()
             refreshMetrics()
         }
     }
