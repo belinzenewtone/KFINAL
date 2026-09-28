@@ -36,7 +36,7 @@ constructor(
     private val prefs: AppPreferences,
     private val db: LifeOsDatabase,
     private val smsService: SmsService,
-    context: Context,
+    private val context: Context,
 ) : ViewModel() {
     /** The full prefs snapshot, shared with AppViewModel but scoped here. */
     val settings: StateFlow<com.belinze.lifeos.data.datastore.AppPreferenceState> =

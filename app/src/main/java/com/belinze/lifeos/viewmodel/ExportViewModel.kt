@@ -31,6 +31,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
 import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
@@ -48,7 +49,7 @@ enum class ExportFormat { JSON, CSV, PDF }
  */
 class ExportViewModel
 constructor(
-    context: Context,
+    private val context: Context,
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
     private val eventDao:       EventDao,

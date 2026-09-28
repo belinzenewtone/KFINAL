@@ -700,7 +700,10 @@ constructor(
             val filled = (pct / 10.0).roundToInt()
             val bar    = "█".repeat(filled) + "░".repeat(10 - filled)
             val deadline = g.deadline?.take(10)?.let { d ->
-                " · due " + runCatching { LocalDate.parse(d).format(dateFmt) }.getOrDefault(d)
+                " · due " + runCatching {
+                    val ld = LocalDate.parse(d)
+                    "${kotlinx.datetime.format.MonthNames.ENGLISH_ABBREVIATED.names[ld.monthNumber - 1]} ${ld.dayOfMonth}"
+                }.getOrDefault(d)
             } ?: ""
             "${g.title}\n  $bar $pct% — ${kes(g.currentValue)} / ${kes(g.targetValue)}$deadline"
         }

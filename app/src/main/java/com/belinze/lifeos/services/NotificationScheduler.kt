@@ -46,7 +46,7 @@ import kotlinx.datetime.toLocalDateTime
  */
 class NotificationScheduler
 constructor(
-    context: Context,
+    private val context: Context,
 ) {
     private val alarmManager: AlarmManager =
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

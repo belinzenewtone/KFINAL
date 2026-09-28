@@ -63,7 +63,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.format.chars
 
 // Matches GoalsScreen.tsx's local SEMANTIC constant exactly.
 private val SUCCESS = Color(0xFF4ADE80)

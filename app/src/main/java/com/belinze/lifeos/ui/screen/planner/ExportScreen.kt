@@ -80,7 +80,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.format.chars
 import kotlinx.datetime.toLocalDateTime
 
 private data class PreviewDomain(val key: String, val label: String, val color: Color)
@@ -517,7 +516,7 @@ fun ExportScreen(
             val initialMillis = (if (target == "from") customStart else customEnd)
                 .takeIf { it.isNotBlank() }
                 ?.let { iso ->
-                    runCatching { LocalDate.parse(iso.take(10)).toEpochDay() * 86_400_000L }.getOrNull()
+                    runCatching { LocalDate.parse(iso.take(10)).toEpochDays() * 86_400_000L }.getOrNull()
                 }
             val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
             DatePickerDialog(

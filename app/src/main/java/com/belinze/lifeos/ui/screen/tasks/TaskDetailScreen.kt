@@ -49,7 +49,6 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.format.chars
 import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val WARNING = Color(0xFFFBBF24)

@@ -59,7 +59,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.format.chars
 
 // Matches LoansScreen.tsx's local SEMANTIC/STATUS_COLOR constants exactly.
 private val SUCCESS = Color(0xFF4ADE80)

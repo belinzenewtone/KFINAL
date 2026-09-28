@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit
  */
 class SmsImportViewModel
 constructor(
-    context: android.content.Context,
+    private val context: android.content.Context,
     private val smsService: SmsService,
 ) : ViewModel() {
     @Immutable

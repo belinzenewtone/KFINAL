@@ -90,7 +90,7 @@ constructor(
             val startIso = Instant.fromEpochMilliseconds(startMs).toLocalDateTime(zone).toString()
             val endIso   = Instant.fromEpochMilliseconds(endMs).toLocalDateTime(zone).toString()
             val catSpend = transactionDao.getExpenseCategoryTotals(startIso, endIso)
-                .associate { it.category.lowercase() to it.total }
+                .associate { (it.category ?: "").lowercase() to it.total }
 
             val enriched = budgets.map { b ->
                 val spend = catSpend[b.category.lowercase()] ?: 0.0

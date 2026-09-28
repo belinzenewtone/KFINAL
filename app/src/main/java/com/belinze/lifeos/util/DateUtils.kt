@@ -9,12 +9,12 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.todayIn
 import kotlinx.datetime.format.DayOfWeekNames
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.format.chars
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
@@ -85,11 +85,17 @@ fun nowIso(zone: TimeZone = DEFAULT_ZONE): String =
 /** Formats an Instant as ISO 8601 with timezone offset, e.g. "2024-01-15T10:30:00+03:00". */
 internal fun formatInstantAsIsoOffset(instant: Instant, zone: TimeZone = DEFAULT_ZONE): String {
     val ldt    = instant.toLocalDateTime(zone)
-    val offset = zone.offsetAt(instant)
-    return DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.format {
-        setDateTime(ldt)
-        setOffset(offset)
-    }
+    val utcLdt = instant.toLocalDateTime(TimeZone.UTC)
+    var diffSec = (ldt.hour - utcLdt.hour) * 3600L + (ldt.minute - utcLdt.minute) * 60
+    if (diffSec > 43200) diffSec -= 86400
+    if (diffSec < -43200) diffSec += 86400
+    val sign = if (diffSec >= 0) "+" else "-"
+    val abs  = kotlin.math.abs(diffSec)
+    return "%04d-%02d-%02dT%02d:%02d:%02d%s%02d:%02d".format(
+        ldt.year, ldt.monthNumber, ldt.dayOfMonth,
+        ldt.hour, ldt.minute, ldt.second,
+        sign, abs / 3600, (abs % 3600) / 60,
+    )
 }
 
 // ─── Display formatters ──────────────────────────────────────────────────────

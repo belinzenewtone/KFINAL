@@ -20,6 +20,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MonthlyWrappedViewModel — full parity with MonthlyWrappedScreen.tsx

@@ -1,13 +1,14 @@
 // Top-level build file. Configuration common to all subprojects goes here.
 plugins {
-    alias(libs.plugins.android.application) apply false
-    alias(libs.plugins.android.library)     apply false
-    alias(libs.plugins.kotlin.android)      apply false
-    alias(libs.plugins.kotlin.compose)      apply false
-    alias(libs.plugins.hilt)               apply false
-    alias(libs.plugins.ksp)                apply false
+    alias(libs.plugins.android.application)   apply false
+    alias(libs.plugins.android.library)       apply false
+    alias(libs.plugins.kotlin.android)        apply false   // still used by :sms
+    alias(libs.plugins.kotlin.multiplatform)  apply false   // used by :app (Phase 3+)
+    alias(libs.plugins.kotlin.compose)        apply false
+    alias(libs.plugins.compose.multiplatform) apply false   // JetBrains CMP plugin
+    alias(libs.plugins.ksp)                   apply false
     alias(libs.plugins.detekt)
-    alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.ktlint)                apply false
 }
 
 // Static analysis (Phase 4): detekt gates CI with maxIssues: 0.

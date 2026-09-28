@@ -77,7 +77,7 @@ val appModule = module {
     // ── Services ──────────────────────────────────────────────────────────────
     single<NotificationScheduler>   { NotificationScheduler(androidContext()) }
     single<BudgetAlertService>      { BudgetAlertService(get(), get(), get(), get()) }
-    single<NotificationSync>        { NotificationSync(androidContext(), get(), get(), get(), get(), get()) }
+    single<NotificationSync>        { NotificationSync(androidContext(), get(), get(), get(), get(), get(), get()) }
     single<DarajaEnrichmentService> { DarajaEnrichmentService(get(), androidContext()) }
     single<RuleBundleSync>          { RuleBundleSync(androidContext(), get()) }
     single<TransactionClassifier>   { TransactionClassifier(get(), get()) }

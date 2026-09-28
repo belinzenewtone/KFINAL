@@ -59,6 +59,7 @@ import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.viewmodel.TransactionViewModel
 import kotlinx.coroutines.launch
+import kotlinx.datetime.atStartOfDayIn
 
 private val TX_TYPES = listOf("expense", "income", "transfer")
 private val STATUSES = listOf("completed", "pending", "failed", "reversed")

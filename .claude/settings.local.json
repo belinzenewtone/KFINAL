@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Test-Path \"C:\\\\Users\\\\BELINZE NEWTONE\\\\Music\\\\RFINAL\\\\final plan.md\")",
+      "Bash(Test-Path \"C:\\\\Users\\\\BELINZE NEWTONE\\\\Music\\\\RFINAL\\\\RN_PARITY_AUDIT.md\")"
+    ]
+  }
+}
