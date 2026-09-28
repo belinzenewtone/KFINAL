@@ -82,12 +82,10 @@ kotlin {
             implementation(libs.sqldelight.runtime)
         }
 
-        // Keep Java/Kotlin sources in src/main/java until Phase 5 migration
-        androidMain {
-            kotlin.srcDirs("src/main/java")
-        }
+        // Phase 5: sources moved to src/androidMain/kotlin and src/commonMain/kotlin.
+        // No srcDirs override needed — KMP default layout applies.
 
-        // Android — existing sources live here until Phase 5 code migration
+        // Android — platform-specific sources
         androidMain.dependencies {
             // AndroidX core
             implementation(libs.core.ktx)
