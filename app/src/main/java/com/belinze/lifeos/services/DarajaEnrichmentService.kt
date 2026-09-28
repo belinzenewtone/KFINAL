@@ -3,13 +3,10 @@ package com.belinze.lifeos.services
 import android.content.Context
 import com.belinze.lifeos.data.db.dao.SmsDao
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
-import javax.inject.Singleton
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DarajaEnrichmentService — 1:1 port of src/services/darajaEnrichment.ts.
@@ -31,12 +28,10 @@ data class EnrichmentResult(
     val source: String, // cache | db_registry | daraja | merchant_categories | unknown
 )
 
-@Singleton
 class DarajaEnrichmentService
-    @Inject
-    constructor(
+constructor(
     private val smsDao: SmsDao,
-    @ApplicationContext private val context: Context,
+    context: Context,
 ) {
     private val cache = ConcurrentHashMap<String, String>()
 

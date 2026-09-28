@@ -71,7 +71,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,9 +85,9 @@ import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 import com.belinze.lifeos.viewmodel.SettingsViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileScreen — 1:1 port of src/screens/profile/ProfileScreen.tsx.
@@ -117,8 +117,8 @@ private val TOOL_HUB = listOf(
 @Composable
 fun ProfileScreen(
     navController:      NavHostController,
-    viewModel:          ProfileViewModel  = hiltViewModel(),
-    settingsViewModel:  SettingsViewModel = hiltViewModel(),
+    viewModel:          ProfileViewModel  = koinViewModel(),
+    settingsViewModel:  SettingsViewModel = koinViewModel(),
 ) {
     val prefState by viewModel.prefState.collectAsStateWithLifecycle()
     val context    = LocalContext.current
@@ -249,7 +249,8 @@ fun ProfileScreen(
                         val memberSince = remember(prefState.profileCreatedAt) {
                             runCatching {
                                 val d = LocalDate.parse(prefState.profileCreatedAt)
-                                DateTimeFormatter.ofPattern("MMM yyyy", Locale.getDefault()).format(d)
+                                val fmt = LocalDate.Format { monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); year() }
+                                fmt.format(d)
                             }.getOrNull()
                         }
                         if (memberSince != null) {

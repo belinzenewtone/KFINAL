@@ -9,7 +9,6 @@ import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -17,19 +16,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * FeeAnalyticsViewModel — service-charge analytics for the month.
  * Mirrors FeeAnalyticsScreen.tsx.
  */
-@HiltViewModel
 class FeeAnalyticsViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
     @Immutable
@@ -48,10 +44,11 @@ class FeeAnalyticsViewModel
         viewModelScope.launch {
             try {
                 val key = currentMonthKey()
-                val startIso = Instant.ofEpochMilli(monthKeyToStartMillis(key))
-                    .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                val endIso = Instant.ofEpochMilli(monthKeyToEndMillis(key))
-                    .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                val zone = TimeZone.currentSystemDefault()
+                val startIso = Instant.fromEpochMilliseconds(monthKeyToStartMillis(key))
+                    .toLocalDateTime(zone).toString()
+                val endIso = Instant.fromEpochMilliseconds(monthKeyToEndMillis(key))
+                    .toLocalDateTime(zone).toString()
 
                 val total  = dao.getFeeTotal(startIso, endIso) ?: 0.0
                 val cats   = dao.getChargesByCategory(startIso, endIso)

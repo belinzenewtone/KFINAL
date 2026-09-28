@@ -66,7 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -108,7 +108,7 @@ private val SUCCESS = Color(0xFF4ADE80)
 @Composable
 fun InsightsScreen(
     navController: NavHostController,
-    viewModel:     InsightsViewModel = hiltViewModel(),
+    viewModel:     InsightsViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 

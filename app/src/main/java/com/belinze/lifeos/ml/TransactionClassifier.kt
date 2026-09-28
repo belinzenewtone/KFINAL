@@ -10,14 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 data class ClassificationResult(val label: String, val confidence: Double)
 
-@Singleton
 class TransactionClassifier
-@Inject
 constructor(
     private val smsDao:      SmsDao,
     private val preferences: AppPreferences,

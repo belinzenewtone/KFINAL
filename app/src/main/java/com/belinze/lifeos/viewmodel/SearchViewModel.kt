@@ -18,7 +18,6 @@ import com.belinze.lifeos.data.db.entity.IncomeEntity
 import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.data.db.entity.TransactionEntity
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -33,7 +32,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 enum class SearchTab {
     All,
@@ -71,10 +69,8 @@ data class SearchUiState(
 )
 
 @OptIn(FlowPreview::class)
-@HiltViewModel
 class SearchViewModel
-    @Inject
-    constructor(
+constructor(
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
     private val eventDao:       EventDao,

@@ -15,7 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -45,7 +45,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -85,7 +85,7 @@ private val CATEGORIES = listOf(
 fun RecurringFormScreen(
     ruleId:        String?,
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val form by viewModel.recurringForm.collectAsStateWithLifecycle()
     val isEdit = !ruleId.isNullOrEmpty()
@@ -113,8 +113,8 @@ fun RecurringFormScreen(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = form.nextRunAt.takeIf { it.isNotBlank() }?.take(10)?.let {
             runCatching {
-                java.time.LocalDate.parse(it)
-                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                kotlinx.datetime.LocalDate.parse(it)
+                    .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
             }.getOrNull()
         } ?: System.currentTimeMillis(),
     )
@@ -149,7 +149,7 @@ fun RecurringFormScreen(
 
     // RF-3: delete confirmation dialog
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Delete rule") },
             text  = { Text("Are you sure?") },
@@ -168,7 +168,7 @@ fun RecurringFormScreen(
 
     // RF-5: validation error dialog
     if (validationError != null) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { validationError = null },
             title = { Text(validationTitle) },
             text  = { Text(validationError!!) },
@@ -244,8 +244,10 @@ fun RecurringFormScreen(
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
                 ExposedDropdownMenu(
-                    expanded = typeExpanded,
+                    expanded         = typeExpanded,
                     onDismissRequest = { typeExpanded = false },
+                    containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation   = 0.dp,
                 ) {
                     TYPES.forEach { type ->
                         DropdownMenuItem(
@@ -270,8 +272,10 @@ fun RecurringFormScreen(
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
                 ExposedDropdownMenu(
-                    expanded = cadenceExpanded,
+                    expanded         = cadenceExpanded,
                     onDismissRequest = { cadenceExpanded = false },
+                    containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation   = 0.dp,
                 ) {
                     CADENCES.forEach { cadence ->
                         DropdownMenuItem(
@@ -297,8 +301,10 @@ fun RecurringFormScreen(
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                     )
                     ExposedDropdownMenu(
-                        expanded = categoryExpanded,
+                        expanded         = categoryExpanded,
                         onDismissRequest = { categoryExpanded = false },
+                        containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation   = 0.dp,
                     ) {
                         CATEGORIES.forEach { cat ->
                             DropdownMenuItem(

@@ -50,7 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import com.belinze.lifeos.util.Haptics
 import java.util.Calendar
 import java.util.TimeZone
+import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val FREQUENCIES = listOf("once", "daily", "weekly", "monthly", "yearly")
 
@@ -72,7 +73,7 @@ private val FREQUENCIES = listOf("once", "daily", "weekly", "monthly", "yearly")
 fun IncomeFormScreen(
     incomeId:      String?,
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val form   by viewModel.incomeForm.collectAsStateWithLifecycle()
     val isEdit = !incomeId.isNullOrEmpty()
@@ -92,8 +93,8 @@ fun IncomeFormScreen(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = form.date.takeIf { it.isNotBlank() }?.take(10)?.let {
             runCatching {
-                java.time.LocalDate.parse(it)
-                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                kotlinx.datetime.LocalDate.parse(it)
+                    .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
             }.getOrNull()
         } ?: System.currentTimeMillis(),
     )
@@ -129,7 +130,7 @@ fun IncomeFormScreen(
     // CC-2: delete confirmation
     var showDeleteConfirm by remember { mutableStateOf(false) }
     if (showDeleteConfirm) {
-        androidx.compose.material3.AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { androidx.compose.material3.Text("Delete income") },
             text  = { androidx.compose.material3.Text("Are you sure?") },
@@ -240,8 +241,10 @@ fun IncomeFormScreen(
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                     )
                     ExposedDropdownMenu(
-                        expanded = frequencyExpanded,
+                        expanded         = frequencyExpanded,
                         onDismissRequest = { frequencyExpanded = false },
+                        containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation   = 0.dp,
                     ) {
                         FREQUENCIES.forEach { freq ->
                             DropdownMenuItem(

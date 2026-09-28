@@ -44,7 +44,7 @@ import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,7 +67,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -95,7 +95,7 @@ private val WARNING = Color(0xFFFBBF24)
 @Composable
 fun SettingsScreen(
     navController: NavHostController,
-    viewModel:     SettingsViewModel = hiltViewModel(),
+    viewModel:     SettingsViewModel = koinViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -444,7 +444,7 @@ fun SettingsScreen(
     )
 
     if (showAboutDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showAboutDialog = false },
             title = { Text("About") },
             text  = { Text("$APP_NAME v$APP_VERSION") },
@@ -455,7 +455,7 @@ fun SettingsScreen(
     }
 
     if (showClearDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showClearDialog = false },
             title = { Text("Clear all local data?") },
             text = { Text("This will reset the app to its initial state. This action cannot be undone.") },

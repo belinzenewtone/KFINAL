@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.LearningSessionDao
 import com.belinze.lifeos.data.db.entity.LearningSessionEntity
 import com.belinze.lifeos.util.Haptics
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -15,10 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 import java.util.UUID
-import javax.inject.Inject
+import kotlinx.datetime.Clock
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LearningViewModel — LE-1 / LE-10
@@ -29,10 +26,8 @@ import javax.inject.Inject
 //  - completed count
 // ─────────────────────────────────────────────────────────────────────────────
 
-@HiltViewModel
 class LearningViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao: LearningSessionDao,
 ) : ViewModel() {
     @Immutable
@@ -76,7 +71,7 @@ class LearningViewModel
         description: String = "",
     ) {
         viewModelScope.launch {
-            val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+            val now = Clock.System.now().toString()
             dao.insert(
                 LearningSessionEntity(
                     id              = UUID.randomUUID().toString(),
@@ -96,7 +91,7 @@ class LearningViewModel
 
     fun deleteSession(id: String) {
         viewModelScope.launch {
-            val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+            val now = Clock.System.now().toString()
             dao.softDelete(id = id, now = now)
             Haptics.warning()
         }

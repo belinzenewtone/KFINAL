@@ -33,9 +33,13 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.formatCurrency
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TransactionListItem
@@ -205,14 +209,14 @@ fun formatRelativeDay(dateIso: String): String {
     } catch (_: Exception) {
         return dateIso
     }
-    val today = LocalDate.now()
-    val diffDays = java.time.temporal.ChronoUnit.DAYS.between(today, date)
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val diffDays = (date.toEpochDays() - today.toEpochDays()).toLong()
     return when {
         diffDays == 0L -> "Today"
         diffDays == 1L -> "Tomorrow"
         diffDays == -1L -> "Yesterday"
-        diffDays in 2..6 -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.US)
-        else -> date.format(DATE_FMT)
+        diffDays in 2..6 -> DayOfWeekNames.ENGLISH_FULL.names[date.dayOfWeek.isoDayNumber - 1]
+        else -> DATE_FMT.format(date)
     }
 }
 
@@ -239,12 +243,14 @@ fun CategoryChip(category: String) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-private val DATE_FMT = DateTimeFormatter.ofPattern("dd MMM")
+private val DATE_FMT = LocalDate.Format {
+    dayOfMonth(); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED)
+}
 
 private fun isoToDate(iso: String?): String {
     if (iso == null) return ""
     return try {
-        LocalDateTime.parse(iso.take(19)).toLocalDate().format(DATE_FMT)
+        DATE_FMT.format(LocalDateTime.parse(iso.take(19)).date)
     } catch (_: Exception) {
         ""
     }

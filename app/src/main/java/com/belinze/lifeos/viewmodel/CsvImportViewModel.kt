@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
 
 @Immutable
 data class CsvColumnMapping(
@@ -43,10 +41,8 @@ data class CsvImportCandidate(
 /**
  * CsvImportViewModel — file-based CSV import with column mapping and validation.
  */
-@HiltViewModel
 class CsvImportViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao: TransactionDao,
 ) : ViewModel() {
     @Immutable

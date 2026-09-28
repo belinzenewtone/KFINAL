@@ -8,7 +8,6 @@ import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
 import com.belinze.lifeos.util.previousMonthKey
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -17,11 +16,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // InsightsViewModel
@@ -143,19 +148,17 @@ data class InsightsUiState(
     val error: String? = null,
 )
 
-@HiltViewModel
 class InsightsViewModel
-    @Inject
-    constructor(
+constructor(
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(InsightsUiState())
     val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
 
-    private val zone     = ZoneId.systemDefault()
-    private val isoDtFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-    private val mthFmt   = DateTimeFormatter.ofPattern("MMM")       // "Jan"
-    private val mthYrFmt = DateTimeFormatter.ofPattern("MMM yyyy")  // "Jan 2026"
+    private val zone = TimeZone.currentSystemDefault()
+
+    // "yyyy-MM" formatter for groupBy month keys
+    private val mthKeyFmt = LocalDate.Format { year(); char('-'); monthNumber(Padding.ZERO) }
 
     init { load() }
 
@@ -213,10 +216,10 @@ class InsightsViewModel
         val prevMonthSpend = transactionDao.getSpendTotalInRange(prevStart, prevEnd)
 
         // 4 weekly buckets (oldest → newest), last 4 weeks
-        val endDay = LocalDate.now(zone)
+        val endDay = Clock.System.todayIn(zone)
         val weekBuckets = (3 downTo 0).map { weeksAgo ->
-            val wEnd   = endDay.minusWeeks(weeksAgo.toLong())
-            val wStart = wEnd.minusWeeks(1).plusDays(1)
+            val wEnd   = endDay.minus(weeksAgo, DateTimeUnit.WEEK)
+            val wStart = wEnd.minus(1, DateTimeUnit.WEEK).plus(1, DateTimeUnit.DAY)
             isoDay(wStart) to isoDay(wEnd, true)
         }
 
@@ -269,9 +272,9 @@ class InsightsViewModel
     // ─── Insights tab ─────────────────────────────────────────────────────────
 
     private suspend fun loadInsightsTabInner() {
-        val now          = LocalDate.now(zone)
+        val now = Clock.System.todayIn(zone)
         // 6-month window: 5 months ago (start of month) → now
-        val sixMonthsAgo = now.minusMonths(5).withDayOfMonth(1).toString() + "T00:00:00"
+        val sixMonthsAgo = LocalDate(now.year, now.month, 1).minus(5, DateTimeUnit.MONTH).toString() + "T00:00:00"
         val endIso       = now.toString() + "T23:59:59"
 
         val monthRows   = transactionDao.getMonthlyTotalsRange(sixMonthsAgo)
@@ -282,12 +285,12 @@ class InsightsViewModel
 
         // Build 6-slot array (oldest → newest), filling in missing months with zeros
         val months = (5 downTo 0).map { monthsAgo ->
-            val d        = now.minusMonths(monthsAgo.toLong()).withDayOfMonth(1)
-            val monthKey = d.format(DateTimeFormatter.ofPattern("yyyy-MM"))
+            val d        = LocalDate(now.year, now.month, 1).minus(monthsAgo, DateTimeUnit.MONTH)
+            val monthKey = mthKeyFmt.format(d)
             val row      = monthRows.find { it.monthKey == monthKey }
             MonthBar(
-                label       = d.atStartOfDay(zone).toInstant().atZone(zone).format(mthFmt),
-                fullLabel   = d.atStartOfDay(zone).toInstant().atZone(zone).format(mthYrFmt),
+                label       = MonthNames.ENGLISH_ABBREVIATED.names[d.monthNumber - 1],
+                fullLabel   = "${MonthNames.ENGLISH_ABBREVIATED.names[d.monthNumber - 1]} ${d.year}",
                 monthKey    = monthKey,
                 monthOffset = -monthsAgo,
                 expense     = row?.expense ?: 0.0,
@@ -366,7 +369,7 @@ class InsightsViewModel
             for (incomeDate in incomeDates) {
                 val base = LocalDate.parse(incomeDate)
                 for (d in 0 until 7) {
-                    postDaySet.add(base.plusDays(d.toLong()).toString())
+                    postDaySet.add(base.plus(d, DateTimeUnit.DAY).toString())
                 }
             }
             var postTotal = 0.0; var postDays = 0
@@ -417,21 +420,21 @@ class InsightsViewModel
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private fun isoRange(monthKey: String): Pair<String, String> {
-        val start = Instant.ofEpochMilli(monthKeyToStartMillis(monthKey)).atZone(zone)
-            .toLocalDateTime().format(isoDtFmt)
-        val end   = Instant.ofEpochMilli(monthKeyToEndMillis(monthKey)).atZone(zone)
-            .toLocalDateTime().format(isoDtFmt)
+        val start = Instant.fromEpochMilliseconds(monthKeyToStartMillis(monthKey))
+            .toLocalDateTime(zone).toString()
+        val end   = Instant.fromEpochMilliseconds(monthKeyToEndMillis(monthKey))
+            .toLocalDateTime(zone).toString()
         return start to end
     }
 
     private fun rangeToIso(range: AnalyticsRange): Pair<String, String> {
-        val endDate   = LocalDate.now(zone)
+        val endDate   = Clock.System.todayIn(zone)
         val startDate = when (range) {
             AnalyticsRange.ThisWeek  -> {
-                val day = endDate.dayOfWeek.value // 1=Mon…7=Sun
-                endDate.minusDays((day - 1).toLong())
+                val day = endDate.dayOfWeek.isoDayNumber // 1=Mon…7=Sun
+                endDate.minus(day - 1, DateTimeUnit.DAY)
             }
-            AnalyticsRange.ThisMonth -> endDate.withDayOfMonth(1)
+            AnalyticsRange.ThisMonth -> LocalDate(endDate.year, endDate.month, 1)
         }
         return isoDay(startDate) to isoDay(endDate, true)
     }

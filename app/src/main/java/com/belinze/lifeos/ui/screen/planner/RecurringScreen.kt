@@ -17,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Repeat
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,8 +50,9 @@ import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 
 private val CADENCE_LABELS = mapOf(
     "hourly"   to "Hourly",
@@ -66,7 +67,7 @@ private val CADENCE_LABELS = mapOf(
 @Composable
 fun RecurringScreen(
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var banner by remember { mutableStateOf<String?>(null) }
@@ -87,7 +88,7 @@ fun RecurringScreen(
 
     if (pendingDelete != null) {
         val (deleteId, deleteTitle) = pendingDelete!!
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("Delete rule") },
             text  = { Text("Remove $deleteTitle?") },
@@ -229,8 +230,12 @@ fun RecurringScreen(
     }
 }
 
+private val FMT_DD_MMM_YYYY = LocalDate.Format {
+    dayOfMonth(); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); year()
+}
+
 private fun formatDate(iso: String?): String = try {
-    LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+    FMT_DD_MMM_YYYY.format(LocalDate.parse(iso!!.take(10)))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }

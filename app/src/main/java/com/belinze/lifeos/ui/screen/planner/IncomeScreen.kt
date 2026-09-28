@@ -20,7 +20,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Payments
 import com.belinze.lifeos.util.Haptics
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +40,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,8 +54,11 @@ import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
 
 private val SUCCESS = Color(0xFF4ADE80)
 
@@ -70,7 +73,7 @@ private val FREQUENCY_LABELS = mapOf(
 @Composable
 fun IncomeScreen(
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -85,7 +88,7 @@ fun IncomeScreen(
 
     if (incomeToDelete != null) {
         val (deleteId, deleteSource) = incomeToDelete!!
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { incomeToDelete = null },
             title = { Text("Delete income") },
             text  = { Text("Remove $deleteSource?") },
@@ -253,8 +256,12 @@ fun IncomeScreen(
     }
 }
 
+private val FMT_MMM_D_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+
 private fun formatDate(iso: String?): String = try {
-    LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+    FMT_MMM_D_YYYY.format(LocalDate.parse(iso!!.take(10)))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -20,7 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.FrostCard
@@ -40,14 +40,14 @@ import com.belinze.lifeos.viewmodel.BudgetWithSpend
 fun BudgetDetailScreen(
     budgetId:       String,
     navController:  NavHostController,
-    viewModel:      BudgetViewModel = hiltViewModel(),
+    viewModel:      BudgetViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val bws: BudgetWithSpend? = state.budgets.firstOrNull { it.budget.id == budgetId }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Delete budget?") },
             text  = { Text("This budget will be permanently removed.") },

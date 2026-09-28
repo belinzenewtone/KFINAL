@@ -51,7 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.LearningSessionEntity
@@ -75,7 +75,7 @@ private val CATEGORY_COLORS = mapOf(
 @Composable
 fun LearningScreen(
     navController: NavHostController,
-    viewModel: LearningViewModel = hiltViewModel(),
+    viewModel: LearningViewModel = koinViewModel(),
 ) {
     // LE-1 / LE-10: live Room state
     val state by viewModel.uiState.collectAsStateWithLifecycle()

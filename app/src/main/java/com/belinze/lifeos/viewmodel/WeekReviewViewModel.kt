@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
+import com.belinze.lifeos.util.FMT_MMM_D
+import com.belinze.lifeos.util.FMT_MMM_D_YYYY
 import com.belinze.lifeos.util.formatCurrency
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.belinze.lifeos.util.previousOrSameMonday
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -17,12 +19,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
-import javax.inject.Inject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WeekReviewViewModel — full parity with WeekReviewScreen.tsx
@@ -67,10 +70,8 @@ data class WeekReviewUiState(
     val error:           String?        = null,
 )
 
-@HiltViewModel
 class WeekReviewViewModel
-    @Inject
-    constructor(
+constructor(
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
     private val appPreferences: AppPreferences,
@@ -78,8 +79,7 @@ class WeekReviewViewModel
     private val _uiState = MutableStateFlow(WeekReviewUiState())
     val uiState: StateFlow<WeekReviewUiState> = _uiState.asStateFlow()
 
-    private val zone    = ZoneId.systemDefault()
-    private val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val zone = TimeZone.currentSystemDefault()
 
     /** Exposed for the greeting — reads profile name. */
     val prefState = appPreferences.state.stateIn(
@@ -93,18 +93,18 @@ class WeekReviewViewModel
     fun load() {
         viewModelScope.launch {
             try {
-                val today   = LocalDate.now(zone)
-                val monThis = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                val sunThis = monThis.plusDays(6)
+                val today   = Clock.System.todayIn(zone)
+                val monThis = previousOrSameMonday(today)
+                val sunThis = monThis.plus(6, DateTimeUnit.DAY)
 
-                val startStr = monThis.format(dateFmt)
-                val endStr   = sunThis.format(dateFmt) + "T23:59:59"
+                val startStr = monThis.toString()
+                val endStr   = sunThis.toString() + "T23:59:59"
 
                 // Previous week
-                val monPrev  = monThis.minusWeeks(1)
-                val sunPrev  = monPrev.plusDays(6)
-                val prevStart = monPrev.format(dateFmt)
-                val prevEnd   = sunPrev.format(dateFmt) + "T23:59:59"
+                val monPrev  = monThis.minus(7, DateTimeUnit.DAY)
+                val sunPrev  = monPrev.plus(6, DateTimeUnit.DAY)
+                val prevStart = monPrev.toString()
+                val prevEnd   = sunPrev.toString() + "T23:59:59"
 
                 // ─ Current week data ─
                 val daySpends    = transactionDao.getDaySpends(startStr, endStr)
@@ -125,15 +125,15 @@ class WeekReviewViewModel
                 // ─ Build day bars ─
                 val spendByDay = daySpends.associate { it.day to it.total }
                 val dayBars = (0..6).map { i ->
-                    val date   = monThis.plusDays(i.toLong())
-                    val dow    = date.dayOfWeek.value   // 1=Mon … 7=Sun
-                    val dayStr = date.format(dateFmt)
+                    val date   = monThis.plus(i, DateTimeUnit.DAY)
+                    val dow    = date.dayOfWeek.isoDayNumber
+                    val dayStr = date.toString()
                     DayBar(
                         dayOfWeek = dow,
                         dateStr   = dayStr,
                         amount    = spendByDay[dayStr] ?: 0.0,
                         avg       = dowAvg[dow] ?: 0.0,
-                        isFuture  = date.isAfter(today),
+                        isFuture  = date > today,
                     )
                 }
 
@@ -179,12 +179,10 @@ class WeekReviewViewModel
                 }
 
                 // ─ Week label ─
-                val monFmt = DateTimeFormatter.ofPattern("MMM d")
-                val sunFmt = DateTimeFormatter.ofPattern("MMM d, yyyy")
-                val weekLabel = "${monThis.format(monFmt)} – ${sunThis.format(sunFmt)}"
+                val weekLabel = "${FMT_MMM_D.format(monThis)} – ${FMT_MMM_D_YYYY.format(sunThis)}"
 
                 // ─ Greeting ─
-                val hourNow  = java.time.ZonedDateTime.now(zone).hour
+                val hourNow  = Clock.System.now().toLocalDateTime(zone).hour
                 val greeting = when {
                     hourNow < 12 -> "Good morning"
                     hourNow < 17 -> "Good afternoon"
@@ -226,13 +224,13 @@ class WeekReviewViewModel
         val counts = mutableMapOf<Int, Int>()
 
         for (weeksBack in 1..4) {
-            val mon   = thisMonday.minusWeeks(weeksBack.toLong())
-            val sun   = mon.plusDays(6)
-            val start = mon.format(dateFmt)
-            val end   = sun.format(dateFmt) + "T23:59:59"
+            val mon   = thisMonday.minus(weeksBack * 7, DateTimeUnit.DAY)
+            val sun   = mon.plus(6, DateTimeUnit.DAY)
+            val start = mon.toString()
+            val end   = sun.toString() + "T23:59:59"
             val days  = transactionDao.getDaySpends(start, end)
             days.forEach { d ->
-                val dow = LocalDate.parse(d.day).dayOfWeek.value
+                val dow = LocalDate.parse(d.day).dayOfWeek.isoDayNumber
                 sums[dow]   = (sums[dow] ?: 0.0) + d.total
                 counts[dow] = (counts[dow] ?: 0) + 1
             }

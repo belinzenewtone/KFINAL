@@ -72,7 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -121,10 +121,10 @@ import com.belinze.lifeos.viewmodel.TransactionViewModel
 @Composable
 fun FinanceScreen(
     navController:      NavHostController,
-    viewModel:          TransactionViewModel = hiltViewModel(),
-    smsImportViewModel: SmsImportViewModel  = hiltViewModel(),
-    budgetViewModel:    BudgetViewModel     = hiltViewModel(),
-    plannerViewModel:   PlannerViewModel    = hiltViewModel(),
+    viewModel:          TransactionViewModel = koinViewModel(),
+    smsImportViewModel: SmsImportViewModel  = koinViewModel(),
+    budgetViewModel:    BudgetViewModel     = koinViewModel(),
+    plannerViewModel:   PlannerViewModel    = koinViewModel(),
 ) {
     val state        by viewModel.uiState.collectAsStateWithLifecycle()
     val smsState     by smsImportViewModel.uiState.collectAsStateWithLifecycle()

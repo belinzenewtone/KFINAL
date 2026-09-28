@@ -28,7 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,7 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppDropdownField
@@ -66,14 +66,16 @@ import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.TransactionViewModel
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
 
 @Composable
 fun TransactionDetailScreen(
     transactionId: String,
     navController:  NavHostController,
-    viewModel:      TransactionViewModel = hiltViewModel(),
+    viewModel:      TransactionViewModel = koinViewModel(),
 ) {
     TransactionDetailDialog(
         transactionId = transactionId,
@@ -269,7 +271,7 @@ fun TransactionDetailDialog(
     }
 
     if (showDeleteDialog && tx != null) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title   = { Text("Delete transaction") },
             text    = { Text("Are you sure?") },
@@ -426,8 +428,17 @@ private val CATEGORIES_DETAIL = listOf(
     "miscellaneous", "income", "uncategorized",
 )
 
+private val FMT_D_MMM_YYYY = kotlinx.datetime.LocalDate.Format {
+    dayOfMonth(Padding.NONE); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); year()
+}
+
 private fun formatDetailDate(iso: String): String = try {
-    LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("d MMM yyyy, h:mm a"))
+    val ldt = LocalDateTime.parse(iso.take(19))
+    val datePart = FMT_D_MMM_YYYY.format(ldt.date)
+    val h = ldt.hour; val m = ldt.minute
+    val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h
+    val ampm = if (h < 12) "AM" else "PM"
+    "$datePart, %d:%02d %s".format(h12, m, ampm)
 } catch (_: Exception) {
     iso.take(16)
 }

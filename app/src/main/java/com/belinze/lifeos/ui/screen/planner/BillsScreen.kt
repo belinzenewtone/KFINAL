@@ -22,7 +22,7 @@ import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Receipt
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +40,7 @@ import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,8 +53,11 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 
 // Matches BillsScreen.tsx's local SEMANTIC constant exactly.
 private val SUCCESS = Color(0xFF4ADE80)
@@ -64,7 +67,7 @@ private val DANGER = Color(0xFFF87171)
 @Composable
 fun BillsScreen(
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -80,7 +83,7 @@ fun BillsScreen(
 
     if (billToDelete != null) {
         val (deleteId, deleteTitle) = billToDelete!!
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { billToDelete = null },
             title = { Text("Delete bill") },
             text  = { Text("Remove $deleteTitle?") },
@@ -167,7 +170,7 @@ private fun BillCard(
 ) {
     val paid = bill.paidStatus != 0
     val isOverdue = !paid && bill.nextDueDate != null &&
-        bill.nextDueDate!!.take(10) < java.time.LocalDate.now().toString()
+        bill.nextDueDate!!.take(10) < Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
     val dueColor = if (isOverdue) DANGER else MaterialTheme.colorScheme.onSurfaceVariant
 
     GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm)) {
@@ -249,8 +252,12 @@ private fun formatCycleLabel(cycle: String?): String = when (cycle) {
     else        -> cycle?.replaceFirstChar { it.uppercase() } ?: ""
 }
 
+private val FMT_DD_MMM_YYYY = LocalDate.Format {
+    dayOfMonth(); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); year()
+}
+
 private fun formatDate(iso: String?): String = try {
-    LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+    FMT_DD_MMM_YYYY.format(LocalDate.parse(iso!!.take(10)))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }

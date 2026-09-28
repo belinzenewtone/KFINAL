@@ -22,7 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -47,7 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -76,7 +76,7 @@ private val BILL_SUCCESS = androidx.compose.ui.graphics.Color(0xFF4ADE80)
 fun BillFormScreen(
     billId:        String?,
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val form by viewModel.billForm.collectAsStateWithLifecycle()
     val isEdit = !billId.isNullOrEmpty()
@@ -95,7 +95,7 @@ fun BillFormScreen(
     )
 
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Delete bill") },
             text  = { Text("Are you sure?") },
@@ -116,8 +116,8 @@ fun BillFormScreen(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = form.nextDueDate.takeIf { it.isNotBlank() }?.take(10)?.let {
             runCatching {
-                java.time.LocalDate.parse(it)
-                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                kotlinx.datetime.LocalDate.parse(it)
+                    .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
             }.getOrNull()
         } ?: System.currentTimeMillis(),
     )

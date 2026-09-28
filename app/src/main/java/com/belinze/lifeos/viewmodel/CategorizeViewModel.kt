@@ -11,7 +11,6 @@ import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.ml.TransactionClassifier
 import com.belinze.lifeos.services.BudgetAlertService
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -20,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** Transactions grouped by merchant for the Categorize screen. */
 @Immutable
@@ -37,10 +35,8 @@ data class MerchantGroup(
  * CategorizeViewModel — per-transaction and per-merchant categorization.
  * Mirrors CategorizeScreen.tsx.
  */
-@HiltViewModel
 class CategorizeViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao:        TransactionDao,
     private val classifier: TransactionClassifier,
     private val budgetAlerts: BudgetAlertService,

@@ -4,14 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
-import javax.inject.Inject
-import javax.inject.Singleton
 
 // ─── DataStore singleton extension ───────────────────────────────────────────
 
@@ -137,11 +134,9 @@ data class AppPreferenceState(
     val firedBudgetAlerts: Map<String, String> = emptyMap(),
 )
 
-@Singleton
 class AppPreferences
-    @Inject
-    constructor(
-    @ApplicationContext private val context: Context,
+constructor(
+    context: Context,
 ) {
     private val store = context.appDataStore
 
@@ -242,9 +237,10 @@ class AppPreferences
         if (raw.isNullOrBlank()) return emptyMap()
         return try {
             val obj = org.json.JSONObject(raw)
-            val now = java.time.LocalDate.now()
-            val ym = { d: java.time.LocalDate -> "${d.year}-${String.format(java.util.Locale.US, "%02d", d.monthValue)}" }
-            val keep = setOf(ym(now), ym(now.minusMonths(1)))
+            val today = kotlinx.datetime.Clock.System.todayIn(kotlinx.datetime.TimeZone.currentSystemDefault())
+            val ym = { d: kotlinx.datetime.LocalDate -> "${d.year}-${"%02d".format(d.monthNumber)}" }
+            val prevMonth = today.minus(1, kotlinx.datetime.DateTimeUnit.MONTH)
+            val keep = setOf(ym(today), ym(prevMonth))
             val result = mutableMapOf<String, String>()
             obj.keys().forEach { key ->
                 val parts = key.split("|")

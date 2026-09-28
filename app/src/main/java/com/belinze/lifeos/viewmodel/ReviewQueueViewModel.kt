@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.nowIso
 import com.lifeos.sms.SmsService
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -17,7 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ReviewQueueViewModel — full parity with ReviewQueueScreen.tsx
@@ -66,10 +64,8 @@ data class BannerState(
     val isSuccess: Boolean,
 )
 
-@HiltViewModel
 class ReviewQueueViewModel
-    @Inject
-    constructor(
+constructor(
     private val smsService:     SmsService,
     private val transactionDao: TransactionDao,
 ) : ViewModel() {

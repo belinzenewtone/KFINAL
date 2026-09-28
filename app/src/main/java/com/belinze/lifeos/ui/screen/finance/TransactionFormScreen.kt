@@ -18,7 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -44,7 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppDropdownField
@@ -77,7 +77,7 @@ private val CATEGORIES = listOf(
 fun TransactionFormScreen(
     transactionId: String?,
     navController: NavHostController,
-    viewModel:     TransactionViewModel = hiltViewModel(),
+    viewModel:     TransactionViewModel = koinViewModel(),
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !transactionId.isNullOrEmpty()
@@ -87,7 +87,7 @@ fun TransactionFormScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title   = { Text("Delete transaction") },
             text    = { Text("Are you sure?") },
@@ -202,9 +202,8 @@ fun TransactionFormScreen(
             if (showDatePicker) {
                 val dpState = rememberDatePickerState(
                     initialSelectedDateMillis = runCatching {
-                        java.time.LocalDate.parse(formState.date.take(10))
-                            .atStartOfDay(java.util.TimeZone.getTimeZone("UTC").toZoneId())
-                            .toInstant().toEpochMilli()
+                        kotlinx.datetime.LocalDate.parse(formState.date.take(10))
+                            .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
                     }.getOrNull(),
                 )
                 DatePickerDialog(

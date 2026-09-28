@@ -58,7 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppChip
@@ -73,9 +73,15 @@ import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ExportFormat
 import com.belinze.lifeos.viewmodel.ExportViewModel
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
+import kotlinx.datetime.toLocalDateTime
 
 private data class PreviewDomain(val key: String, val label: String, val color: Color)
 
@@ -96,7 +102,7 @@ private val DATE_WINDOWS =
 @Composable
 fun ExportScreen(
     navController: NavHostController,
-    viewModel:     ExportViewModel = hiltViewModel(),
+    viewModel:     ExportViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var format by remember { mutableStateOf(ExportFormat.CSV) }
@@ -519,8 +525,8 @@ fun ExportScreen(
                 confirmButton    = {
                     TextButton(onClick = {
                         pickerState.selectedDateMillis?.let { millis ->
-                            val iso = java.time.Instant.ofEpochMilli(millis)
-                                .atZone(java.time.ZoneOffset.UTC).toLocalDate().toString()
+                            val iso = Instant.fromEpochMilliseconds(millis)
+                                .toLocalDateTime(TimeZone.UTC).date.toString()
                             if (target == "from") customStart = iso else customEnd = iso
                         }
                         pickerTarget = null
@@ -536,12 +542,16 @@ fun ExportScreen(
     }
 }
 
+private val FMT_MMM_D_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+
 /** RFINAL renders the picker value as "MMM d, yyyy"; blank renders as "Select". */
 private fun formatPickerDate(iso: String): String = try {
     if (iso.isBlank()) {
         ""
     } else {
-        LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+        FMT_MMM_D_YYYY.format(LocalDate.parse(iso.take(10)))
     }
 } catch (_: Exception) {
     iso
@@ -555,7 +565,12 @@ private fun SectionLabel(label: String) {
 }
 
 private fun formatDateTime(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
+    val ldt = LocalDateTime.parse(iso!!.take(19))
+    val datePart = FMT_MMM_D_YYYY.format(ldt.date)
+    val h = ldt.hour; val m = ldt.minute
+    val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h
+    val ampm = if (h < 12) "AM" else "PM"
+    "$datePart · %d:%02d %s".format(h12, m, ampm)
 } catch (_: Exception) {
     iso?.take(16) ?: ""
 }

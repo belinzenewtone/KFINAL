@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.dao.FeeCategoryTotal
@@ -38,15 +38,17 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.FeeAnalyticsViewModel
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
 
 private val WARNING = Color(0xFFFBBF24)
 
 @Composable
 fun FeeAnalyticsScreen(
     navController: NavHostController,
-    viewModel:     FeeAnalyticsViewModel = hiltViewModel(),
+    viewModel:     FeeAnalyticsViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -200,8 +202,12 @@ private fun Divider() {
     )
 }
 
+private val FMT_MMM_D = kotlinx.datetime.LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+}
+
 private fun formatMonthDay(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM d"))
+    FMT_MMM_D.format(LocalDateTime.parse(iso!!.take(19)).date)
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }

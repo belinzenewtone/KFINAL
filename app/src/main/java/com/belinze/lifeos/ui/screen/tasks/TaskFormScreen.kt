@@ -23,7 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -53,7 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -77,7 +77,7 @@ private val PRIORITIES = listOf(
 fun TaskFormScreen(
     taskId:        String?,
     navController: NavHostController,
-    viewModel:     TaskViewModel = hiltViewModel(),
+    viewModel:     TaskViewModel = koinViewModel(),
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit     = !taskId.isNullOrEmpty()
@@ -107,8 +107,8 @@ fun TaskFormScreen(
         val deadlinePickerState = rememberDatePickerState(
             initialSelectedDateMillis = formState.deadline?.take(10)?.let {
                 runCatching {
-                    java.time.LocalDate.parse(it)
-                        .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                    kotlinx.datetime.LocalDate.parse(it)
+                        .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
                 }.getOrNull()
             } ?: System.currentTimeMillis(),
         )
@@ -145,7 +145,7 @@ fun TaskFormScreen(
             initialMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0,
             is24Hour      = true,
         )
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeadlineTimePicker = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -376,7 +376,7 @@ fun TaskFormScreen(
 
     // CC-2: delete confirmation dialog
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title            = { Text("Delete task") },
             text             = { Text("Remove \"${formState.title}\"?") },

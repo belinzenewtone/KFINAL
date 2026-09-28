@@ -34,7 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowCircleUp
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,14 +58,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.viewmodel.AssistantViewModel
 import com.belinze.lifeos.viewmodel.ChatMessage
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AssistantScreen
@@ -83,7 +84,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AssistantScreen(
-    viewModel: AssistantViewModel = hiltViewModel(),
+    viewModel: AssistantViewModel = koinViewModel(),
 ) {
     val state       by viewModel.uiState.collectAsStateWithLifecycle()
     val quickSuggestionsEnabled by viewModel.quickSuggestionsEnabled.collectAsStateWithLifecycle()
@@ -167,7 +168,7 @@ fun AssistantScreen(
         }
 
         if (showClearConfirm) {
-            AlertDialog(
+            AppAlertDialog(
                 onDismissRequest = { showClearConfirm = false },
                 title            = { Text("Clear chat history?") },
                 text             = { Text("This will remove your current conversation and start a fresh one.") },
@@ -360,7 +361,7 @@ private fun AssistantEmptyState() {
 
 // ─── Chat bubble ─────────────────────────────────────────────────────────────
 
-private val CHAT_TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val CHAT_ZONE = TimeZone.currentSystemDefault()
 
 @Composable
 private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
@@ -380,7 +381,11 @@ private fun ChatBubble(message: ChatMessage, onActionPress: (String) -> Unit) {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     val timeLabel = remember(message.createdAt) {
-        runCatching { OffsetDateTime.parse(message.createdAt).format(CHAT_TIME_FMT) }.getOrDefault("")
+        runCatching {
+            val ldt = DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.parse(message.createdAt)
+                .toInstantUsingOffset().toLocalDateTime(CHAT_ZONE)
+            "%02d:%02d".format(ldt.hour, ldt.minute)
+        }.getOrDefault("")
     }
 
     Row(

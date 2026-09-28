@@ -9,7 +9,6 @@ import com.belinze.lifeos.data.datastore.PreferenceKeys
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.previousMonthKey
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileViewModel
@@ -55,10 +53,8 @@ data class ProfileFormState(
     val error:     String? = null,
 )
 
-@HiltViewModel
 class ProfileViewModel
-    @Inject
-    constructor(
+constructor(
     private val appPreferences:  AppPreferences,
     private val transactionDao:  TransactionDao,
 ) : ViewModel() {

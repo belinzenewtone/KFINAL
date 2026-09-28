@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
@@ -88,8 +87,6 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            // OpenCSV ships with some duplicate files
-            excludes += "META-INF/DEPENDENCIES"
         }
     }
 }
@@ -122,10 +119,12 @@ dependencies {
     // Navigation
     implementation(libs.navigation.compose)
 
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.hilt.navigation.compose)
+    // Koin
+    val koinBom = platform(libs.koin.bom)
+    implementation(koinBom)
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 
     // Room
     implementation(libs.room.runtime)
@@ -149,23 +148,17 @@ dependencies {
     // Coroutines
     implementation(libs.coroutines.android)
 
-    // WorkManager + Hilt integration
+    // WorkManager
     implementation(libs.workmanager)
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.work.compiler)
 
     // Biometrics
     implementation(libs.biometric)
 
-    // Charts
-    implementation(libs.vico.compose.m3)
-    implementation(libs.vico.compose)
-
-    // CSV
-    implementation(libs.opencsv)
-
     // Immutable collections (stable Compose params, no @Stable annotation needed)
     implementation(libs.kotlinx.collections.immutable)
+
+    // kotlinx-datetime — CMP-compatible date/time (replaces java.time.*)
+    implementation(libs.kotlinx.datetime)
 
     // SMS module (parser â€” source included, zero parser changes)
     implementation(project(":sms"))

@@ -36,7 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.belinze.lifeos.ui.components.AppAlertDialog
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -48,8 +49,15 @@ import com.belinze.lifeos.viewmodel.EventFormState
 import com.belinze.lifeos.viewmodel.EventViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EventFormScreen — redesigned to match reference CalendarAddScreen
@@ -116,7 +124,7 @@ fun EventFormScreen(
     eventId:       String?,
     type:          String = "event",
     navController: NavHostController,
-    viewModel:     EventViewModel = hiltViewModel(),
+    viewModel:     EventViewModel = koinViewModel(),
 ) {
     val form  by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit = !eventId.isNullOrEmpty()
@@ -314,7 +322,7 @@ fun EventFormScreen(
 
     // ── Delete confirmation ───────────────────────────────────────────────────
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title            = { Text("Delete event") },
             text             = { Text("Are you sure?") },
@@ -1444,7 +1452,7 @@ private fun CustomReminderDialog(
     var valueIndex by remember(unit) { mutableStateOf(0) }
     val currentValue = valueItems.getOrNull(valueIndex)?.toIntOrNull() ?: 1
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title            = { Text("Custom reminder", style = MaterialTheme.typography.titleMedium) },
         text = {
@@ -1543,7 +1551,7 @@ private fun TimePickerModal(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         confirmButton    = { TextButton(onClick = onConfirm) { Text("OK") } },
         dismissButton    = { TextButton(onClick = onDismiss) { Text("Cancel") } },
@@ -1559,13 +1567,37 @@ private fun TimePickerModal(
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-private fun formatDisplayDate(isoDate: String, pattern: String = "EEE, MMM d, yyyy"): String =
-    try {
-        java.time.LocalDate.parse(isoDate)
-            .format(DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH))
-    } catch (_: Exception) {
-        isoDate.ifBlank { "Not set" }
+private val EF_FMT_EEE_MMM_D_YYYY = LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_ABBREVIATED); chars(", ")
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+private val EF_FMT_EEE_MMM_D = LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_ABBREVIATED); chars(", ")
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+}
+private val EF_FMT_MMM_D_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+private val EF_FMT_MMMM_D_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_FULL); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+private val EF_FMT_MMMM_D = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_FULL); char(' '); dayOfMonth(Padding.NONE)
+}
+
+private fun formatDisplayDate(isoDate: String, pattern: String = "EEE, MMM d, yyyy"): String {
+    val date = try { LocalDate.parse(isoDate) } catch (_: Exception) { return isoDate.ifBlank { "Not set" } }
+    val trailing = pattern.length - pattern.trimEnd().length
+    val formatted = when (pattern.trim()) {
+        "EEE, MMM d, yyyy" -> EF_FMT_EEE_MMM_D_YYYY.format(date)
+        "EEE, MMM d"       -> EF_FMT_EEE_MMM_D.format(date)
+        "MMM d, yyyy"      -> EF_FMT_MMM_D_YYYY.format(date)
+        "MMMM d, yyyy"     -> EF_FMT_MMMM_D_YYYY.format(date)
+        "MMMM d"           -> EF_FMT_MMMM_D.format(date)
+        else               -> return isoDate.ifBlank { "Not set" }
     }
+    return if (trailing > 0) formatted + " ".repeat(trailing) else formatted
+}
 
 private fun formatDisplayTime(time24: String): String =
     try {
@@ -1580,16 +1612,13 @@ private fun formatDisplayTime(time24: String): String =
 
 private fun isoDateToMillis(dateStr: String): Long? =
     try {
-        java.time.LocalDate.parse(dateStr)
-            .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+        LocalDate.parse(dateStr).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
     } catch (_: Exception) {
         null
     }
 
 private fun millisToIsoDate(ms: Long): String =
-    java.time.Instant.ofEpochMilli(ms)
-        .atZone(java.time.ZoneOffset.UTC)
-        .toLocalDate().toString()
+    Instant.fromEpochMilliseconds(ms).toLocalDateTime(TimeZone.UTC).date.toString()
 
 private fun minutesLabel(minutes: Int): String = when {
     minutes % (60 * 24 * 7) == 0 -> { val w = minutes / (60 * 24 * 7); "$w week${if (w > 1) "s" else ""} before" }

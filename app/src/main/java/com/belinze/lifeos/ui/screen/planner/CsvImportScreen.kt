@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppChip
@@ -46,8 +46,9 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.CsvColumnMapping
 import com.belinze.lifeos.viewmodel.CsvImportViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 
 private fun mappingFor(field: String, m: CsvColumnMapping): String = when (field) {
     "amount" -> m.amount
@@ -70,10 +71,12 @@ private val ALL_FIELDS = listOf(
 )
 
 /** RFINAL renders the preview date via formatDate() → "04 Feb 2026", not ISO. */
-private val CSV_DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+private val CSV_DATE_FMT = LocalDate.Format {
+    dayOfMonth(); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); year()
+}
 
 private fun formatCsvDate(raw: String): String = try {
-    LocalDate.parse(raw.take(10)).format(CSV_DATE_FMT)
+    CSV_DATE_FMT.format(LocalDate.parse(raw.take(10)))
 } catch (_: Exception) {
     raw
 }
@@ -81,7 +84,7 @@ private fun formatCsvDate(raw: String): String = try {
 @Composable
 fun CsvImportScreen(
     navController: NavHostController,
-    viewModel:     CsvImportViewModel = hiltViewModel(),
+    viewModel:     CsvImportViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -34,7 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -45,8 +45,12 @@ import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.TaskViewModel
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
+import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val WARNING = Color(0xFFFBBF24)
 
@@ -54,7 +58,7 @@ private val WARNING = Color(0xFFFBBF24)
 fun TaskDetailScreen(
     taskId:        String,
     navController: NavHostController,
-    viewModel:     TaskViewModel = hiltViewModel(),
+    viewModel:     TaskViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val task = remember(uiState.tasks, taskId) { uiState.tasks.find { it.id == taskId } }
@@ -169,7 +173,7 @@ fun TaskDetailScreen(
     }
 
     if (showDelete) {
-        androidx.compose.material3.AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDelete = false },
             title = { Text("Delete task") },
             text = { Text("Are you sure?") },
@@ -186,8 +190,17 @@ fun TaskDetailScreen(
     }
 }
 
+private val FMT_MMM_D_YYYY = kotlinx.datetime.LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+
 private fun formatDateTime(iso: String): String = try {
-    LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
+    val ldt = LocalDateTime.parse(iso.take(19))
+    val datePart = FMT_MMM_D_YYYY.format(ldt.date)
+    val h = ldt.hour; val m = ldt.minute
+    val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h
+    val ampm = if (h < 12) "AM" else "PM"
+    "$datePart · %d:%02d %s".format(h12, m, ampm)
 } catch (_: Exception) {
     iso.take(16)
 }

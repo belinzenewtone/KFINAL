@@ -34,7 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppDropdownField
@@ -57,7 +57,7 @@ private val CATEGORIZE_CATEGORIES = listOf(
 @Composable
 fun CategorizeScreen(
     navController: NavHostController,
-    viewModel:     CategorizeViewModel = hiltViewModel(),
+    viewModel:     CategorizeViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var infoMessage by remember { mutableStateOf<String?>(null) }

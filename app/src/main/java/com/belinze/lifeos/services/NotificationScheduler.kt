@@ -16,15 +16,16 @@ import androidx.core.content.ContextCompat
 import com.belinze.lifeos.MainActivity
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.navigation.Route
-import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * NotificationScheduler — 1:1 port of src/services/notificationService.ts +
@@ -43,11 +44,9 @@ import javax.inject.Singleton
  * All scheduling is gated on the persisted `notificationsEnabled` flag plus the
  * per-type toggles, mirroring the RN `syncXxxReminders` gates.
  */
-@Singleton
 class NotificationScheduler
-    @Inject
-    constructor(
-    @ApplicationContext private val context: Context,
+constructor(
+    context: Context,
 ) {
     private val alarmManager: AlarmManager =
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -160,11 +159,13 @@ class NotificationScheduler
         val now = System.currentTimeMillis()
 
         // Countdown events may specify a time-of-day for the reminder
+        val zone = TimeZone.currentSystemDefault()
         if (type == "countdown" && reminderTimeOfDayMinutes != null) {
-            val localDate = Instant.ofEpochMilli(baseMs).atZone(ZoneId.systemDefault()).toLocalDate()
-            val time = LocalTime.of(reminderTimeOfDayMinutes / 60, reminderTimeOfDayMinutes % 60)
-            val fireMs = LocalDateTime.of(localDate, time)
-                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val localDate = Instant.fromEpochMilliseconds(baseMs).toLocalDateTime(zone).date
+            val h = reminderTimeOfDayMinutes / 60
+            val m = reminderTimeOfDayMinutes % 60
+            val fireMs = LocalDateTime(localDate.year, localDate.month, localDate.dayOfMonth, h, m, 0, 0)
+                .toInstant(zone).toEpochMilliseconds()
             if (fireMs > now) {
                 scheduleOneShot(
                     requestCode = idFor("event", eventId, -1),
@@ -253,10 +254,15 @@ class NotificationScheduler
         cancelByPrefix(DIGEST_PREFIX)
         val parts = deliveryTime.split(":").mapNotNull { it.trim().toIntOrNull() }
         if (parts.size < 2) return
-        val now = LocalDateTime.now()
-        var next = now.withHour(parts[0]).withMinute(parts[1]).withSecond(0).withNano(0)
-        if (!next.isAfter(now)) next = next.plusDays(1)
-        val fireMs = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val zone = TimeZone.currentSystemDefault()
+        val nowInstant = Clock.System.now()
+        val nowLdt = nowInstant.toLocalDateTime(zone)
+        var next = LocalDateTime(nowLdt.year, nowLdt.month, nowLdt.dayOfMonth, parts[0], parts[1], 0, 0)
+        if (next.toInstant(zone) <= nowInstant) {
+            val tomorrow = LocalDate(nowLdt.year, nowLdt.month, nowLdt.dayOfMonth).plus(1, DateTimeUnit.DAY)
+            next = LocalDateTime(tomorrow.year, tomorrow.month, tomorrow.dayOfMonth, parts[0], parts[1], 0, 0)
+        }
+        val fireMs = next.toInstant(zone).toEpochMilliseconds()
         val pending = PendingIntent.getBroadcast(
             context,
             DIGEST_REQUEST_CODE,
@@ -368,14 +374,13 @@ class NotificationScheduler
 
     private fun parseIso(iso: String?): Long? {
         if (iso == null) return null
+        val zone = TimeZone.currentSystemDefault()
         return try {
             // Accept "2026-08-12T14:30:00" and "2026-08-12"
             if (iso.length <= 10) {
-                LocalDate.parse(iso.take(10))
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                LocalDate.parse(iso.take(10)).atStartOfDayIn(zone).toEpochMilliseconds()
             } else {
-                LocalDateTime.parse(iso.take(19))
-                    .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                LocalDateTime.parse(iso.take(19)).toInstant(zone).toEpochMilliseconds()
             }
         } catch (_: Exception) {
             null
@@ -492,4 +497,3 @@ class NotificationReceiver : BroadcastReceiver() {
     }
 }
 
-private val ISO_DT = DateTimeFormatter.ISO_LOCAL_DATE_TIME

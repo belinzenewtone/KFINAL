@@ -4,24 +4,17 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.belinze.lifeos.data.datastore.AppPreferences
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-/**
- * Re-arms all AlarmManager alarms after device reboot.
- * Android cancels all scheduled alarms on reboot; this receiver restores them
- * by delegating to NotificationSync.syncAll() — the same reconciliation that
- * runs on every normal app start.
- */
-@AndroidEntryPoint
-class BootReceiver : BroadcastReceiver() {
-    @Inject lateinit var notificationSync: NotificationSync
+class BootReceiver : BroadcastReceiver(), KoinComponent {
 
-    @Inject lateinit var prefs: AppPreferences
+    private val notificationSync: NotificationSync by inject()
+    private val prefs: AppPreferences by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED &&

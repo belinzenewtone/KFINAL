@@ -8,7 +8,6 @@ import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -22,7 +21,12 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TaskViewModel
@@ -64,10 +68,8 @@ data class TaskFormState(
     val error:       String?  = null,
 )
 
-@HiltViewModel
 class TaskViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao: TaskDao,
     private val scheduler: NotificationScheduler,
 ) : ViewModel() {
@@ -130,9 +132,9 @@ class TaskViewModel
     private fun loadUpcoming() {
         viewModelScope.launch {
             // Next 7 days
-            val until = java.time.LocalDate.now()
-                .plusDays(7).atStartOfDay(java.time.ZoneId.systemDefault())
-                .format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            val zone  = TimeZone.currentSystemDefault()
+            val until = Clock.System.todayIn(zone).plus(7, DateTimeUnit.DAY)
+                .atStartOfDayIn(zone).toLocalDateTime(zone).toString()
             val tasks = dao.getUpcoming(until, 5)
             _uiState.update { it.copy(upcoming = tasks.toImmutableList()) }
         }
@@ -141,7 +143,7 @@ class TaskViewModel
     private fun loadPendingCount() {
         viewModelScope.launch {
             val count = dao.countPending()
-            val today = java.time.LocalDate.now()
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
             val startOfDay = "${today}T00:00:00"
             val endOfDay   = "${today}T23:59:59"
             val dueToday = dao.countDueToday(startOfDay, endOfDay)

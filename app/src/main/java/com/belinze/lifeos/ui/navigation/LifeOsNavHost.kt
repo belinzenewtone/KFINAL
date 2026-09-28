@@ -1,6 +1,6 @@
 package com.belinze.lifeos.ui.navigation
 
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -11,7 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -44,7 +44,7 @@ import com.belinze.lifeos.viewmodel.AppViewModel
 @Composable
 fun LifeOsNavHost(
     modifier:             Modifier      = Modifier,
-    appViewModel:         AppViewModel  = hiltViewModel(),
+    appViewModel:         AppViewModel  = koinViewModel(),
     pendingNotifRoute:    String?       = null,
     onNotifRouteConsumed: () -> Unit    = {},
 ) {
@@ -103,7 +103,7 @@ fun LifeOsNavHost(
     var showForgotPinDialog by remember { mutableStateOf(false) }
 
     if (showForgotPinDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showForgotPinDialog = false },
             title   = { Text("Forgot your PIN?") },
             text    = { Text("This turns off screen lock so you can get back into the app. You can set a new PIN afterward in Settings.") },

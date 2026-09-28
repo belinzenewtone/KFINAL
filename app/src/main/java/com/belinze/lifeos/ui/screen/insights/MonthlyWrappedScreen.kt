@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -49,7 +49,7 @@ private val COLOR_DANGER  = Color(0xFFEF4444)
 fun MonthlyWrappedScreen(
     initialMonthOffset: Int = 0,
     navController:      NavHostController,
-    viewModel:          MonthlyWrappedViewModel = hiltViewModel(),
+    viewModel:          MonthlyWrappedViewModel = koinViewModel(),
 ) {
     val state  by viewModel.uiState.collectAsStateWithLifecycle()
 

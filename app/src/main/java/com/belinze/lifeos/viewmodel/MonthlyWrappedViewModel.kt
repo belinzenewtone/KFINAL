@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.belinze.lifeos.util.lastDayOfMonth
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -13,11 +13,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MonthlyWrappedViewModel — full parity with MonthlyWrappedScreen.tsx
@@ -55,17 +57,14 @@ data class MonthlyWrappedUiState(
     val error:              String?              = null,
 )
 
-@HiltViewModel
 class MonthlyWrappedViewModel
-    @Inject
-    constructor(
+constructor(
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MonthlyWrappedUiState())
     val uiState: StateFlow<MonthlyWrappedUiState> = _uiState.asStateFlow()
 
-    private val zone    = ZoneId.systemDefault()
-    private val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val zone = TimeZone.currentSystemDefault()
 
     // Screen's LaunchedEffect calls setMonthOffset(initialMonthOffset) — that is
     // the single load trigger. No init load to avoid flashing the wrong month.
@@ -81,13 +80,13 @@ class MonthlyWrappedViewModel
         _uiState.update { it.copy(isLoading = true, error = null, monthOffset = offset) }
         viewModelScope.launch {
             try {
-                val today       = LocalDate.now(zone)
-                val targetMonth = YearMonth.from(today).plusMonths(offset.toLong())
-                val firstDay    = targetMonth.atDay(1)
-                val lastDay     = targetMonth.atEndOfMonth()
+                val today    = Clock.System.todayIn(zone)
+                // firstDay of target month (using offset from current month)
+                val firstDay = LocalDate(today.year, today.month, 1).plus(offset, DateTimeUnit.MONTH)
+                val lastDay  = lastDayOfMonth(firstDay)
 
-                val startStr = firstDay.format(dateFmt) + "T00:00:00"
-                val endStr   = lastDay.format(dateFmt) + "T23:59:59"
+                val startStr = firstDay.toString() + "T00:00:00"
+                val endStr   = lastDay.toString() + "T23:59:59"
 
                 val totalSpend   = transactionDao.getSpendTotalInRange(startStr, endStr)
                 val totalIncome  = transactionDao.getIncomeTotalInRange(startStr, endStr)
@@ -103,9 +102,14 @@ class MonthlyWrappedViewModel
 
                 // Compute how far back we can navigate
                 val minOffset = if (minDateStr != null) {
-                    val minYm = YearMonth.from(LocalDate.parse(minDateStr.take(10)))
-                    val curYm = YearMonth.from(today)
-                    minYm.until(curYm, java.time.temporal.ChronoUnit.MONTHS).toInt().let { -it }
+                    val minFirst = LocalDate(
+                        LocalDate.parse(minDateStr.take(10)).year,
+                        LocalDate.parse(minDateStr.take(10)).month,
+                        1,
+                    )
+                    val curFirst = LocalDate(today.year, today.month, 1)
+                    val diff = (curFirst.year - minFirst.year) * 12 + (curFirst.monthNumber - minFirst.monthNumber)
+                    -diff
                 } else {
                     -24
                 }
@@ -119,9 +123,9 @@ class MonthlyWrappedViewModel
                 // React shows the year only once the month is 12+ months back
                 // (monthOffset < -11), so -11 and above stay month-only.
                 val monthLabel = if (offset >= -11) {
-                    targetMonth.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+                    MonthNames.ENGLISH_FULL.names[firstDay.monthNumber - 1]
                 } else {
-                    targetMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", java.util.Locale.ENGLISH))
+                    "${MonthNames.ENGLISH_FULL.names[firstDay.monthNumber - 1]} ${firstDay.year}"
                 }
 
                 _uiState.update {

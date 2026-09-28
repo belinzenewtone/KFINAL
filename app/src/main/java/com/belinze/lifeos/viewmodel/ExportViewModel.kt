@@ -16,8 +16,6 @@ import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.ExportEntity
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -28,14 +26,17 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.security.SecureRandom
-import java.time.LocalDate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
-import javax.inject.Inject
 
 enum class ExportFormat { JSON, CSV, PDF }
 
@@ -45,11 +46,9 @@ enum class ExportFormat { JSON, CSV, PDF }
  * sheet so the user can immediately save or send the file.
  * Mirrors ExportScreen.tsx.
  */
-@HiltViewModel
 class ExportViewModel
-    @Inject
-    constructor(
-    @ApplicationContext private val context: Context,
+constructor(
+    context: Context,
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
     private val eventDao:       EventDao,
@@ -115,11 +114,11 @@ class ExportViewModel
         customStart: String,
         customEnd:   String,
     ): Pair<String?, String?> {
-        val today = LocalDate.now()
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         return when (dateWindow) {
-            "week"   -> today.minusDays(6).toString() to today.toString()
-            "month"  -> today.withDayOfMonth(1).toString() to today.toString()
-            "last30" -> today.minusDays(29).toString() to today.toString()
+            "week"   -> today.minus(6, DateTimeUnit.DAY).toString() to today.toString()
+            "month"  -> LocalDate(today.year, today.month, 1).toString() to today.toString()
+            "last30" -> today.minus(29, DateTimeUnit.DAY).toString() to today.toString()
             "custom" -> customStart.takeIf { it.isNotBlank() } to customEnd.takeIf { it.isNotBlank() }
             else     -> null to null  // "all" — no filter
         }

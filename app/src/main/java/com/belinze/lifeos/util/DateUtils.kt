@@ -1,13 +1,24 @@
 package com.belinze.lifeos.util
 
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
-import java.util.Locale
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DateUtils
@@ -18,57 +29,68 @@ import java.util.Locale
 // TimeZone: device local (Nairobi = Africa/Nairobi, EAT UTC+3 by default).
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val DEFAULT_ZONE: ZoneId = ZoneId.systemDefault()
+private val DEFAULT_ZONE: TimeZone = TimeZone.currentSystemDefault()
 
 // ─── Formatters ─────────────────────────────────────────────────────────────
 
 /** "12 Jan 2024" */
-private val FMT_DISPLAY_DATE: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+private val FMT_DISPLAY_DATE = LocalDate.Format {
+    dayOfMonth(Padding.NONE); char(' ')
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' ')
+    year()
+}
 
 /** "12 Jan" (no year, used in lists) */
-private val FMT_SHORT_DATE: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
+private val FMT_SHORT_DATE = LocalDate.Format {
+    dayOfMonth(Padding.NONE); char(' ')
+    monthName(MonthNames.ENGLISH_ABBREVIATED)
+}
 
 /** "12 Jan 2024, 14:35" */
-private val FMT_DISPLAY_DATETIME: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", Locale.ENGLISH)
+private val FMT_DISPLAY_DATETIME = LocalDateTime.Format {
+    dayOfMonth(Padding.NONE); char(' ')
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' ')
+    year(); chars(", ")
+    hour(Padding.ZERO); char(':'); minute(Padding.ZERO)
+}
 
 /** "14:35" */
-private val FMT_TIME: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+private val FMT_TIME = LocalTime.Format {
+    hour(Padding.ZERO); char(':'); minute(Padding.ZERO)
+}
 
 /** "Jan 2024" — for month headers in transaction lists */
-private val FMT_MONTH_YEAR: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH)
+private val FMT_MONTH_YEAR = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); year()
+}
 
 /** "2024-01" — used for groupBy month keys */
-private val FMT_MONTH_KEY: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("yyyy-MM", Locale.ENGLISH)
+private val FMT_MONTH_KEY = LocalDate.Format {
+    year(); char('-'); monthNumber(Padding.ZERO)
+}
 
-/** ISO 8601 full — "2024-01-12T14:35:00+03:00" */
-private val FMT_ISO: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+// ─── Epoch ↔ LocalDate ──────────────────────────────────────────────────────
 
-// ─── Epoch ↔ LocalDate / ZonedDateTime ──────────────────────────────────────
+fun epochMillisToLocalDate(epochMillis: Long, zone: TimeZone = DEFAULT_ZONE): LocalDate =
+    Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(zone).date
 
-fun epochMillisToLocalDate(epochMillis: Long, zone: ZoneId = DEFAULT_ZONE): LocalDate =
-    Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
+fun localDateToEpochMillis(date: LocalDate, zone: TimeZone = DEFAULT_ZONE): Long =
+    date.atStartOfDayIn(zone).toEpochMilliseconds()
 
-fun epochMillisToZdt(epochMillis: Long, zone: ZoneId = DEFAULT_ZONE): ZonedDateTime =
-    Instant.ofEpochMilli(epochMillis).atZone(zone)
+// ─── ISO string helpers ──────────────────────────────────────────────────────
 
-fun localDateToEpochMillis(date: LocalDate, zone: ZoneId = DEFAULT_ZONE): Long =
-    date.atStartOfDay(zone).toInstant().toEpochMilli()
+fun nowIso(zone: TimeZone = DEFAULT_ZONE): String =
+    formatInstantAsIsoOffset(Clock.System.now(), zone)
 
-// ─── ISO string ↔ ZonedDateTime ─────────────────────────────────────────────
-
-fun isoToZdt(iso: String): ZonedDateTime =
-    ZonedDateTime.parse(iso, FMT_ISO)
-
-fun zdtToIso(zdt: ZonedDateTime): String = zdt.format(FMT_ISO)
-
-fun nowIso(zone: ZoneId = DEFAULT_ZONE): String =
-    ZonedDateTime.now(zone).format(FMT_ISO)
+/** Formats an Instant as ISO 8601 with timezone offset, e.g. "2024-01-15T10:30:00+03:00". */
+internal fun formatInstantAsIsoOffset(instant: Instant, zone: TimeZone = DEFAULT_ZONE): String {
+    val ldt    = instant.toLocalDateTime(zone)
+    val offset = zone.offsetAt(instant)
+    return DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.format {
+        setDateTime(ldt)
+        setOffset(offset)
+    }
+}
 
 // ─── Display formatters ──────────────────────────────────────────────────────
 
@@ -77,25 +99,25 @@ fun nowIso(zone: ZoneId = DEFAULT_ZONE): String =
  * If [showYear] is false returns "12 Jan".
  */
 fun formatDate(epochMillis: Long, showYear: Boolean = true): String {
-    val ldt = epochMillisToLocalDate(epochMillis)
-    return ldt.format(if (showYear) FMT_DISPLAY_DATE else FMT_SHORT_DATE)
+    val date = epochMillisToLocalDate(epochMillis)
+    return if (showYear) FMT_DISPLAY_DATE.format(date) else FMT_SHORT_DATE.format(date)
 }
 
 /** "12 Jan 2024, 14:35" */
 fun formatDateTime(epochMillis: Long): String =
-    epochMillisToZdt(epochMillis).format(FMT_DISPLAY_DATETIME)
+    FMT_DISPLAY_DATETIME.format(Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(DEFAULT_ZONE))
 
 /** "14:35" */
 fun formatTime(epochMillis: Long): String =
-    epochMillisToZdt(epochMillis).format(FMT_TIME)
+    FMT_TIME.format(Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(DEFAULT_ZONE).time)
 
 /** "Jan 2024" */
 fun formatMonthYear(epochMillis: Long): String =
-    epochMillisToLocalDate(epochMillis).format(FMT_MONTH_YEAR)
+    FMT_MONTH_YEAR.format(epochMillisToLocalDate(epochMillis))
 
 /** "2024-01" — stable month key for groupBy and map keys */
 fun monthKey(epochMillis: Long): String =
-    epochMillisToLocalDate(epochMillis).format(FMT_MONTH_KEY)
+    FMT_MONTH_KEY.format(epochMillisToLocalDate(epochMillis))
 
 // ─── Relative helpers ────────────────────────────────────────────────────────
 
@@ -104,68 +126,115 @@ fun monthKey(epochMillis: Long): String =
  * "Just now", "5m ago", "2h ago", "Yesterday", "12 Jan"
  */
 fun timeAgo(epochMillis: Long): String {
-    val nowMillis = System.currentTimeMillis()
+    val nowMillis = Clock.System.now().toEpochMilliseconds()
     val diffMs    = nowMillis - epochMillis
-
     val seconds = diffMs / 1_000L
     val minutes = seconds / 60L
     val hours   = minutes / 60L
-
     return when {
         seconds < 60  -> "Just now"
         minutes < 60  -> "${minutes}m ago"
         hours < 24    -> "${hours}h ago"
         hours < 48    -> "Yesterday"
-        else          -> formatDate(epochMillis, showYear = LocalDate.now().year != epochMillisToLocalDate(epochMillis).year)
+        else          -> {
+            val today  = Clock.System.todayIn(DEFAULT_ZONE)
+            val target = epochMillisToLocalDate(epochMillis)
+            formatDate(epochMillis, showYear = today.year != target.year)
+        }
     }
 }
 
 // ─── Period boundaries ───────────────────────────────────────────────────────
 
 /** Start of today (midnight) as epoch millis. */
-fun startOfToday(zone: ZoneId = DEFAULT_ZONE): Long =
-    LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
+fun startOfToday(zone: TimeZone = DEFAULT_ZONE): Long =
+    Clock.System.todayIn(zone).atStartOfDayIn(zone).toEpochMilliseconds()
 
 /** End of today (23:59:59.999) as epoch millis. */
-fun endOfToday(zone: ZoneId = DEFAULT_ZONE): Long =
-    LocalDate.now(zone).atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
+fun endOfToday(zone: TimeZone = DEFAULT_ZONE): Long {
+    val today = Clock.System.todayIn(zone)
+    return LocalDateTime(today.year, today.month, today.dayOfMonth, 23, 59, 59, 999_000_000)
+        .toInstant(zone).toEpochMilliseconds()
+}
 
 /** Start of the current month as epoch millis. */
-fun startOfMonth(zone: ZoneId = DEFAULT_ZONE): Long {
-    val now = LocalDate.now(zone)
-    return now.withDayOfMonth(1).atStartOfDay(zone).toInstant().toEpochMilli()
+fun startOfMonth(zone: TimeZone = DEFAULT_ZONE): Long {
+    val today = Clock.System.todayIn(zone)
+    return LocalDate(today.year, today.month, 1).atStartOfDayIn(zone).toEpochMilliseconds()
 }
 
 /** End of the current month as epoch millis. */
-fun endOfMonth(zone: ZoneId = DEFAULT_ZONE): Long {
-    val now = LocalDate.now(zone)
-    return now.with(TemporalAdjusters.lastDayOfMonth())
-        .atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
+fun endOfMonth(zone: TimeZone = DEFAULT_ZONE): Long {
+    val today   = Clock.System.todayIn(zone)
+    val lastDay = lastDayOfMonth(today)
+    return LocalDateTime(lastDay.year, lastDay.month, lastDay.dayOfMonth, 23, 59, 59, 999_000_000)
+        .toInstant(zone).toEpochMilliseconds()
 }
 
 /** Start of current week (Monday) as epoch millis. */
-fun startOfWeek(zone: ZoneId = DEFAULT_ZONE): Long {
-    val now = LocalDate.now(zone)
-    return now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-        .atStartOfDay(zone).toInstant().toEpochMilli()
+fun startOfWeek(zone: TimeZone = DEFAULT_ZONE): Long {
+    val today  = Clock.System.todayIn(zone)
+    val monday = previousOrSameMonday(today)
+    return monday.atStartOfDayIn(zone).toEpochMilliseconds()
 }
 
 /** "yyyy-MM" key for current month. */
-fun currentMonthKey(zone: ZoneId = DEFAULT_ZONE): String =
-    LocalDate.now(zone).format(FMT_MONTH_KEY)
+fun currentMonthKey(zone: TimeZone = DEFAULT_ZONE): String =
+    FMT_MONTH_KEY.format(Clock.System.todayIn(zone))
 
 /** Previous month key "yyyy-MM". */
-fun previousMonthKey(zone: ZoneId = DEFAULT_ZONE): String =
-    LocalDate.now(zone).minusMonths(1).format(FMT_MONTH_KEY)
+fun previousMonthKey(zone: TimeZone = DEFAULT_ZONE): String =
+    FMT_MONTH_KEY.format(Clock.System.todayIn(zone).minus(1, DateTimeUnit.MONTH))
 
 /** Return epoch millis for the first day of any "yyyy-MM" month key. */
-fun monthKeyToStartMillis(key: String, zone: ZoneId = DEFAULT_ZONE): Long {
+fun monthKeyToStartMillis(key: String, zone: TimeZone = DEFAULT_ZONE): Long {
     val date = LocalDate.parse("$key-01")
-    return date.atStartOfDay(zone).toInstant().toEpochMilli()
+    return date.atStartOfDayIn(zone).toEpochMilliseconds()
 }
 
 /** Return epoch millis for the last day of any "yyyy-MM" month key. */
-fun monthKeyToEndMillis(key: String, zone: ZoneId = DEFAULT_ZONE): Long {
-    val date = LocalDate.parse("$key-01").with(TemporalAdjusters.lastDayOfMonth())
-    return date.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
+fun monthKeyToEndMillis(key: String, zone: TimeZone = DEFAULT_ZONE): Long {
+    val last = lastDayOfMonth(LocalDate.parse("$key-01"))
+    return LocalDateTime(last.year, last.month, last.dayOfMonth, 23, 59, 59, 999_000_000)
+        .toInstant(zone).toEpochMilliseconds()
+}
+
+// ─── Internal date helpers ───────────────────────────────────────────────────
+
+/** Last day of the month that [date] falls in. */
+internal fun lastDayOfMonth(date: LocalDate): LocalDate =
+    LocalDate(date.year, date.month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+
+/** Most recent Monday on or before [date] (ISO: Monday = 1). */
+internal fun previousOrSameMonday(date: LocalDate): LocalDate {
+    val daysBack = (date.dayOfWeek.isoDayNumber - DayOfWeek.MONDAY.isoDayNumber + 7) % 7
+    return date.minus(daysBack, DateTimeUnit.DAY)
+}
+
+/** "EEE, d MMM" format — shared by AssistantViewModel and task list displays. */
+internal val FMT_EEE_D_MMM = LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_ABBREVIATED); chars(", ")
+    dayOfMonth(Padding.NONE); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED)
+}
+
+/** "d MMM" format — short date display (no year). */
+internal val FMT_D_MMM = LocalDate.Format {
+    dayOfMonth(Padding.NONE); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED)
+}
+
+/** "MMM d" format — used in week-review header and calendar labels. */
+internal val FMT_MMM_D = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+}
+
+/** "MMM d, yyyy" format — used in week-review header for Sunday label. */
+internal val FMT_MMM_D_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' ')
+    dayOfMonth(Padding.NONE); chars(", "); year()
+}
+
+/** "MMM d, yyyy" format — e.g. for search screen date display. */
+internal val FMT_MMM_D_YYYY_FULL = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' ')
+    dayOfMonth(Padding.NONE); chars(", "); year()
 }

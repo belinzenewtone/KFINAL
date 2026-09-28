@@ -19,7 +19,6 @@ import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
 import com.belinze.lifeos.util.nowIso
 import com.lifeos.sms.SmsEventBus
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +33,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TransactionViewModel
@@ -96,10 +102,8 @@ data class TransactionFormState(
 private const val PAGE_SIZE = 50
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-@HiltViewModel
 class TransactionViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao: TransactionDao,
     private val budgetAlertService: BudgetAlertService,
     private val prefs: AppPreferences,
@@ -205,18 +209,21 @@ class TransactionViewModel
         _uiState.update { it.copy(filters = it.filters.copy(search = q)) }
 
     fun setPeriod(period: String) {
-        val now = java.time.LocalDate.now()
+        val zone = TimeZone.currentSystemDefault()
+        val now = Clock.System.todayIn(zone)
         // endDate must include the full day: transaction dates are ISO timestamps
         // ("2026-08-22T14:00:00"), so "date <= '2026-08-22'" excludes everything from
         // that day. The bound also follows RFINAL, which closes the window at
         // endOfDay / endOfWeek (Mon-first) / endOfMonth — NOT at today — so rows
         // dated later in the current week or month are included.
+        val mondayOfWeek = now.minus(now.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
+        val sundayOfWeek = mondayOfWeek.plus(6, DateTimeUnit.DAY)
+        val firstOfMonth = LocalDate(now.year, now.month, 1)
+        val lastOfMonth  = com.belinze.lifeos.util.lastDayOfMonth(now)
         val (start, end) = when (period) {
             "today" -> now.toString() to "${now}T23:59:59"
-            "week"  -> now.with(java.time.DayOfWeek.MONDAY).toString() to
-                "${now.with(java.time.DayOfWeek.SUNDAY)}T23:59:59"
-            "month" -> now.withDayOfMonth(1).toString() to
-                "${now.withDayOfMonth(now.lengthOfMonth())}T23:59:59"
+            "week"  -> mondayOfWeek.toString() to "${sundayOfWeek}T23:59:59"
+            "month" -> firstOfMonth.toString() to "${lastOfMonth}T23:59:59"
             else    -> null to null
         }
         _uiState.update {
@@ -261,10 +268,9 @@ class TransactionViewModel
             val monthKey = currentMonthKey()
             val startMs  = monthKeyToStartMillis(monthKey)
             val endMs    = monthKeyToEndMillis(monthKey)
-            val startIso = java.time.Instant.ofEpochMilli(startMs)
-                .atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            val endIso   = java.time.Instant.ofEpochMilli(endMs)
-                .atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            val zone2    = TimeZone.currentSystemDefault()
+            val startIso = Instant.fromEpochMilliseconds(startMs).toLocalDateTime(zone2).toString()
+            val endIso   = Instant.fromEpochMilliseconds(endMs).toLocalDateTime(zone2).toString()
 
             val totals   = dao.getMonthTotals(monthKey)
             val feeTotal = dao.getFeeTotal(startIso, endIso) ?: 0.0
@@ -272,8 +278,8 @@ class TransactionViewModel
             val uncatAmount = dao.sumUncategorizedAmount()
 
             // Today / week spend for the Finance hero card sub-metrics
-            val today         = java.time.LocalDate.now()
-            val weekStart     = today.with(java.time.DayOfWeek.MONDAY).toString()
+            val today     = Clock.System.todayIn(zone2)
+            val weekStart = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY).toString()
             val weekStartIso  = "${weekStart}T00:00:00"
             val todayStartIso = "${today}T00:00:00"
             val todayEndIso   = "${today}T23:59:59"

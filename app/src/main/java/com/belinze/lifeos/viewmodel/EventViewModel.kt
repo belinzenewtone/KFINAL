@@ -7,8 +7,9 @@ import com.belinze.lifeos.data.db.dao.EventDao
 import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
+import com.belinze.lifeos.util.formatInstantAsIsoOffset
+import com.belinze.lifeos.util.lastDayOfMonth
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -19,14 +20,18 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import org.json.JSONArray
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
-import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EventViewModel
@@ -42,7 +47,7 @@ enum class CalendarView { Month, Week, Agenda }
 data class EventUiState(
     val isLoading:    Boolean                    = true,
     val events:       ImmutableList<EventEntity> = persistentListOf(),
-    val selectedDay:  LocalDate         = LocalDate.now(),
+    val selectedDay:  LocalDate         = Clock.System.todayIn(TimeZone.currentSystemDefault()),
     val calendarView: CalendarView      = CalendarView.Month,
     val nextEvent:    EventEntity?      = null,
     /** Per-day event-type flags for the visible calendar month; keyed by LocalDate. */
@@ -71,7 +76,7 @@ data class EventFormState(
     val title:                String       = "",
     val description:          String       = "",
     // ─ Date / time ─
-    val startDateStr:         String       = LocalDate.now().toString(),  // "YYYY-MM-DD"
+    val startDateStr:         String       = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString(),
     val startTimeStr:         String       = "08:00",                      // "HH:mm"
     val endDateStr:           String?      = null,
     val endTimeStr:           String       = "09:00",
@@ -83,7 +88,7 @@ data class EventFormState(
     val locations:            ImmutableList<String> = persistentListOf(),
     val locationInput:        String       = "",
     val guests:               ImmutableList<String> = persistentListOf(),
-    val timeZoneId:           String       = ZoneId.systemDefault().id,
+    val timeZoneId:           String       = TimeZone.currentSystemDefault().id,
     val kind:                 String       = "other",       // event category dropdown
     val importance:           String       = "medium",      // priority
     val reminderOffsets:      ImmutableList<Int> = persistentListOf(),   // minutes-before list
@@ -98,10 +103,8 @@ data class EventFormState(
     val error:                String?      = null,
 )
 
-@HiltViewModel
 class EventViewModel
-    @Inject
-    constructor(
+constructor(
     private val dao: EventDao,
     private val scheduler: NotificationScheduler,
 ) : ViewModel() {
@@ -111,12 +114,12 @@ class EventViewModel
     private val _formState = MutableStateFlow(EventFormState())
     val formState: StateFlow<EventFormState> = _formState.asStateFlow()
 
-    private val zone      = ZoneId.systemDefault()
-    private val dateFmt   = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    private val timeFmt   = DateTimeFormatter.ofPattern("HH:mm")
-    private val isoOffFmt = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+    private val zone = TimeZone.currentSystemDefault()
 
-    private var currentYearMonth: YearMonth = YearMonth.now()
+    // Track the visible calendar month as first-of-month LocalDate
+    private var currentMonthFirst: LocalDate = Clock.System.todayIn(zone).let { today ->
+        LocalDate(today.year, today.month, 1)
+    }
 
     init {
         dao.observeAll()
@@ -136,20 +139,19 @@ class EventViewModel
     fun setCalendarView(view: CalendarView) = _uiState.update { it.copy(calendarView = view) }
 
     fun eventsForDay(day: LocalDate): List<EventEntity> {
-        val nextDay = day.plusDays(1)
+        val nextDay = day.plus(1, DateTimeUnit.DAY)
         return _uiState.value.events.filter { expandOccurrences(it, day, nextDay).isNotEmpty() }
     }
 
     /** Called from CalendarScreen when the visible month changes. */
-    fun loadCalendarMonth(yearMonth: YearMonth) {
-        currentYearMonth = yearMonth
+    fun loadCalendarMonth(monthFirst: LocalDate) {
+        currentMonthFirst = LocalDate(monthFirst.year, monthFirst.month, 1)
         computeEventsByDate()
     }
 
     private fun computeEventsByDate() {
-        val ym          = currentYearMonth
-        val windowStart = ym.atDay(1)
-        val windowEnd   = ym.atEndOfMonth().plusDays(1)
+        val windowStart = currentMonthFirst
+        val windowEnd   = lastDayOfMonth(currentMonthFirst).plus(1, DateTimeUnit.DAY)
         val allEvents   = _uiState.value.events
         val byDate      = HashMap<LocalDate, MutableSet<String>>()
         for (event in allEvents) {
@@ -169,13 +171,13 @@ class EventViewModel
         val baseDate = runCatching { LocalDate.parse(event.date.take(10)) }.getOrNull() ?: return out
         val endDate  = event.endDate
             ?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() } ?: baseDate
-        val spanDays = minOf(366, maxOf(1, (endDate.toEpochDay() - baseDate.toEpochDay()).toInt() + 1))
+        val spanDays = minOf(366, maxOf(1, (endDate.toEpochDays() - baseDate.toEpochDays()) + 1))
         val repeatEnd = event.repeatEndDate
             ?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
 
         fun emitRange(start: LocalDate) {
             for (i in 0 until spanDays) {
-                val day = start.plusDays(i.toLong())
+                val day = start.plus(i, DateTimeUnit.DAY)
                 if (day >= windowStart && day < windowEnd) out.add(day)
             }
         }
@@ -191,14 +193,14 @@ class EventViewModel
         while (idx < 400) {
             if (repeatEnd != null && cursor > repeatEnd) break
             if (cursor >= windowEnd) break
-            val occEnd = cursor.plusDays(spanDays.toLong())
+            val occEnd = cursor.plus(spanDays, DateTimeUnit.DAY)
             if (occEnd > windowStart) emitRange(cursor)
             cursor = when (rule) {
-                "daily"   -> cursor.plusDays(1)
-                "weekly"  -> cursor.plusWeeks(1)
-                "monthly" -> cursor.plusMonths(1)
-                "yearly"  -> cursor.plusYears(1)
-                else      -> cursor.plusDays(1)
+                "daily"   -> cursor.plus(1, DateTimeUnit.DAY)
+                "weekly"  -> cursor.plus(7, DateTimeUnit.DAY)
+                "monthly" -> cursor.plus(1, DateTimeUnit.MONTH)
+                "yearly"  -> cursor.plus(1, DateTimeUnit.YEAR)
+                else      -> cursor.plus(1, DateTimeUnit.DAY)
             }
             idx++
         }
@@ -207,7 +209,9 @@ class EventViewModel
 
     private fun loadNextEvent() {
         viewModelScope.launch {
-            val today = LocalDate.now(zone).atStartOfDay(zone).format(isoOffFmt)
+            val today = formatInstantAsIsoOffset(
+                Clock.System.todayIn(zone).atStartOfDayIn(zone), zone
+            )
             _uiState.update { it.copy(nextEvent = dao.getNextUpcoming(today)) }
         }
     }
@@ -443,10 +447,10 @@ class EventViewModel
     /** Returns ("YYYY-MM-DD", "HH:mm") from any ISO date-time string. */
     private fun parseIsoDateTimeParts(iso: String): Pair<String, String> {
         return try {
-            val zdt = ZonedDateTime.parse(iso, isoOffFmt)
-            zdt.format(dateFmt) to zdt.format(timeFmt)
+            val instant = DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.parse(iso).toInstantUsingOffset()
+            val ldt = instant.toLocalDateTime(zone)
+            ldt.date.toString() to "%02d:%02d".format(ldt.hour, ldt.minute)
         } catch (_: Exception) {
-            // Fallback: extract manually from prefix
             val datePart = iso.take(10)
             val timePart = if (iso.length >= 16) iso.substring(11, 16) else "00:00"
             datePart to timePart
@@ -456,12 +460,13 @@ class EventViewModel
     /** Build ISO offset date-time from "YYYY-MM-DD" + "HH:mm" + timeZoneId. */
     private fun buildIso(dateStr: String, timeStr: String, tzId: String): String {
         return try {
-            val tz   = ZoneId.of(tzId)
-            val date = LocalDate.parse(dateStr)
+            val tz    = TimeZone.of(tzId)
+            val date  = LocalDate.parse(dateStr)
             val parts = timeStr.split(":")
             val hour  = parts.getOrNull(0)?.toIntOrNull() ?: 0
             val min   = parts.getOrNull(1)?.toIntOrNull() ?: 0
-            date.atTime(hour, min).atZone(tz).format(isoOffFmt)
+            val ldt   = LocalDateTime(date.year, date.month, date.dayOfMonth, hour, min, 0, 0)
+            formatInstantAsIsoOffset(ldt.toInstant(tz), tz)
         } catch (_: Exception) {
             "${dateStr}T$timeStr:00"
         }

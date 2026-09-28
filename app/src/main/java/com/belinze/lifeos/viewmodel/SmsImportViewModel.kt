@@ -7,8 +7,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.lifeos.sms.SmsService
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 /**
  * SmsImportViewModel — drives the Import SMS screen.
@@ -31,11 +28,9 @@ import javax.inject.Inject
  * unique work name "lifeos_historical_import", so the Finance screen shows
  * "Importing…" for the full duration of the worker, not just the enqueue call.
  */
-@HiltViewModel
 class SmsImportViewModel
-    @Inject
-    constructor(
-    @ApplicationContext private val context: android.content.Context,
+constructor(
+    context: android.content.Context,
     private val smsService: SmsService,
 ) : ViewModel() {
     @Immutable

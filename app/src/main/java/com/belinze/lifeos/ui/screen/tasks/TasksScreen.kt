@@ -30,7 +30,7 @@ import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,7 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.TaskEntity
@@ -75,7 +75,7 @@ private const val COMPLETED_LIMIT = 20
 @Composable
 fun TasksScreen(
     navController: NavHostController,
-    viewModel:     TaskViewModel = hiltViewModel(),
+    viewModel:     TaskViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
@@ -210,7 +210,7 @@ fun TasksScreen(
 
     // Delete confirmation — matches React's useConfirm dialog on swipe-to-delete
     taskToDelete?.let { task ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { taskToDelete = null },
             title = { Text("Delete task") },
             text  = { Text("Remove \"${task.title}\"?") },

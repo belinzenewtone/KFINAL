@@ -8,14 +8,12 @@ import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.data.datastore.PreferenceKeys
 import com.belinze.lifeos.services.BudgetAlertService
 import com.belinze.lifeos.services.NotificationSync
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UI state — mirrors useAppStore shape from the RN app
@@ -28,10 +26,8 @@ data class AppUiState(
     val prefs:       AppPreferenceState = AppPreferenceState(),
 )
 
-@HiltViewModel
 class AppViewModel
-    @Inject
-    constructor(
+constructor(
     private val appPreferences: AppPreferences,
     private val budgetAlertService: BudgetAlertService,
     private val notificationSync: NotificationSync,
@@ -79,7 +75,7 @@ class AppViewModel
 
     fun completeOnboarding() {
         viewModelScope.launch {
-            val today = java.time.LocalDate.now().toString()   // ISO yyyy-MM-dd
+            val today = kotlinx.datetime.Clock.System.todayIn(kotlinx.datetime.TimeZone.currentSystemDefault()).toString()   // ISO yyyy-MM-dd
             appPreferences.update {
                 it[PreferenceKeys.HAS_COMPLETED_ONBOARDING] = true
                 // Stamp member-since date once; never overwrite once set.

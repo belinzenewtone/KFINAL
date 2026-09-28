@@ -1,12 +1,17 @@
 package com.belinze.lifeos.util
 
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.hours
 
 /**
  * Pure recurrence math — 1:1 port of RFINAL src/utils/recurrence.ts.
@@ -21,13 +26,16 @@ import java.time.format.DateTimeParseException
  * clamp to Feb 28 on non-leap years.
  */
 
-private val ISO_OFFSET: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+private val zone: TimeZone = TimeZone.currentSystemDefault()
 
 /** Add [months] preserving the anchored day-of-month, clamped to the target month's length. */
-private fun addMonthsClamped(d: ZonedDateTime, months: Long, anchorDay: Int): ZonedDateTime {
-    val next = d.plusMonths(months)
-    val maxDay = next.toLocalDate().lengthOfMonth()
-    return next.withDayOfMonth(minOf(anchorDay, maxDay))
+private fun addMonthsClamped(instant: Instant, months: Int, anchorDay: Int): Instant {
+    val ldt     = instant.toLocalDateTime(zone)
+    val shifted = LocalDate(ldt.year, ldt.month, 1).plus(months, DateTimeUnit.MONTH)
+    val maxDay  = lastDayOfMonth(shifted).dayOfMonth
+    val clamped = LocalDate(shifted.year, shifted.month, minOf(anchorDay, maxDay))
+    return LocalDateTime(clamped.year, clamped.month, clamped.dayOfMonth,
+        ldt.hour, ldt.minute, ldt.second, ldt.nanosecond).toInstant(zone)
 }
 
 /**
@@ -38,37 +46,38 @@ private fun addMonthsClamped(d: ZonedDateTime, months: Long, anchorDay: Int): Zo
 fun advanceCadencePastNow(
     iso: String?,
     cadence: String?,
-    nowMs: Long = System.currentTimeMillis(),
+    nowMs: Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
 ): String? {
     if (iso.isNullOrBlank() || cadence.isNullOrBlank()) return null
 
-    val base: ZonedDateTime = try {
+    val base: Instant = try {
         when {
-            iso.length <= 10 -> LocalDate.parse(iso.take(10)).atStartOfDay(ZoneId.systemDefault())
+            iso.length <= 10 -> LocalDate.parse(iso.take(10)).atStartOfDayIn(zone)
             else -> try {
-                ZonedDateTime.parse(iso, ISO_OFFSET)
-            } catch (_: DateTimeParseException) {
-                LocalDateTime.parse(iso.take(19)).atZone(ZoneId.systemDefault())
+                DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.parse(iso).toInstantUsingOffset()
+            } catch (_: Exception) {
+                LocalDateTime.parse(iso.take(19)).toInstant(zone)
             }
         }
     } catch (_: Exception) {
         return null
     }
 
-    if (base.toInstant().toEpochMilli() > nowMs) return null
+    if (base.toEpochMilliseconds() > nowMs) return null
 
-    val anchorDay = base.dayOfMonth
-    var cursor = base
-    var i = 0
-    while (i < 5000 && cursor.toInstant().toEpochMilli() <= nowMs) {
+    val anchorDay = base.toLocalDateTime(zone).dayOfMonth
+    var cursor    = base
+    var i         = 0
+    while (i < 5000 && cursor.toEpochMilliseconds() <= nowMs) {
         cursor = when (cadence) {
-            "hourly"   -> cursor.plusHours(1)
+            "hourly"   -> cursor + 1.hours
             "daily"    -> cursor.plusDays(1)
             "weekly"   -> cursor.plusDays(7)
             "biweekly" -> cursor.plusDays(14)
             "mon_fri"  -> {
                 var next = cursor.plusDays(1)
-                while (next.dayOfWeek == DayOfWeek.SATURDAY || next.dayOfWeek == DayOfWeek.SUNDAY) {
+                while (next.toLocalDateTime(zone).dayOfWeek == DayOfWeek.SATURDAY ||
+                    next.toLocalDateTime(zone).dayOfWeek == DayOfWeek.SUNDAY) {
                     next = next.plusDays(1)
                 }
                 next
@@ -80,5 +89,7 @@ fun advanceCadencePastNow(
         i++
     }
 
-    return if (cursor.toInstant().toEpochMilli() > nowMs) cursor.format(ISO_OFFSET) else null
+    return if (cursor.toEpochMilliseconds() > nowMs) formatInstantAsIsoOffset(cursor, zone) else null
 }
+
+private fun Instant.plusDays(n: Int): Instant = plus(n.toLong() * 24, DateTimeUnit.HOUR)

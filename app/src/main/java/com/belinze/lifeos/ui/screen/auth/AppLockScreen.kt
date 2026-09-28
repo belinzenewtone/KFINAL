@@ -29,7 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backspace
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -300,7 +300,7 @@ fun AppLockScreen(
 
     // ── Forgot PIN dialog ─────────────────────────────────────────────────────
     if (showForgotDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showForgotDialog = false },
             title            = { Text("Reset PIN") },
             text             = { Text("This will disable your PIN lock. You can set a new PIN in Settings.") },

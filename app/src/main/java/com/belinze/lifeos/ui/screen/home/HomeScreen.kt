@@ -43,7 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -59,9 +59,15 @@ import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.ProfileViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HomeScreen
@@ -80,10 +86,10 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     navController:        NavHostController,
-    transactionViewModel: TransactionViewModel = hiltViewModel(),
-    taskViewModel:        TaskViewModel        = hiltViewModel(),
-    eventViewModel:       EventViewModel       = hiltViewModel(),
-    profileViewModel:     ProfileViewModel     = hiltViewModel(),
+    transactionViewModel: TransactionViewModel = koinViewModel(),
+    taskViewModel:        TaskViewModel        = koinViewModel(),
+    eventViewModel:       EventViewModel       = koinViewModel(),
+    profileViewModel:     ProfileViewModel     = koinViewModel(),
 ) {
     val txState      by transactionViewModel.uiState.collectAsStateWithLifecycle()
     val taskState    by taskViewModel.uiState.collectAsStateWithLifecycle()
@@ -104,7 +110,11 @@ fun HomeScreen(
     }
     val greeting  = remember(firstName) { greeting(firstName) }
     val todayLabel = remember {
-        LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH))
+        val fmt = LocalDate.Format {
+            dayOfWeek(DayOfWeekNames.ENGLISH_FULL); chars(", ")
+            monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+        }
+        fmt.format(Clock.System.todayIn(TimeZone.currentSystemDefault()))
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -264,14 +274,13 @@ private fun HomeMenuCard(
     onSearch:         () -> Unit,
     modifier:         Modifier = Modifier,
 ) {
+    val fmtMmmD = LocalDate.Format { monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE) }
     val eventDateLabel = nextEventDate?.let {
         try {
-            java.time.LocalDateTime.parse(it.take(19))
-                .format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+            fmtMmmD.format(LocalDateTime.parse(it.take(19)).date)
         } catch (_: Exception) {
             try {
-                java.time.LocalDate.parse(it.take(10))
-                    .format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+                fmtMmmD.format(LocalDate.parse(it.take(10)))
             } catch (_: Exception) {
                 null
             }

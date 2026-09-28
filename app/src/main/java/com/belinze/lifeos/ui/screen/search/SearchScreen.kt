@@ -67,7 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -77,8 +77,12 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.SearchTab
 import com.belinze.lifeos.viewmodel.SearchViewModel
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
 
 private val TYPE_COLORS = mapOf(
     "birthday" to Color(0xFFFF69B4),
@@ -109,7 +113,7 @@ private const val MAX_RECENT = 5
 @Composable
 fun SearchScreen(
     navController: NavHostController,
-    viewModel:     SearchViewModel = hiltViewModel(),
+    viewModel:     SearchViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
@@ -618,14 +622,23 @@ private fun SearchRow(
     }
 }
 
+private val FMT_MMM_D_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); chars(", "); year()
+}
+
 private fun formatDate(iso: String?): String = try {
-    java.time.LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+    FMT_MMM_D_YYYY.format(LocalDate.parse(iso!!.take(10)))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }
 
 private fun formatDateTime(iso: String): String = try {
-    LocalDateTime.parse(iso.take(19)).format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
+    val ldt = LocalDateTime.parse(iso.take(19))
+    val datePart = FMT_MMM_D_YYYY.format(ldt.date)
+    val h = ldt.hour; val m = ldt.minute
+    val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h
+    val ampm = if (h < 12) "AM" else "PM"
+    "$datePart · %d:%02d %s".format(h12, m, ampm)
 } catch (_: Exception) {
     iso.take(16)
 }

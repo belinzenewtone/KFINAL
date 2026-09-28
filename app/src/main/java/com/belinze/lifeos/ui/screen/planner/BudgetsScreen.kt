@@ -19,7 +19,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Wallet
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +43,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,7 +70,7 @@ private val DANGER = Color(0xFFF87171)
 @Composable
 fun BudgetsScreen(
     navController: NavHostController,
-    viewModel:     BudgetViewModel = hiltViewModel(),
+    viewModel:     BudgetViewModel = koinViewModel(),
 ) {
     // Reload whenever the screen resumes (e.g. returning from BudgetFormScreen)
     // so newly added or edited budgets appear immediately.
@@ -87,7 +87,7 @@ fun BudgetsScreen(
 
     if (budgetToDelete != null) {
         val (deleteId, deleteCategory) = budgetToDelete!!
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { budgetToDelete = null },
             title = { Text("Delete budget") },
             text  = { Text("Remove $deleteCategory budget?") },

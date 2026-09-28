@@ -27,7 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -36,10 +36,17 @@ import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventViewModel
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val PRIORITY_COLORS = mapOf(
     "low" to Color(0xFF7FC8F8),
@@ -51,7 +58,7 @@ private val PRIORITY_COLORS = mapOf(
 fun EventDetailScreen(
     eventId:       String,
     navController: NavHostController,
-    viewModel:     EventViewModel = hiltViewModel(),
+    viewModel:     EventViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val event = remember(uiState.events, eventId) { uiState.events.find { it.id == eventId } }
@@ -121,7 +128,7 @@ fun EventDetailScreen(
     }
 
     if (showDelete) {
-        androidx.compose.material3.AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDelete = false },
             title = { Text("Delete event") },
             text = { Text("Are you sure?") },
@@ -152,14 +159,20 @@ private fun DetailRow(label: String, value: String, valueColor: androidx.compose
     }
 }
 
+private val FMT_EEE_MMM_D_YYYY = kotlinx.datetime.LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_ABBREVIATED); chars(", ")
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); char(' '); year()
+}
+
 private fun formatDateTime(iso: String): String {
     return try {
-        val odt = OffsetDateTime.parse(iso)
-        odt.format(DateTimeFormatter.ofPattern("EEE, MMM d yyyy · HH:mm", Locale.ENGLISH))
-    } catch (_: Exception) {
-        try {
-            val ldt = LocalDateTime.parse(iso.take(19))
-            ldt.format(DateTimeFormatter.ofPattern("EEE, MMM d yyyy · HH:mm", Locale.ENGLISH))
-        } catch (_: Exception) { iso }
-    }
+        val ldt = try {
+            DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.parse(iso).toInstantUsingOffset()
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+        } catch (_: Exception) {
+            LocalDateTime.parse(iso.take(19))
+        }
+        val datePart = FMT_EEE_MMM_D_YYYY.format(ldt.date)
+        "%s · %02d:%02d".format(datePart, ldt.hour, ldt.minute)
+    } catch (_: Exception) { iso }
 }

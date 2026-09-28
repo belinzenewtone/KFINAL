@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -36,14 +36,18 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.MerchantDetailViewModel
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
 
 @Composable
 fun MerchantDetailScreen(
     merchant:       String,
     navController:  NavHostController,
-    viewModel:      MerchantDetailViewModel = hiltViewModel(),
+    viewModel:      MerchantDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -193,22 +197,33 @@ private fun StatDivider() {
         .background(MaterialTheme.colorScheme.outlineVariant))
 }
 
+private val FMT_MMM_DD_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(); chars(", "); year()
+}
+private val FMT_MMM_D = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+}
+
 // MD-3: zero-pad day with "dd"
 private fun formatDate(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+    FMT_MMM_DD_YYYY.format(LocalDateTime.parse(iso!!.take(19)).date)
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }
 
 // MD-2: 12-hour clock with AM/PM
 private fun formatTime(iso: String?): String = try {
-    LocalDateTime.parse(iso?.take(19)).format(DateTimeFormatter.ofPattern("hh:mm a"))
+    val ldt = LocalDateTime.parse(iso!!.take(19))
+    val h = ldt.hour; val m = ldt.minute
+    val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h
+    val ampm = if (h < 12) "AM" else "PM"
+    "%02d:%02d %s".format(h12, m, ampm)
 } catch (_: Exception) {
     ""
 }
 
 private fun formatPeakDay(day: String): String = try {
-    java.time.LocalDate.parse(day).format(DateTimeFormatter.ofPattern("MMM d"))
+    FMT_MMM_D.format(LocalDate.parse(day))
 } catch (_: Exception) {
     day
 }

@@ -13,7 +13,6 @@ import com.belinze.lifeos.data.db.entity.IncomeEntity
 import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -23,7 +22,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PlannerViewModel
@@ -126,10 +127,8 @@ data class IncomeFormState(
     val error:       String?  = null,
 )
 
-@HiltViewModel
 class PlannerViewModel
-    @Inject
-    constructor(
+constructor(
     private val plannerDao: PlannerDao,
     private val incomeDao:  IncomeDao,
 ) : ViewModel() {
@@ -413,12 +412,12 @@ class PlannerViewModel
     private fun advanceDueDate(due: String?, cycle: String?): String? {
         if (due == null) return null
         return try {
-            val date = java.time.LocalDate.parse(due.take(10))
+            val date = LocalDate.parse(due.take(10))
             val next = when (cycle?.lowercase()) {
-                "daily"   -> date.plusDays(1)
-                "weekly"  -> date.plusWeeks(1)
-                "monthly" -> date.plusMonths(1)
-                "yearly"  -> date.plusYears(1)
+                "daily"   -> date.plus(1, DateTimeUnit.DAY)
+                "weekly"  -> date.plus(1, DateTimeUnit.WEEK)
+                "monthly" -> date.plus(1, DateTimeUnit.MONTH)
+                "yearly"  -> date.plus(1, DateTimeUnit.YEAR)
                 else      -> return null
             }
             next.toString()

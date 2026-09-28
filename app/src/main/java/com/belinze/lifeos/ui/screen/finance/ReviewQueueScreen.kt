@@ -14,7 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.belinze.lifeos.ui.components.AppAlertDialog
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,7 +40,7 @@ import com.lifeos.sms.SmsService
 @Composable
 fun ReviewQueueScreen(
     navController: NavHostController,
-    viewModel:     ReviewQueueViewModel = hiltViewModel(),
+    viewModel:     ReviewQueueViewModel = koinViewModel(),
 ) {
     val state   by viewModel.uiState.collectAsStateWithLifecycle()
     val visible  = viewModel.visibleEntries
@@ -61,7 +62,7 @@ fun ReviewQueueScreen(
     var showDismissAllDialog  by remember { mutableStateOf(false) }
 
     if (showRecoverAllDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showRecoverAllDialog = false },
             title            = { Text("Recover all?") },
             text             = { Text("This will add all ${visible.size} pending transaction${if (visible.size != 1) "s" else ""} to your ledger.") },
@@ -77,7 +78,7 @@ fun ReviewQueueScreen(
     }
 
     if (showDismissAllDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDismissAllDialog = false },
             title            = { Text("Dismiss all?") },
             text             = { Text("This will permanently discard all ${visible.size} pending entr${if (visible.size != 1) "ies" else "y"}. This cannot be undone.") },
@@ -218,7 +219,7 @@ private fun EntryCard(
     var showDismissDialog by remember { mutableStateOf(false) }
 
     if (showDismissDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDismissDialog = false },
             title            = { Text("Dismiss transaction?") },
             text             = { Text("This entry will be permanently removed from the queue. This cannot be undone.") },

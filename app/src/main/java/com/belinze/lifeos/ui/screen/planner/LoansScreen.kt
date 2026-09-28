@@ -42,7 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,8 +55,11 @@ import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.PlannerViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
 
 // Matches LoansScreen.tsx's local SEMANTIC/STATUS_COLOR constants exactly.
 private val SUCCESS = Color(0xFF4ADE80)
@@ -78,7 +81,7 @@ private val LOAN_STATUS_LABEL = mapOf(
 @Composable
 fun LoansScreen(
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -369,14 +372,21 @@ private fun LoanCard(
     }
 }
 
+private val FMT_MMM_DD_YYYY = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(); chars(", "); year()
+}
+private val FMT_MMM_D = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+}
+
 private fun formatDate(iso: String?): String = try {
-    LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+    FMT_MMM_DD_YYYY.format(LocalDate.parse(iso!!.take(10)))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }
 
 private fun formatDateShort(iso: String?): String = try {
-    LocalDate.parse(iso?.take(10)).format(DateTimeFormatter.ofPattern("MMM d"))
+    FMT_MMM_D.format(LocalDate.parse(iso!!.take(10)))
 } catch (_: Exception) {
     iso?.take(10) ?: ""
 }

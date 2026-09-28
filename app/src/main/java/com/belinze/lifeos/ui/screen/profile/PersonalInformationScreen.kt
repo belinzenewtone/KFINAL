@@ -50,7 +50,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -71,7 +71,7 @@ private enum class InfoField { Name, Email, Phone, Username }
 @Composable
 fun PersonalInformationScreen(
     navController: NavHostController,
-    viewModel:     ProfileViewModel = hiltViewModel(),
+    viewModel:     ProfileViewModel = koinViewModel(),
 ) {
     val prefState by viewModel.prefState.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<InfoField?>(null) }

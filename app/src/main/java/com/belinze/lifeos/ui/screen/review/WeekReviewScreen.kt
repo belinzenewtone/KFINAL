@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,7 +51,7 @@ private val COLOR_PEAK   = Color(0xFFEF4444)
 @Composable
 fun WeekReviewScreen(
     navController: NavHostController,
-    viewModel:     WeekReviewViewModel = hiltViewModel(),
+    viewModel:     WeekReviewViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pref  by viewModel.prefState.collectAsStateWithLifecycle()

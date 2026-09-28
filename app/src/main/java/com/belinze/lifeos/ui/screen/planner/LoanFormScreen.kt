@@ -45,7 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -58,6 +58,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
+import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val LOAN_STATUSES = listOf("active", "repaid", "defaulted")
 private val LOAN_STATUS_COLOR = mapOf(
@@ -72,7 +73,7 @@ private val LOAN_STATUS_COLOR = mapOf(
 fun LoanFormScreen(
     loanId:        String?,
     navController: NavHostController,
-    viewModel:     PlannerViewModel = hiltViewModel(),
+    viewModel:     PlannerViewModel = koinViewModel(),
 ) {
     val form by viewModel.loanForm.collectAsStateWithLifecycle()
     val isEdit = !loanId.isNullOrEmpty()
@@ -92,8 +93,8 @@ fun LoanFormScreen(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = form.drawDate.takeIf { it.isNotBlank() }?.take(10)?.let {
             runCatching {
-                java.time.LocalDate.parse(it)
-                    .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                kotlinx.datetime.LocalDate.parse(it)
+                    .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
             }.getOrNull()
         } ?: System.currentTimeMillis(),
     )
@@ -129,7 +130,7 @@ fun LoanFormScreen(
     // CC-2: delete confirmation
     var showDeleteConfirm by remember { mutableStateOf(false) }
     if (showDeleteConfirm) {
-        androidx.compose.material3.AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { androidx.compose.material3.Text("Delete loan") },
             text  = { androidx.compose.material3.Text("Are you sure?") },
@@ -228,8 +229,8 @@ fun LoanFormScreen(
             val repayDatePickerState = rememberDatePickerState(
                 initialSelectedDateMillis = form.lastRepaymentDate.takeIf { it.isNotBlank() }?.take(10)?.let {
                     runCatching {
-                        java.time.LocalDate.parse(it)
-                            .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                        kotlinx.datetime.LocalDate.parse(it)
+                            .atStartOfDayIn(kotlinx.datetime.TimeZone.UTC).toEpochMilliseconds()
                     }.getOrNull()
                 } ?: System.currentTimeMillis(),
             )

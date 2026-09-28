@@ -12,7 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.outlined.WbSunny
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.alpha
 import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -45,7 +45,7 @@ import com.belinze.lifeos.viewmodel.SettingsViewModel
 @Composable
 fun NotificationsScreen(
     navController: NavHostController,
-    viewModel:     SettingsViewModel = hiltViewModel(),
+    viewModel:     SettingsViewModel = koinViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     var infoMessage by remember { mutableStateOf<String?>(null) }
@@ -212,7 +212,7 @@ fun NotificationsScreen(
             initialMinute = initM,
             is24Hour      = false,
         )
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showTimePicker = false },
             title            = { Text("Delivery time") },
             text             = { TimePicker(state = tState) },

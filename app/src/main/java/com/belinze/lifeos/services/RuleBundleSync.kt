@@ -4,11 +4,8 @@ import android.content.Context
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.lifeos.sms.BundleCompiler
 import com.lifeos.sms.SmsParserConfig
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.HttpURLConnection
 import java.net.URL
-import javax.inject.Inject
-import javax.inject.Singleton
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RuleBundleSync — 1:1 port of src/services/ruleSync.ts.
@@ -22,11 +19,9 @@ import javax.inject.Singleton
 // and is persisted to DataStore so subsequent cold starts reuse it.
 // ─────────────────────────────────────────────────────────────────────────────
 
-@Singleton
 class RuleBundleSync
-    @Inject
-    constructor(
-    @ApplicationContext private val context: Context,
+constructor(
+    context: Context,
     private val prefs: AppPreferences,
 ) {
     private companion object {

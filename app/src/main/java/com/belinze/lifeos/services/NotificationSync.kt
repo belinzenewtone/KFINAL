@@ -8,9 +8,6 @@ import com.belinze.lifeos.data.db.dao.PlannerDao
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
 import com.belinze.lifeos.util.advanceCadencePastNow
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * NotificationSync — 1:1 port of src/services/notificationSyncService.ts.
@@ -19,11 +16,9 @@ import javax.inject.Singleton
  * user settings. Called on app startup (after hydration) and after any
  * task/event/recurring/bill mutation.
  */
-@Singleton
 class NotificationSync
-    @Inject
-    constructor(
-    @ApplicationContext private val context: Context,
+constructor(
+    context: Context,
     private val scheduler:   NotificationScheduler,
     private val prefs:       AppPreferences,
     private val taskDao:     TaskDao,

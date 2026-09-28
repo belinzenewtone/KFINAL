@@ -11,7 +11,6 @@ import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
 import com.belinze.lifeos.util.nowIso
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -20,11 +19,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.UUID
-import javax.inject.Inject
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BudgetViewModel
@@ -64,10 +62,8 @@ data class BudgetFormState(
     val error:          String?  = null,
 )
 
-@HiltViewModel
 class BudgetViewModel
-    @Inject
-    constructor(
+constructor(
     private val budgetDao:      BudgetDao,
     private val transactionDao: TransactionDao,
 ) : ViewModel() {
@@ -77,8 +73,7 @@ class BudgetViewModel
     private val _formState = MutableStateFlow(BudgetFormState())
     val formState: StateFlow<BudgetFormState> = _formState.asStateFlow()
 
-    private val isoDtFmt    = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    private val zone        = ZoneId.systemDefault()
+    private val zone = TimeZone.currentSystemDefault()
 
     init { load() }
 
@@ -92,8 +87,8 @@ class BudgetViewModel
             val monthKey = currentMonthKey()
             val startMs  = monthKeyToStartMillis(monthKey)
             val endMs    = monthKeyToEndMillis(monthKey)
-            val startIso = Instant.ofEpochMilli(startMs).atZone(zone).format(isoDtFmt)
-            val endIso   = Instant.ofEpochMilli(endMs).atZone(zone).format(isoDtFmt)
+            val startIso = Instant.fromEpochMilliseconds(startMs).toLocalDateTime(zone).toString()
+            val endIso   = Instant.fromEpochMilliseconds(endMs).toLocalDateTime(zone).toString()
             val catSpend = transactionDao.getExpenseCategoryTotals(startIso, endIso)
                 .associate { it.category.lowercase() to it.total }
 

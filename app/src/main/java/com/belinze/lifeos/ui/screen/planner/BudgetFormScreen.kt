@@ -23,7 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,7 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -76,7 +76,7 @@ private val PERIODS = listOf("daily", "weekly", "monthly", "yearly")
 fun BudgetFormScreen(
     budgetId:      String?,
     navController: NavHostController,
-    viewModel:     BudgetViewModel = hiltViewModel(),
+    viewModel:     BudgetViewModel = koinViewModel(),
 ) {
     val form         by viewModel.formState.collectAsStateWithLifecycle()
     val isEdit        = !budgetId.isNullOrEmpty()
@@ -139,8 +139,10 @@ fun BudgetFormScreen(
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                     )
                     ExposedDropdownMenu(
-                        expanded = categoryExpanded,
+                        expanded         = categoryExpanded,
                         onDismissRequest = { categoryExpanded = false },
+                        containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation   = 0.dp,
                     ) {
                         CATEGORIES.forEach { cat ->
                             DropdownMenuItem(
@@ -176,8 +178,10 @@ fun BudgetFormScreen(
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                     )
                     ExposedDropdownMenu(
-                        expanded = periodExpanded,
+                        expanded         = periodExpanded,
                         onDismissRequest = { periodExpanded = false },
+                        containerColor   = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation   = 0.dp,
                     ) {
                         PERIODS.forEach { period ->
                             DropdownMenuItem(
@@ -288,7 +292,7 @@ fun BudgetFormScreen(
 
     // CC-2: delete confirmation dialog
     if (showDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title            = { Text("Delete budget") },
             text             = { Text("Are you sure?") },

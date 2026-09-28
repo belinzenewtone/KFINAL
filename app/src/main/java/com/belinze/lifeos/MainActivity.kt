@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,22 +15,11 @@ import com.belinze.lifeos.data.datastore.AppPreferenceState
 import com.belinze.lifeos.ui.navigation.LifeOsNavHost
 import com.belinze.lifeos.ui.theme.LifeOsTheme
 import com.belinze.lifeos.viewmodel.SettingsViewModel
-import dagger.hilt.android.AndroidEntryPoint
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
-/**
- * Single-activity Compose host.
- *
- * Responsibilities:
- *  - Install the splash screen (hides once the first Compose frame is drawn).
- *  - Enable edge-to-edge display so the Compose UI can draw under system bars.
- *  - Hand off to [LifeOsNavHost], which owns all navigation and auth-guard logic.
- *  - Surface notification tap deep-link routes to the nav graph.
- */
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val settingsVm: SettingsViewModel by viewModels()
+    private val settingsVm: SettingsViewModel by viewModel()
 
-    /** Pending navigation route from a notification tap; consumed once by the nav graph. */
     var pendingNotifRoute: String? by mutableStateOf(null)
         private set
 

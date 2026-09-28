@@ -13,15 +13,12 @@ import com.belinze.lifeos.data.datastore.PreferenceKeys
 import com.belinze.lifeos.data.db.LifeOsDatabase
 import com.belinze.lifeos.util.Haptics
 import com.lifeos.sms.SmsService
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SettingsViewModel
@@ -34,14 +31,12 @@ import javax.inject.Inject
 // when the user is on other tabs.
 // ─────────────────────────────────────────────────────────────────────────────
 
-@HiltViewModel
 class SettingsViewModel
-    @Inject
-    constructor(
+constructor(
     private val prefs: AppPreferences,
     private val db: LifeOsDatabase,
     private val smsService: SmsService,
-    @ApplicationContext private val context: Context,
+    context: Context,
 ) : ViewModel() {
     /** The full prefs snapshot, shared with AppViewModel but scoped here. */
     val settings: StateFlow<com.belinze.lifeos.data.datastore.AppPreferenceState> =
