@@ -46,21 +46,25 @@ class FeeAnalyticsViewModel
     fun load() {
         _uiState.value = FeeAnalyticsUiState(isLoading = true)
         viewModelScope.launch {
-            val key = currentMonthKey()
-            val startIso = Instant.ofEpochMilli(monthKeyToStartMillis(key))
-                .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            val endIso = Instant.ofEpochMilli(monthKeyToEndMillis(key))
-                .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            try {
+                val key = currentMonthKey()
+                val startIso = Instant.ofEpochMilli(monthKeyToStartMillis(key))
+                    .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                val endIso = Instant.ofEpochMilli(monthKeyToEndMillis(key))
+                    .atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
-            val total  = dao.getFeeTotal(startIso, endIso) ?: 0.0
-            val cats   = dao.getChargesByCategory(startIso, endIso)
-            val txs    = dao.getFeeTransactions(startIso, endIso)
-            _uiState.value = FeeAnalyticsUiState(
-                isLoading    = false,
-                totalFees    = total,
-                categories   = cats.toImmutableList(),
-                transactions = txs.toImmutableList(),
-            )
+                val total  = dao.getFeeTotal(startIso, endIso) ?: 0.0
+                val cats   = dao.getChargesByCategory(startIso, endIso)
+                val txs    = dao.getFeeTransactions(startIso, endIso)
+                _uiState.value = FeeAnalyticsUiState(
+                    isLoading    = false,
+                    totalFees    = total,
+                    categories   = cats.toImmutableList(),
+                    transactions = txs.toImmutableList(),
+                )
+            } catch (e: Exception) {
+                _uiState.value = FeeAnalyticsUiState(isLoading = false)
+            }
         }
     }
 }

@@ -77,7 +77,6 @@ class BudgetViewModel
     private val _formState = MutableStateFlow(BudgetFormState())
     val formState: StateFlow<BudgetFormState> = _formState.asStateFlow()
 
-    private val monthKey    = currentMonthKey()
     private val isoDtFmt    = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     private val zone        = ZoneId.systemDefault()
 
@@ -88,16 +87,18 @@ class BudgetViewModel
             _uiState.update { it.copy(isLoading = true) }
             val budgets = budgetDao.getAll()
 
-            // Category spend for this month
+            // Category spend for this month — recomputed each load so month
+            // boundaries are respected even in long-lived ViewModels.
+            val monthKey = currentMonthKey()
             val startMs  = monthKeyToStartMillis(monthKey)
             val endMs    = monthKeyToEndMillis(monthKey)
             val startIso = Instant.ofEpochMilli(startMs).atZone(zone).format(isoDtFmt)
             val endIso   = Instant.ofEpochMilli(endMs).atZone(zone).format(isoDtFmt)
             val catSpend = transactionDao.getExpenseCategoryTotals(startIso, endIso)
-                .associate { it.category to it.total }
+                .associate { it.category.lowercase() to it.total }
 
             val enriched = budgets.map { b ->
-                val spend = catSpend[b.category] ?: 0.0
+                val spend = catSpend[b.category.lowercase()] ?: 0.0
                 val pct   = if (b.limitAmount > 0) (spend / b.limitAmount).toFloat() else 0f
                 BudgetWithSpend(
                     budget    = b,

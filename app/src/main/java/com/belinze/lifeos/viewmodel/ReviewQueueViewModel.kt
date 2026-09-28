@@ -92,7 +92,7 @@ class ReviewQueueViewModel
     // ─── Load ─────────────────────────────────────────────────────────────────
 
     fun load() {
-        _uiState.update { it.copy(isLoading = true, error = null) }
+        _uiState.update { it.copy(isLoading = true, error = null, banner = null) }
         viewModelScope.launch {
             try {
                 val all = smsService.getAuditLog(200)

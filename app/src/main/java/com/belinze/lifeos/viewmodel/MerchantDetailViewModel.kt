@@ -49,28 +49,32 @@ class MerchantDetailViewModel
     fun load(merchant: String) {
         _uiState.value = MerchantDetailUiState(isLoading = true)
         viewModelScope.launch {
-            val txs = dao.getByMerchant(merchant)
-            // RFINAL: the headline total and the average cover ALL transactions; only the
-            // temporal stats (active days, peak day) are outflow-only. avgPerDay then
-            // divides the all-transaction total by the outflow day count — quirky, but
-            // that is what the reference screen displays.
-            val totalSpend = txs.sumOf { it.amount }
-            val outflow = txs.filter { it.transactionType in listOf("expense", "transfer", "fuliza") }
-            val dayTotals = outflow
-                .filter { !it.date.isNullOrBlank() }
-                .groupBy { it.date!!.take(10) }
-                .mapValues { (_, list) -> list.sumOf { it.amount } }
-            val peak = dayTotals.maxByOrNull { it.value }
-            val stats = MerchantStats(
-                totalSpend = totalSpend,
-                txCount    = txs.size,
-                avgAmount  = if (txs.isNotEmpty()) totalSpend / txs.size else 0.0,
-                activeDays = dayTotals.size,
-                avgPerDay  = if (dayTotals.isNotEmpty()) totalSpend / dayTotals.size else 0.0,
-                peakDay    = peak?.key,
-                peakAmount = peak?.value ?: 0.0,
-            )
-            _uiState.value = MerchantDetailUiState(isLoading = false, transactions = txs.toImmutableList(), stats = stats)
+            try {
+                val txs = dao.getByMerchant(merchant)
+                // RFINAL: the headline total and the average cover ALL transactions; only the
+                // temporal stats (active days, peak day) are outflow-only. avgPerDay then
+                // divides the all-transaction total by the outflow day count — quirky, but
+                // that is what the reference screen displays.
+                val totalSpend = txs.sumOf { it.amount }
+                val outflow = txs.filter { it.transactionType in listOf("expense", "transfer", "fuliza") }
+                val dayTotals = outflow
+                    .filter { !it.date.isNullOrBlank() }
+                    .groupBy { it.date!!.take(10) }
+                    .mapValues { (_, list) -> list.sumOf { it.amount } }
+                val peak = dayTotals.maxByOrNull { it.value }
+                val stats = MerchantStats(
+                    totalSpend = totalSpend,
+                    txCount    = txs.size,
+                    avgAmount  = if (txs.isNotEmpty()) totalSpend / txs.size else 0.0,
+                    activeDays = dayTotals.size,
+                    avgPerDay  = if (dayTotals.isNotEmpty()) totalSpend / dayTotals.size else 0.0,
+                    peakDay    = peak?.key,
+                    peakAmount = peak?.value ?: 0.0,
+                )
+                _uiState.value = MerchantDetailUiState(isLoading = false, transactions = txs.toImmutableList(), stats = stats)
+            } catch (e: Exception) {
+                _uiState.value = MerchantDetailUiState(isLoading = false)
+            }
         }
     }
 }

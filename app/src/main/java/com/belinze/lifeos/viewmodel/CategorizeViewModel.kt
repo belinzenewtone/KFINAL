@@ -63,19 +63,23 @@ class CategorizeViewModel
     fun refresh() {
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
-            val txs = dao.getUncategorized()
-            val groups = txs
-                .groupBy { it.merchant?.trim()?.ifBlank { "Unknown" } ?: "Unknown" }
-                .map { (merchant, list) -> MerchantGroup(merchant, list.toImmutableList()) }
-                // RFINAL orders merchant groups by most-recent activity, not by volume.
-                .sortedByDescending { it.latestDate ?: "" }
-                .toImmutableList()
-            _uiState.value = CategorizeUiState(
-                isLoading      = false,
-                transactions   = txs.toImmutableList(),
-                merchantGroups = groups,
-                groupByMerchant = _uiState.value.groupByMerchant,
-            )
+            try {
+                val txs = dao.getUncategorized()
+                val groups = txs
+                    .groupBy { it.merchant?.trim()?.ifBlank { "Unknown" } ?: "Unknown" }
+                    .map { (merchant, list) -> MerchantGroup(merchant, list.toImmutableList()) }
+                    // RFINAL orders merchant groups by most-recent activity, not by volume.
+                    .sortedByDescending { it.latestDate ?: "" }
+                    .toImmutableList()
+                _uiState.value = CategorizeUiState(
+                    isLoading      = false,
+                    transactions   = txs.toImmutableList(),
+                    merchantGroups = groups,
+                    groupByMerchant = _uiState.value.groupByMerchant,
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, message = "Failed to load", isError = true)
+            }
         }
     }
 

@@ -127,8 +127,7 @@ class TransactionViewModel
     private val _counterpartyStats = MutableStateFlow<CounterpartyStats?>(null)
     val counterpartyStats: StateFlow<CounterpartyStats?> = _counterpartyStats.asStateFlow()
 
-    // Current month analytics key
-    private val monthKey = currentMonthKey()
+    // monthKey is computed per-call inside loadMetrics() to stay accurate across month boundaries
 
     // ─── Paging 3 ─────────────────────────────────────────────────────────────
     //
@@ -259,6 +258,7 @@ class TransactionViewModel
 
     private fun loadMetrics() {
         viewModelScope.launch {
+            val monthKey = currentMonthKey()
             val startMs  = monthKeyToStartMillis(monthKey)
             val endMs    = monthKeyToEndMillis(monthKey)
             val startIso = java.time.Instant.ofEpochMilli(startMs)
