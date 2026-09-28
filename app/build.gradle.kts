@@ -44,10 +44,13 @@ kotlin {
 
     // ── iOS ───────────────────────────────────────────────────────────────────
     // Requires macOS + Xcode to compile; declared here for CMP structure.
-    // Sources live in src/iosMain/kotlin/ (Phase 5+).
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    // Sources live in src/iosMain/kotlin/ (Phase 6).
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
 
     // ── Desktop (JVM) ─────────────────────────────────────────────────────────
     // Sources live in src/desktopMain/kotlin/ (Phase 5+).
@@ -133,11 +136,18 @@ kotlin {
             implementation(project(":sms"))
         }
 
-        // iOS — empty until Phase 5; hierarchy auto-wired by KMP default targets
-        // iosMain source set is auto-created for iosX64 + iosArm64 + iosSimulatorArm64
+        // iOS — platform-specific sources (Phase 6)
+        iosMain.dependencies {
+            implementation(libs.sqldelight.native.driver)
+        }
 
-        // Desktop — empty until Phase 5
-        // desktopMain source set is auto-created for jvm("desktop")
+        // Desktop (JVM) — Phase 6
+        val desktopMain by getting {
+            dependencies {
+                implementation(libs.sqldelight.sqlite.driver)
+                implementation(compose.desktop.currentOs)
+            }
+        }
     }
 }
 
@@ -253,4 +263,22 @@ dependencies {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Compose Desktop application (Phase 6)
+// ─────────────────────────────────────────────────────────────────────────────
+compose.desktop {
+    application {
+        mainClass = "com.belinze.lifeos.MainKt"
+        nativeDistributions {
+            targetFormats(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
+            )
+            packageName = "LifeOS"
+            packageVersion = "1.5.6"
+        }
+    }
 }
