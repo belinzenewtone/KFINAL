@@ -278,12 +278,13 @@ private fun BudgetCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val category = bws.budget.category
-    val color = categoryColor(category)
-    val isActive = bws.budget.isActive != 0
-    val percent = bws.pct.coerceIn(0f, 100f)
-    val isOver = bws.spend > bws.budget.limitAmount
-    val isWarning = !isOver && bws.pct > 0.80f
+    val category    = bws.budget.category
+    val color       = categoryColor(category)
+    val isActive    = bws.budget.isActive != 0
+    val pctFraction = bws.pct.coerceIn(0f, 1f)   // stored as 0..1 ratio
+    val pctInt      = (pctFraction * 100).roundToInt()
+    val isOver      = bws.spend > bws.budget.limitAmount
+    val isWarning   = !isOver && pctFraction > 0.80f
     val statusColor = if (isOver) DANGER else if (isWarning) WARNING else SUCCESS
     val statusLabel = if (isOver) "Over" else if (isWarning) "Close" else "On track"
 
@@ -357,7 +358,7 @@ private fun BudgetCard(
         }
 
         // Row 3: progress bar
-        BudgetProgressBar(pct = percent.coerceIn(0f, 100f) / 100f, color = statusColor)
+        BudgetProgressBar(pct = pctFraction, color = statusColor)
 
         // Row 4: spent | left/over
         Row(
@@ -365,7 +366,7 @@ private fun BudgetCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                "${formatCurrency(bws.spend)} spent (${bws.pct.roundToInt()}%)",
+                "${formatCurrency(bws.spend)} spent ($pctInt%)",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
