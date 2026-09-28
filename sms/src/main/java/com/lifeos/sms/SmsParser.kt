@@ -1,9 +1,5 @@
 package com.lifeos.sms
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -168,69 +164,69 @@ object SmsParser {
     }
 
     private val DT_SLASH = listOf(
-        DateTimeFormatter.ofPattern("d/M/yy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d/M/yyyy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d/M/yy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d/M/yyyy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d/M/yy HH:mm:ss", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d/M/yyyy HH:mm:ss", Locale.ENGLISH),
+        "d/M/yy h:mm a",
+        "d/M/yyyy h:mm a",
+        "d/M/yy hh:mm a",
+        "d/M/yyyy hh:mm a",
+        "d/M/yy HH:mm:ss",
+        "d/M/yyyy HH:mm:ss",
     )
     private val DT_DASH_NUMERIC = listOf(
-        DateTimeFormatter.ofPattern("d-M-yy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-M-yyyy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-M-yy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-M-yyyy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-M-yy HH:mm:ss", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-M-yyyy HH:mm:ss", Locale.ENGLISH),
+        "d-M-yy h:mm a",
+        "d-M-yyyy h:mm a",
+        "d-M-yy hh:mm a",
+        "d-M-yyyy hh:mm a",
+        "d-M-yy HH:mm:ss",
+        "d-M-yyyy HH:mm:ss",
     )
     private val DT_ISO = listOf(
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm", Locale.ENGLISH),
+        "yyyy-MM-dd HH:mm",
+        "yyyy-MM-dd H:mm",
     )
     private val DT_DASH_MONTHNAME = listOf(
-        DateTimeFormatter.ofPattern("d-MMM-yy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-MMM-yyyy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-MMM-yy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-MMM-yyyy hh:mm a", Locale.ENGLISH),
+        "d-MMM-yy h:mm a",
+        "d-MMM-yyyy h:mm a",
+        "d-MMM-yy hh:mm a",
+        "d-MMM-yyyy hh:mm a",
     )
     private val DT_SPACE_MONTHNAME_COMMA = listOf(
-        DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("MMM d, yyyy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("MMM dd, yyyy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a", Locale.ENGLISH),
+        "MMM d, yyyy h:mm a",
+        "MMM d, yyyy hh:mm a",
+        "MMM dd, yyyy h:mm a",
+        "MMM dd, yyyy hh:mm a",
     )
     private val DT_SPACE_MONTHNAME = listOf(
-        DateTimeFormatter.ofPattern("d MMM yy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d MMM yyyy h:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d MMM yy hh:mm a", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d MMM yyyy hh:mm a", Locale.ENGLISH),
+        "d MMM yy h:mm a",
+        "d MMM yyyy h:mm a",
+        "d MMM yy hh:mm a",
+        "d MMM yyyy hh:mm a",
     )
 
     private val DO_SLASH = listOf(
-        DateTimeFormatter.ofPattern("d/M/yy", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d/M/yyyy", Locale.ENGLISH),
+        "d/M/yy",
+        "d/M/yyyy",
     )
     private val DO_DASH_NUMERIC = listOf(
-        DateTimeFormatter.ofPattern("d-M-yy", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-M-yyyy", Locale.ENGLISH),
+        "d-M-yy",
+        "d-M-yyyy",
     )
     private val DO_ISO = listOf(
-        DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH),
+        "yyyy-MM-dd",
     )
     private val DO_DASH_MONTHNAME = listOf(
-        DateTimeFormatter.ofPattern("d-MMM-yy", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d-MMM-yyyy", Locale.ENGLISH),
+        "d-MMM-yy",
+        "d-MMM-yyyy",
     )
     private val DO_SPACE_MONTHNAME_COMMA = listOf(
-        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH),
+        "MMM d, yyyy",
+        "MMM dd, yyyy",
     )
     private val DO_SPACE_MONTHNAME = listOf(
-        DateTimeFormatter.ofPattern("d MMM yy", Locale.ENGLISH),
-        DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH),
+        "d MMM yy",
+        "d MMM yyyy",
     )
 
-    private fun dtFormatters(shape: DateShape) = when (shape) {
+    private fun dtFormatters(shape: DateShape): List<String> = when (shape) {
         DateShape.SLASH -> DT_SLASH
         DateShape.DASH_NUMERIC -> DT_DASH_NUMERIC
         DateShape.ISO -> DT_ISO
@@ -239,7 +235,7 @@ object SmsParser {
         DateShape.SPACE_MONTHNAME -> DT_SPACE_MONTHNAME
     }
 
-    private fun doFormatters(shape: DateShape) = when (shape) {
+    private fun doFormatters(shape: DateShape): List<String> = when (shape) {
         DateShape.SLASH -> DO_SLASH
         DateShape.DASH_NUMERIC -> DO_DASH_NUMERIC
         DateShape.ISO -> DO_ISO
@@ -654,17 +650,19 @@ object SmsParser {
         val shape = dateShape(datePart)
         if (timePart != null) {
             val combined = "$datePart $timePart"
-            dtFormatters(shape).firstNotNullOfOrNull { fmt ->
+            dtFormatters(shape).firstNotNullOfOrNull { pattern ->
                 runCatching {
-                    LocalDateTime.parse(combined, fmt)
-                        .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    java.text.SimpleDateFormat(pattern, Locale.ENGLISH)
+                        .apply { timeZone = java.util.TimeZone.getDefault() }
+                        .parse(combined)?.time
                 }.getOrNull()
             }?.let { return it }
         }
-        return doFormatters(shape).firstNotNullOfOrNull { fmt ->
+        return doFormatters(shape).firstNotNullOfOrNull { pattern ->
             runCatching {
-                LocalDate.parse(datePart, fmt)
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                java.text.SimpleDateFormat(pattern, Locale.ENGLISH)
+                    .apply { timeZone = java.util.TimeZone.getDefault() }
+                    .parse(datePart)?.time
             }.getOrNull()
         }
     }
@@ -686,8 +684,8 @@ object SmsParser {
         dateMs: Long,
         counterparty: String?,
     ): String {
-        val utcDateTime = java.time.Instant.ofEpochMilli(dateMs)
-            .atZone(java.time.ZoneId.of("UTC")).toLocalDateTime()
+        val utcDateTime = kotlinx.datetime.Instant.fromEpochMilliseconds(dateMs)
+            .toLocalDateTime(kotlinx.datetime.TimeZone.UTC)
         val normalizedCp = counterparty?.lowercase()?.trim().orEmpty()
         val key = "${category.name}|${"%.2f".format(amount)}|$utcDateTime|$normalizedCp"
         return "sem_${sha256(key).take(16)}"

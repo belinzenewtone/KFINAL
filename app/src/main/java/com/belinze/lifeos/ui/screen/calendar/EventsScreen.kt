@@ -35,7 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -43,18 +43,24 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.EventViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
 
 @Composable
 fun EventsScreen(
     navController: NavHostController,
-    viewModel:     EventViewModel = hiltViewModel(),
+    viewModel:     EventViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
 
-    val today    = remember { LocalDate.now().toString() }
+    val today    = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() }
     val upcoming = remember(state.events, query) {
         state.events
             .filter { it.type != "task" }   // show events, birthdays, anniversaries, countdowns — not tasks
@@ -156,10 +162,15 @@ fun EventsScreen(
     }
 }
 
+private val FMT_EEE_MMM_D_YYYY = LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_ABBREVIATED); chars(", ")
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE); char(' '); year()
+}
+
 private fun formatEventSubtitle(iso: String): String {
     val datePart = try {
         val date = LocalDate.parse(iso.take(10))
-        date.format(DateTimeFormatter.ofPattern("EEE, MMM d yyyy"))
+        FMT_EEE_MMM_D_YYYY.format(date)
     } catch (_: Exception) {
         iso.take(10)
     }

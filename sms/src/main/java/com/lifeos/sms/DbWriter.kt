@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteStatement
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 /**
@@ -882,15 +881,13 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private fun isoNow(): String {
-        val fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-        return java.time.LocalDateTime.now().format(fmt)
-    }
+    private fun isoNow(): String =
+        kotlinx.datetime.Clock.System.now()
+            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+            .toString()
 
-    private fun epochToIso(epochMs: Long): String {
-        val ldt = java.time.Instant.ofEpochMilli(epochMs)
-            .atZone(java.time.ZoneId.systemDefault())
-            .toLocalDateTime()
-        return java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(ldt)
-    }
+    private fun epochToIso(epochMs: Long): String =
+        kotlinx.datetime.Instant.fromEpochMilliseconds(epochMs)
+            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+            .toString()
 }

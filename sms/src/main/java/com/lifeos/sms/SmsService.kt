@@ -9,10 +9,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
-import java.time.LocalDateTime
-import java.time.ZoneId
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * SmsService — the Compose-side bridge to the SMS parser module.
@@ -23,10 +19,7 @@ import javax.inject.Singleton
  * Call [initialize] from Application.onCreate() to arm the background receiver,
  * register the SmsReceiverModule Compose stub, and schedule the periodic sweep.
  */
-@Singleton
-class SmsService
-    @Inject
-    constructor(
+class SmsService(
     private val context: Context,
 ) {
     private val workManager: WorkManager get() = WorkManager.getInstance(context)
@@ -441,10 +434,9 @@ class SmsService
     private fun isoToEpoch(iso: String?): Long {
         if (iso.isNullOrBlank()) return System.currentTimeMillis()
         return try {
-            LocalDateTime.parse(iso)
-                .atZone(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli()
+            kotlinx.datetime.LocalDateTime.parse(iso.take(19))
+                .toInstant(kotlinx.datetime.TimeZone.currentSystemDefault())
+                .toEpochMilliseconds()
         } catch (_: Exception) {
             System.currentTimeMillis()
         }

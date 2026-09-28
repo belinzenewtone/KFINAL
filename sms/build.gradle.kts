@@ -8,7 +8,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
 }
@@ -58,8 +57,8 @@ dependencies {
     // Core Android
     implementation(libs.core.ktx)
 
-    // Hilt — SmsService.kt uses @Inject / @Singleton
-    implementation(libs.hilt.android)
+    // kotlinx-datetime — DbWriter.kt, SmsParser.kt, SmsService.kt
+    implementation(libs.kotlinx.datetime)
 
     // Unit tests (ported from RFINAL modules/lifeos-sms — see Phase 2)
     testImplementation(libs.kotlin.test)

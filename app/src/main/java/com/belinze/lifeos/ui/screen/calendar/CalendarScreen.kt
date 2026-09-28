@@ -39,7 +39,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material3.AlertDialog
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,7 +69,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.EventEntity
@@ -82,10 +82,17 @@ import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.SettingsViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.belinze.lifeos.util.lastDayOfMonth
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.format.chars
+import kotlinx.datetime.plus
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CalendarScreen — 1:1 port of src/screens/calendar/CalendarScreen.tsx.
@@ -108,6 +115,16 @@ private val PRIORITY_COLORS = mapOf(
 
 // HorizontalPager bounds — ±100 years around today so months can be swiped
 // freely in either direction (same paging engine the Material3 date picker uses).
+private val FMT_MMMM_YYYY = LocalDate.Format { monthName(MonthNames.ENGLISH_FULL); char(' '); year() }
+private val FMT_EEEE_MMM_DD = LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_FULL); chars(", ")
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth()
+}
+private val FMT_EEE_MMM_D = LocalDate.Format {
+    dayOfWeek(DayOfWeekNames.ENGLISH_ABBREVIATED); chars(", ")
+    monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); dayOfMonth(Padding.NONE)
+}
+
 private const val PAGER_CENTER = 1200
 private const val PAGER_RANGE = PAGER_CENTER * 2 + 1
 
@@ -115,9 +132,9 @@ private const val PAGER_RANGE = PAGER_CENTER * 2 + 1
 @Composable
 fun CalendarScreen(
     navController:    NavHostController,
-    eventViewModel:   EventViewModel   = hiltViewModel(),
-    taskViewModel:    TaskViewModel    = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    eventViewModel:   EventViewModel   = koinViewModel(),
+    taskViewModel:    TaskViewModel    = koinViewModel(),
+    settingsViewModel: SettingsViewModel = koinViewModel(),
 ) {
     val eventState   by eventViewModel.uiState.collectAsStateWithLifecycle()
     val taskState    by taskViewModel.uiState.collectAsStateWithLifecycle()
@@ -125,37 +142,37 @@ fun CalendarScreen(
     val calendarSwipeEnabled = settings.calendarSwipe
 
     var selectedTab by rememberSaveable { mutableStateOf(CalendarTab.Calendar) }
-    var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    var selectedDate by rememberSaveable { mutableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()) }
     var calendarQuery by remember { mutableStateOf("") }
     var tasksQuery by remember { mutableStateOf("") }
     var eventsQuery by remember { mutableStateOf("") }
     var addMenuOpen by remember { mutableStateOf(false) }
 
-    val today = LocalDate.now()
-    val todayYearMonth = YearMonth.now()
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val todayFirstOfMonth = LocalDate(today.year, today.month, 1)
 
     // Pager center = current month; swiping left/right moves ±1 month with the
     // same smooth animated paging the Material3 date picker uses.
     val pagerState = rememberPagerState(initialPage = PAGER_CENTER) { PAGER_RANGE }
     val yearMonth = remember(pagerState.currentPage) {
-        YearMonth.now().plusMonths(pagerState.currentPage.toLong() - PAGER_CENTER)
+        LocalDate(today.year, today.month, 1).plus(pagerState.currentPage - PAGER_CENTER, DateTimeUnit.MONTH)
     }
-    val isCurrentMonth = yearMonth == todayYearMonth
+    val isCurrentMonth = yearMonth == todayFirstOfMonth
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(yearMonth) {
         eventViewModel.loadCalendarMonth(yearMonth)
     }
 
-    val headerSubtitle = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH))
+    val headerSubtitle = FMT_MMMM_YYYY.format(yearMonth)
     val selectedDateLabel = remember(selectedDate) {
         runCatching {
-            LocalDate.parse(selectedDate).format(DateTimeFormatter.ofPattern("EEEE, MMM dd", Locale.ENGLISH))
+            FMT_EEEE_MMM_DD.format(LocalDate.parse(selectedDate))
         }.getOrNull() ?: selectedDate
     }
 
     val selectedLocalDate = remember(selectedDate) {
-        runCatching { LocalDate.parse(selectedDate) }.getOrNull() ?: LocalDate.now()
+        runCatching { LocalDate.parse(selectedDate) }.getOrNull() ?: today
     }
     val dayItems = remember(eventState.events, selectedDate) {
         eventViewModel.eventsForDay(selectedLocalDate)
@@ -263,7 +280,7 @@ fun CalendarScreen(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)),
+                            FMT_MMMM_YYYY.format(yearMonth),
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -312,7 +329,7 @@ fun CalendarScreen(
                     beyondViewportPageCount = 1,
                     userScrollEnabled = calendarSwipeEnabled,
                 ) { page ->
-                    val pageMonth = YearMonth.now().plusMonths(page.toLong() - PAGER_CENTER)
+                    val pageMonth = LocalDate(today.year, today.month, 1).plus(page - PAGER_CENTER, DateTimeUnit.MONTH)
                     MonthGrid(
                         yearMonth    = pageMonth,
                         today        = today,
@@ -581,13 +598,13 @@ private fun DayItemGroup(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        val today = LocalDate.now()
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         items.forEach { item ->
             val barColor = PRIORITY_COLORS[item.importance] ?: color
             val isCountdown = item.type == "countdown"
             val subtitle = if (isCountdown) {
                 val eventDate = runCatching { LocalDate.parse(item.date.take(10)) }.getOrNull()
-                val days = eventDate?.let { (it.toEpochDay() - today.toEpochDay()).toInt() }
+                val days = eventDate?.let { (it.toEpochDays() - today.toEpochDays()) }
                 when {
                     days == null -> null
                     days == 0    -> "Today!"
@@ -686,8 +703,7 @@ private fun CalendarTaskItem(
                 )
                 task.deadline?.let {
                     val deadlineLabel = runCatching {
-                        LocalDate.parse(it.take(10))
-                            .format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
+                        FMT_EEE_MMM_D.format(LocalDate.parse(it.take(10)))
                     }.getOrElse { _ -> it.take(10) }
                     Text(
                         deadlineLabel,
@@ -710,7 +726,7 @@ private fun EventListItem(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     if (showDeleteDialog) {
-        androidx.compose.material3.AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title            = { Text("Remove event") },
             text             = { Text("Remove \"${event.title}\"? This cannot be undone.") },
@@ -760,7 +776,7 @@ private fun EventListItem(
 
 @Composable
 private fun MonthGrid(
-    yearMonth:    YearMonth,
+    yearMonth:    LocalDate,
     today:        LocalDate,
     selectedDate: String,
     eventsByDate: Map<LocalDate, Set<String>>,
@@ -768,10 +784,10 @@ private fun MonthGrid(
     modifier:     Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        val firstDay = yearMonth.atDay(1)
+        val firstDay = yearMonth
         // Monday = 0 offset (Mon-first grid matches "M T W T F S S" header)
-        val startOffset = firstDay.dayOfWeek.value - 1
-        val daysInMonth = yearMonth.lengthOfMonth()
+        val startOffset = firstDay.dayOfWeek.isoDayNumber - 1
+        val daysInMonth = lastDayOfMonth(yearMonth).dayOfMonth
         val rows = (startOffset + daysInMonth + 6) / 7
         for (row in 0 until rows) {
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -780,7 +796,7 @@ private fun MonthGrid(
                     if (dayIndex < 1 || dayIndex > daysInMonth) {
                         Box(modifier = Modifier.weight(1f).aspectRatio(1f))
                     } else {
-                        val date = yearMonth.atDay(dayIndex)
+                        val date = LocalDate(yearMonth.year, yearMonth.month, dayIndex)
                         val dateStr = date.toString()
                         val isToday = date == today
                         val isSelected = dateStr == selectedDate
@@ -872,7 +888,7 @@ private fun DayCell(
 
 private fun formatCalendarEventSubtitle(iso: String, type: String, location: String?): String {
     val datePart = runCatching {
-        LocalDate.parse(iso.take(10)).format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
+        FMT_EEE_MMM_D.format(LocalDate.parse(iso.take(10)))
     }.getOrElse { iso.take(10) }
     val typeLabel = when (type) {
         "birthday"    -> "Birthday"

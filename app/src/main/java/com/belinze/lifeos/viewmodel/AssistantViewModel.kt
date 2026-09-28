@@ -18,7 +18,6 @@ import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
 import com.belinze.lifeos.util.nowIso
 import com.belinze.lifeos.util.previousMonthKey
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -34,15 +33,25 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
-import java.util.Locale
 import java.util.UUID
-import javax.inject.Inject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import com.belinze.lifeos.util.FMT_EEE_D_MMM
+import com.belinze.lifeos.util.FMT_MMM_D
+import com.belinze.lifeos.util.lastDayOfMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -146,10 +155,8 @@ private data class PeriodTotals(val income: Double, val expense: Double)
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-@HiltViewModel
 class AssistantViewModel
-    @Inject
-    constructor(
+constructor(
     private val assistantDao:   AssistantDao,
     private val transactionDao: TransactionDao,
     private val taskDao:        TaskDao,
@@ -172,10 +179,8 @@ class AssistantViewModel
     private val _uiState = MutableStateFlow(AssistantUiState())
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
 
-    private val zone      = ZoneId.systemDefault()
-    private val isoDtFmt  = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    private val dateFmt   = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
-    private val monthKey  = currentMonthKey()
+    private val zone     = TimeZone.currentSystemDefault()
+    private val monthKey = currentMonthKey()
     private val prevKey   = previousMonthKey()
 
     init {
@@ -435,54 +440,53 @@ class AssistantViewModel
     // ─── Period extraction ────────────────────────────────────────────────────
 
     private fun extractPeriod(text: String): Period {
-        val now   = ZonedDateTime.now(zone)
-        val year  = now.year
-        val month = now.monthValue
+        val nowInstant = Clock.System.now()
+        val nowLdt     = nowInstant.toLocalDateTime(zone)
+        val today      = nowLdt.date
+        val year       = today.year
+        val month      = today.monthNumber
+        val nowMs      = nowInstant.toEpochMilliseconds()
 
-        fun ms(zdt: ZonedDateTime) = zdt.toInstant().toEpochMilli()
-
-        fun endOfDay(date: LocalDate) = date.atTime(23, 59, 59, 999_000_000).atZone(zone)
+        fun startMs(date: LocalDate) = date.atStartOfDayIn(zone).toEpochMilliseconds()
+        fun endMs(date: LocalDate)   = LocalDateTime(
+            date.year, date.month, date.dayOfMonth, 23, 59, 59, 999_000_000
+        ).toInstant(zone).toEpochMilliseconds()
 
         if (text.contains("yesterday")) {
-            val d = now.minusDays(1).toLocalDate()
-            return Period("yesterday", ms(d.atStartOfDay(zone)), ms(endOfDay(d)), year, month)
+            val d = today.minus(1, DateTimeUnit.DAY)
+            return Period("yesterday", startMs(d), endMs(d), year, month)
         }
         if (text.contains("today")) {
-            return Period("today", ms(now.toLocalDate().atStartOfDay(zone)), ms(now), year, month)
+            return Period("today", startMs(today), nowMs, year, month)
         }
         if (text.containsAny("this week", "past week", "last 7 days", "last seven days", "seven days", "past 7")) {
-            val start = now.minusDays(7).toLocalDate().atStartOfDay(zone)
-            return Period("the past 7 days", ms(start), ms(now), year, month)
+            return Period("the past 7 days", startMs(today.minus(7, DateTimeUnit.DAY)), nowMs, year, month)
         }
         if (text.containsAny("last week", "previous week", "week before")) {
-            val start = now.minusDays(14).toLocalDate().atStartOfDay(zone)
-            val end   = endOfDay(now.minusDays(7).toLocalDate())
-            return Period("last week", ms(start), ms(end), year, month)
+            return Period("last week",
+                startMs(today.minus(14, DateTimeUnit.DAY)),
+                endMs(today.minus(7, DateTimeUnit.DAY)),
+                year, month)
         }
         if (text.containsAny("last month", "previous month", "month before")) {
             val lm = if (month == 1) 12 else month - 1
             val ly = if (month == 1) year - 1 else year
-            val firstOfMonth = LocalDate.of(ly, lm, 1)
-            val start = firstOfMonth.atStartOfDay(zone)
-            val end   = endOfDay(firstOfMonth.with(TemporalAdjusters.lastDayOfMonth()))
-            return Period("last month", ms(start), ms(end), ly, lm)
+            val firstOfMonth = LocalDate(ly, lm, 1)
+            return Period("last month", startMs(firstOfMonth), endMs(lastDayOfMonth(firstOfMonth)), ly, lm)
         }
         if (text.containsAny("last 30 days", "past 30 days", "thirty days", "30 days")) {
-            val start = now.minusDays(30).toLocalDate().atStartOfDay(zone)
-            return Period("the last 30 days", ms(start), ms(now), year, month)
+            return Period("the last 30 days", startMs(today.minus(30, DateTimeUnit.DAY)), nowMs, year, month)
         }
         if (text.containsAny("this year", "year to date", "ytd", "so far this year")) {
-            val start = LocalDate.of(year, 1, 1).atStartOfDay(zone)
-            return Period("this year", ms(start), ms(now), year, month)
+            return Period("this year", startMs(LocalDate(year, 1, 1)), nowMs, year, month)
         }
         if (text.containsAny("last year", "previous year")) {
-            val start = LocalDate.of(year - 1, 1, 1).atStartOfDay(zone)
-            val end   = endOfDay(LocalDate.of(year - 1, 12, 31))
-            return Period("last year", ms(start), ms(end), year - 1, 12)
+            val lastYearFirst = LocalDate(year - 1, 1, 1)
+            val lastYearLast  = LocalDate(year - 1, 12, 31)
+            return Period("last year", startMs(lastYearFirst), endMs(lastYearLast), year - 1, 12)
         }
         // Default: this month
-        val start = LocalDate.of(year, month, 1).atStartOfDay(zone)
-        return Period("this month", ms(start), ms(now), year, month)
+        return Period("this month", startMs(LocalDate(year, month, 1)), nowMs, year, month)
     }
 
     private fun extractCategory(text: String): String? =
@@ -510,7 +514,7 @@ class AssistantViewModel
     // ─── Intent handlers ──────────────────────────────────────────────────────
 
     private suspend fun getGreeting(): EngineResponse {
-        val hour  = ZonedDateTime.now(zone).hour
+        val hour  = Clock.System.now().toLocalDateTime(zone).hour
         val greet = if (hour < 12) "Good morning" else if (hour < 17) "Good afternoon" else "Good evening"
         // RFINAL greets with the profile name exactly as stored. We were truncating to
         // the first word, so "Jane Wanjiku" was greeted as "Jane".
@@ -719,9 +723,8 @@ class AssistantViewModel
             return engineResponse("No active bills set up. Go to Planner to add recurring payments.", "View bills")
         }
 
-        val now    = ZonedDateTime.now(zone)
-        val nowStr = now.format(isoDtFmt)
-        val in7Str = now.plusDays(7).format(isoDtFmt)
+        val nowStr = Clock.System.now().toLocalDateTime(zone).toString()
+        val in7Str = Clock.System.now().plus(7 * 24, DateTimeUnit.HOUR).toLocalDateTime(zone).toString()
         val overdue = active.filter { it.nextDueDate != null && it.nextDueDate!! < nowStr && it.paidStatus == 0 }
         val dueSoon = active.filter { it.nextDueDate != null && it.nextDueDate!! in nowStr..in7Str }
             .sortedBy { it.nextDueDate }
@@ -759,14 +762,13 @@ class AssistantViewModel
             )
         }
 
-        val now    = ZonedDateTime.now(zone)
-        val in14   = now.plusDays(14).format(isoDtFmt)
+        val in14   = Clock.System.now().plus(14 * 24, DateTimeUnit.HOUR).toLocalDateTime(zone).toString()
         val dueNext = active.filter { it.nextRunAt != null && it.nextRunAt!! <= in14 }.take(5)
 
         val upcoming = if (dueNext.isNotEmpty()) {
             dueNext.joinToString("\n") { r ->
                 val dateLabel = r.nextRunAt!!.take(10).let { d ->
-                    runCatching { LocalDate.parse(d).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)) }
+                    runCatching { FMT_EEE_D_MMM.format(LocalDate.parse(d)) }
                         .getOrDefault(d)
                 }
                 val amt      = r.amount?.let { " — ${kes(it)}" } ?: ""
@@ -809,7 +811,7 @@ class AssistantViewModel
         val repaidAmt   = active.sumOf { it.totalRepaidKes }
         val lines = active.take(3).joinToString("\n") { l ->
             val date = l.drawDate?.take(10)?.let { d ->
-                runCatching { LocalDate.parse(d).format(DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)) }.getOrDefault(d)
+                runCatching { LocalDate.Format { dayOfMonth(Padding.NONE); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED) }.format(LocalDate.parse(d)) }.getOrDefault(d)
             } ?: "unknown date"
             val code = l.drawCode?.let { " ($it)" } ?: ""
             "• ${kes(l.drawAmountKes)} drawn on $date$code"
@@ -823,9 +825,8 @@ class AssistantViewModel
     }
 
     private suspend fun getTasksSummary(): EngineResponse {
-        val now    = ZonedDateTime.now(zone)
-        val nowStr = now.format(isoDtFmt)
-        val in7Str = now.plusDays(7).format(isoDtFmt)
+        val nowStr = Clock.System.now().toLocalDateTime(zone).toString()
+        val in7Str = Clock.System.now().plus(7 * 24, DateTimeUnit.HOUR).toLocalDateTime(zone).toString()
         val tasks  = taskDao.getUpcoming(in7Str, 100)
 
         if (tasks.isEmpty()) {
@@ -843,7 +844,7 @@ class AssistantViewModel
 
         val list = upcoming.joinToString("\n") { t ->
             val due = t.deadline?.take(10)?.let { d ->
-                runCatching { LocalDate.parse(d).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)) }.getOrDefault(d)
+                runCatching { FMT_EEE_D_MMM.format(LocalDate.parse(d)) }.getOrDefault(d)
             } ?: "no date"
             "• ${t.title} ($due)"
         }
@@ -854,11 +855,13 @@ class AssistantViewModel
     }
 
     private suspend fun getEventsSummary(text: String): EngineResponse {
-        val now = ZonedDateTime.now(zone)
+        val nowInstant = Clock.System.now()
+        val today      = nowInstant.toLocalDateTime(zone).date
 
         if (text.contains("today")) {
-            val todayStart = now.toLocalDate().atStartOfDay(zone).format(isoDtFmt)
-            val todayEnd   = now.toLocalDate().atTime(23, 59, 59).atZone(zone).format(isoDtFmt)
+            val todayStart = today.atStartOfDayIn(zone).toLocalDateTime(zone).toString()
+            val todayEnd   = LocalDateTime(today.year, today.month, today.dayOfMonth, 23, 59, 59, 0)
+                .toInstant(zone).toLocalDateTime(zone).toString()
             val events     = eventDao.getInRange(todayStart, todayEnd)
             if (events.isEmpty()) return engineResponse("Nothing on your calendar today.", "View calendar")
 
@@ -866,8 +869,11 @@ class AssistantViewModel
                 val time = if (e.allDay != 0) {
                     "all day"
                 } else {
-                    runCatching { java.time.OffsetDateTime.parse(e.date).format(DateTimeFormatter.ofPattern("HH:mm")) }
-                        .getOrDefault(if (e.date.length >= 16) e.date.substring(11, 16) else "")
+                    runCatching {
+                        val ldt = DateTimeComponents.Formats.ISO_DATE_TIME_OFFSET.parse(e.date).toInstantUsingOffset()
+                            .toLocalDateTime(zone)
+                        "%02d:%02d".format(ldt.hour, ldt.minute)
+                    }.getOrDefault(if (e.date.length >= 16) e.date.substring(11, 16) else "")
                 }
                 "• ${e.title} ($time)"
             }
@@ -877,14 +883,14 @@ class AssistantViewModel
             )
         }
 
-        val nowStr = now.format(isoDtFmt)
-        val endStr = now.plusDays(7).format(isoDtFmt)
+        val nowStr = nowInstant.toLocalDateTime(zone).toString()
+        val endStr = nowInstant.plus(7 * 24, DateTimeUnit.HOUR).toLocalDateTime(zone).toString()
         val events = eventDao.getInRange(nowStr, endStr)
         if (events.isEmpty()) return engineResponse("No upcoming events in the next 7 days.", "View calendar")
 
         val list = events.take(6).joinToString("\n") { e ->
             val date = runCatching {
-                LocalDate.parse(e.date.take(10)).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH))
+                FMT_EEE_D_MMM.format(LocalDate.parse(e.date.take(10)))
             }.getOrDefault(e.date.take(10))
             "• ${e.title} ($date)"
         }
@@ -899,7 +905,7 @@ class AssistantViewModel
 
         val list = txs.joinToString("\n") { t ->
             val date = t.date?.take(10)?.let { d ->
-                runCatching { LocalDate.parse(d).format(dateFmt) }.getOrDefault(d)
+                runCatching { FMT_MMM_D.format(LocalDate.parse(d)) }.getOrDefault(d)
             } ?: ""
             val icon = when (t.transactionType) {
                 "receive"  -> "↑"
@@ -968,8 +974,7 @@ class AssistantViewModel
         val goals       = plannerDao.getAllGoals()
         val activeGoals = goals.count { it.status == "active" }
 
-        val now    = ZonedDateTime.now(zone)
-        val in7Str = now.plusDays(7).format(isoDtFmt)
+        val in7Str = Clock.System.now().plus(7 * 24, DateTimeUnit.HOUR).toLocalDateTime(zone).toString()
         val bills       = plannerDao.getAllBills()
         val activeBills = bills.filter { it.isActive != 0 }
         val dueSoonCount = activeBills.count { it.nextDueDate != null && it.nextDueDate!! <= in7Str }
@@ -1041,13 +1046,13 @@ class AssistantViewModel
     }
 
     private fun isoFromMillis(ms: Long): String =
-        Instant.ofEpochMilli(ms).atZone(zone).format(isoDtFmt)
+        Instant.fromEpochMilliseconds(ms).toLocalDateTime(zone).toString()
 
     /** Whole calendar days between two ISO-ish date(-time) strings (end - start). */
     private fun daysBetween(startIso: String, endIso: String): Int = runCatching {
         val start = LocalDate.parse(startIso.take(10))
         val end   = LocalDate.parse(endIso.take(10))
-        (end.toEpochDay() - start.toEpochDay()).toInt()
+        (end.toEpochDays() - start.toEpochDays())
     }.getOrDefault(0)
 
     /**

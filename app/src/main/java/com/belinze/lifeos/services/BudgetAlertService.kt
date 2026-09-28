@@ -7,11 +7,10 @@ import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * BudgetAlertService — 1:1 port of src/services/budgetAlertService.ts.
@@ -24,17 +23,14 @@ import javax.inject.Singleton
  * Dedup is keyed `category|level|yearMonth` and persisted in DataStore, so a
  * single category only notifies once per month per level.
  */
-@Singleton
 class BudgetAlertService
-    @Inject
-    constructor(
+constructor(
     private val budgetDao:  BudgetDao,
     private val transactionDao: TransactionDao,
     private val prefs:      AppPreferences,
     private val scheduler:  NotificationScheduler,
 ) {
-    private val zone = ZoneId.systemDefault()
-    private val isoDtFmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    private val zone = TimeZone.currentSystemDefault()
 
     /** Evaluate a single budget's spend and fire if a threshold is crossed. */
     suspend fun checkBudgetThresholds(state: AppPreferenceState, category: String) {
@@ -80,7 +76,7 @@ class BudgetAlertService
             val customKey = "$category|custom|$yearMonth"
             if (state.firedBudgetAlerts[customKey] == null) {
                 scheduler.postBudgetAlert(category, pct)
-                prefs.markBudgetAlertFired(customKey, Instant.now().toString())
+                prefs.markBudgetAlertFired(customKey, Clock.System.now().toString())
             }
         }
 
@@ -105,7 +101,7 @@ class BudgetAlertService
         val highestThreshold = thresholds[highestLevel] ?: 0
         for (level in listOf("high", "medium", "low")) {
             if ((thresholds[level] ?: 0) <= highestThreshold) {
-                prefs.markBudgetAlertFired("$category|$level|$yearMonth", Instant.now().toString())
+                prefs.markBudgetAlertFired("$category|$level|$yearMonth", Clock.System.now().toString())
             }
         }
     }
@@ -115,16 +111,16 @@ class BudgetAlertService
 
     private suspend fun categorySpendMap(): Map<String, Double> {
         val key = currentMonthKey()
-        val startIso = Instant.ofEpochMilli(monthKeyToStartMillis(key))
-            .atZone(zone).format(isoDtFmt)
-        val endIso = Instant.ofEpochMilli(monthKeyToEndMillis(key))
-            .atZone(zone).format(isoDtFmt)
+        val startIso = Instant.fromEpochMilliseconds(monthKeyToStartMillis(key))
+            .toLocalDateTime(zone).toString()
+        val endIso = Instant.fromEpochMilliseconds(monthKeyToEndMillis(key))
+            .toLocalDateTime(zone).toString()
         return transactionDao.getExpenseCategoryTotals(startIso, endIso)
             .associate { (it.category ?: "").lowercase() to it.total }
     }
 
     private fun currentYearMonth(): String {
-        val now = java.time.LocalDate.now()
-        return "${now.year}-${String.format(java.util.Locale.US, "%02d", now.monthValue)}"
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        return "${today.year}-${"%02d".format(today.monthNumber)}"
     }
 }

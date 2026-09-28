@@ -28,7 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.belinze.lifeos.ui.components.AppAlertDialog
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -37,9 +38,15 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.SmsImportHealthViewModel
 import com.lifeos.sms.SmsService
 import kotlinx.coroutines.delay
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,7 +59,7 @@ private val FULIZA_COLOR  = Color(0xFFFB923C)
 @Composable
 fun SmsImportHealthScreen(
     navController: NavHostController,
-    viewModel:     SmsImportHealthViewModel = hiltViewModel(),
+    viewModel:     SmsImportHealthViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -92,7 +99,7 @@ fun SmsImportHealthScreen(
         resultDialogTitle = title; resultDialogMessage = body; showResultDialog = true
     }
     if (showResultDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showResultDialog = false },
             title            = { Text(resultDialogTitle) },
             text             = { Text(resultDialogMessage) },
@@ -100,7 +107,7 @@ fun SmsImportHealthScreen(
         )
     }
     if (showClearLogConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showClearLogConfirm = false },
             title = { Text("Clear import log?") },
             text  = { Text("All visible log entries will be removed. This cannot be undone.") },
@@ -153,7 +160,7 @@ fun SmsImportHealthScreen(
                             SmsImportHealthViewModel.ReceiverStatus.Unknown  -> "Waiting"  to WARNING_COLOR
                         }
                         val lastFireLabel = state.lastFireMs
-                            ?.let { formatTimestamp(Instant.ofEpochMilli(it).toString()) } ?: "Never"
+                            ?.let { formatTimestamp(Instant.fromEpochMilliseconds(it).toString()) } ?: "Never"
 
                         Row(
                             modifier             = Modifier.fillMaxWidth(),
@@ -615,7 +622,7 @@ private fun RejectionRow(r: SmsService.RejectionEntry) {
                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2)
         }
-        Text(formatTimestamp(Instant.ofEpochMilli(r.timestampMs).toString()),
+        Text(formatTimestamp(Instant.fromEpochMilliseconds(r.timestampMs).toString()),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline)
     }
@@ -716,21 +723,28 @@ private fun auditDisplayTimestamp(createdAt: String?, smsDate: String?, outcome:
 
 private fun formatTimestamp(iso: String?): String {
     if (iso.isNullOrBlank()) return "Never"
+    val zone = TimeZone.currentSystemDefault()
     return try {
         // Try Instant first (has 'Z' or offset).  Fall back to LocalDateTime
         // for timestamps stored without a timezone designator.
         val instant = try {
             Instant.parse(iso)
         } catch (_: Exception) {
-            java.time.LocalDateTime.parse(iso.take(19))
-                .atZone(ZoneId.systemDefault()).toInstant()
+            LocalDateTime.parse(iso.take(19)).toInstant(zone)
         }
-        val dt    = instant.atZone(ZoneId.systemDefault())
-        val today = java.time.LocalDate.now(ZoneId.systemDefault())
-        if (dt.toLocalDate() == today) {
-            dt.format(DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH))
+        val ldt   = instant.toLocalDateTime(zone)
+        val today = Clock.System.todayIn(zone)
+        val h = ldt.hour; val m = ldt.minute
+        val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h
+        val ampm = if (h < 12) "AM" else "PM"
+        if (ldt.date == today) {
+            "%d:%02d %s".format(h12, m, ampm)
         } else {
-            dt.format(DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.ENGLISH))
+            val datePart = "%s %d".format(
+                MonthNames.ENGLISH_ABBREVIATED.names[ldt.date.monthNumber - 1],
+                ldt.date.dayOfMonth,
+            )
+            "%s, %d:%02d %s".format(datePart, h12, m, ampm)
         }
     } catch (_: Exception) {
         // Last resort: trim to the human-readable portion (first 16 chars)
