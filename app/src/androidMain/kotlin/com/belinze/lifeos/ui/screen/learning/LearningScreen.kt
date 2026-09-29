@@ -24,10 +24,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -43,10 +40,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -431,57 +430,117 @@ private fun LogSessionSheet(
     }
 }
 
-// LE-3 + LE-5: card is now tappable and shows progress/chip for non-completed sessions
 @Composable
 private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit) {
-    // LE-7: elevated Card surface to match RN session card style
     val completed = session.isCompleted == 1
     val color = CATEGORY_COLORS[session.category] ?: MaterialTheme.colorScheme.primary
-    Card(
-        onClick   = onTap,
-        modifier  = Modifier
-            .fillMaxWidth()
-            .padding(bottom = Spacing.base),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(session.category, style = MaterialTheme.typography.bodySmall, color = color)
-                    Text(session.title, style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface)
-                }
-                if (completed) {
-                    Icon(Icons.Outlined.CheckCircle, contentDescription = null,
-                        tint = Color(0xFF4ADE80), modifier = Modifier.size(22.dp))
-                }
-            }
-            if (!session.description.isNullOrBlank()) {
-                Text(session.description, style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-            }
-            Spacer(Modifier.height(Spacing.sm))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Outlined.Timer, contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
-                Text("${session.durationMinutes} min", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
 
-            // LE-5: action chip — only shown for non-completed sessions ("Start")
-            if (!completed) {
-                Spacer(Modifier.height(4.dp))
-                AssistChip(
-                    onClick = onTap,
-                    label = { Text("Start", style = MaterialTheme.typography.labelSmall) },
-                )
+    val totalSeconds = session.durationMinutes * 60
+    var timerRunning by remember { mutableStateOf(false) }
+    var timerSeconds by remember { mutableStateOf(totalSeconds) }
+
+    LaunchedEffect(timerRunning) {
+        if (timerRunning) {
+            while (timerSeconds > 0) {
+                delay(1000L)
+                timerSeconds--
             }
-        } // end Column padding
+            timerRunning = false
+            onTap() // auto-mark complete when timer finishes
+        }
+    }
+
+    val timeLabel = if (timerRunning || timerSeconds < totalSeconds) {
+        "%d:%02d".format(timerSeconds / 60, timerSeconds % 60)
+    } else {
+        "${session.durationMinutes}m"
+    }
+
+    GlassCard(
+        onClick  = onTap,
+        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 3.dp, height = 44.dp)
+                    .background(color, MaterialTheme.shapes.extraSmall),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    session.category,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color,
+                )
+                Text(
+                    session.title,
+                    style      = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    maxLines   = 1,
+                )
+                if (!session.description.isNullOrBlank()) {
+                    Text(
+                        session.description,
+                        style    = MaterialTheme.typography.bodySmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+            if (completed) {
+                Icon(
+                    Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint     = Color(0xFF4ADE80),
+                    modifier = Modifier.size(20.dp),
+                )
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Timer,
+                            contentDescription = null,
+                            tint     = if (timerRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Text(
+                            timeLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (timerRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(
+                        onClick          = {
+                            if (timerRunning) {
+                                timerRunning = false
+                            } else {
+                                timerSeconds = totalSeconds
+                                timerRunning = true
+                            }
+                        },
+                        contentPadding   = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        modifier         = Modifier.height(24.dp),
+                    ) {
+                        Text(
+                            if (timerRunning) "Stop" else "Start",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (timerRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

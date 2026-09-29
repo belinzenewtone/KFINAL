@@ -90,7 +90,7 @@ import com.belinze.lifeos.viewmodel.SettingsViewModel
 
 private const val APP_NAME = "LifeOS"
 private val APP_VERSION get() = com.belinze.lifeos.BuildConfig.VERSION_NAME
-private val WARNING = Color(0xFFFBBF24)
+private val INFO = Color(0xFF60A5FA)
 
 @Composable
 fun SettingsScreen(
@@ -487,19 +487,17 @@ private fun SectionLabel(label: String) {
 }
 
 // ST-2: requesting param shows "Requesting…" and hides chevron while in-flight
-// ST-2 / InlineAlert parity: shape = borderRadius.xl (24dp), padding 10/14,
-// bg = WARNING@5%, border = WARNING@16%, icon in 32×32 badge@10%.
 @Composable
 private fun PermissionBanner(onClick: () -> Unit, requesting: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = Spacing.sm)
-            .background(WARNING.copy(alpha = 0x0D / 255f), RoundedCornerShape(24.dp))
-            .border(1.dp, WARNING.copy(alpha = 0x28 / 255f), RoundedCornerShape(24.dp))
+            .background(INFO.copy(alpha = 0x0D / 255f), RoundedCornerShape(24.dp))
+            .border(1.dp, INFO.copy(alpha = 0x28 / 255f), RoundedCornerShape(24.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication        = ripple(color = WARNING.copy(alpha = 0.12f)),
+                indication        = ripple(color = INFO.copy(alpha = 0.12f)),
                 onClick           = { if (!requesting) onClick() },
             )
             .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -509,19 +507,19 @@ private fun PermissionBanner(onClick: () -> Unit, requesting: Boolean = false) {
         Box(
             modifier           = Modifier
                 .size(32.dp)
-                .background(WARNING.copy(alpha = 0x1A / 255f), RoundedCornerShape(10.dp)),
+                .background(INFO.copy(alpha = 0x1A / 255f), RoundedCornerShape(10.dp)),
             contentAlignment   = Alignment.Center,
         ) {
             if (requesting) {
-                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = WARNING)
+                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = INFO)
             } else {
-                Icon(Icons.Outlined.Warning, contentDescription = null, tint = WARNING, modifier = Modifier.size(16.dp))
+                Icon(Icons.Outlined.Info, contentDescription = null, tint = INFO, modifier = Modifier.size(16.dp))
             }
         }
         Text(
             text     = if (requesting) "Requesting SMS access…" else "SMS permissions not granted — tap to allow",
             style    = MaterialTheme.typography.labelLarge,
-            color    = WARNING,
+            color    = INFO,
             maxLines = 2,
             modifier = Modifier.weight(1f),
         )
@@ -529,7 +527,7 @@ private fun PermissionBanner(onClick: () -> Unit, requesting: Boolean = false) {
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint               = WARNING.copy(alpha = 0x99 / 255f),
+                tint               = INFO.copy(alpha = 0x99 / 255f),
                 modifier           = Modifier.size(14.dp),
             )
         }

@@ -196,15 +196,12 @@ fun FinanceScreen(
                      results[Manifest.permission.RECEIVE_SMS] == true
     }
 
-    // Top budget alert — mirrors RN: prefer a budget that's crossed its alert
-    // threshold, else fall back to the single highest-usage active budget so a
-    // card is shown whenever at least one active budget exists (RN always
-    // shows one here, not only once a threshold is crossed).
+    // Top budget alert — only shown when a budget has crossed its alert threshold (≥ 80%).
     val alertBudget by remember {
         derivedStateOf {
             activeBudgetsDs.firstOrNull { b ->
                 b.pct >= (b.budget.alertThreshold ?: 0.8).toFloat()
-            } ?: activeBudgetsDs.maxByOrNull { it.pct }
+            }
         }
     }
 
@@ -338,19 +335,19 @@ fun FinanceScreen(
                         val bgColor     = if (isOver) {
                             MaterialTheme.colorScheme.errorContainer
                         } else {
-                            Color(0xFFFEF9C3)
+                            Color(0xFFEFF6FF)
                         }
                         val accentColor = if (isOver) {
                             MaterialTheme.colorScheme.error
                         } else {
-                            Color(0xFFFBBF24)
+                            Color(0xFF60A5FA)
                         }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.xs)
                                 .clip(MaterialTheme.shapes.large)
-                                .border(1.dp, accentColor, MaterialTheme.shapes.large)
+                                .border(1.dp, accentColor.copy(alpha = 0.4f), MaterialTheme.shapes.large)
                                 .background(bgColor)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },

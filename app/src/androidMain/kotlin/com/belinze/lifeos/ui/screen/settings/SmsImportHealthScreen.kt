@@ -55,6 +55,7 @@ import java.util.Locale
 // ─────────────────────────────────────────────────────────────────────────────
 
 private val WARNING_COLOR = Color(0xFFFBBF24)
+private val INFO_COLOR    = Color(0xFF60A5FA)
 private val FULIZA_COLOR  = Color(0xFFFB923C)
 
 @Composable
@@ -219,7 +220,7 @@ fun SmsImportHealthScreen(
                             InlineWarning(
                                 icon    = Icons.Outlined.BatteryAlert,
                                 text    = "Battery optimization is on — tap to exempt",
-                                color   = WARNING_COLOR,
+                                color   = INFO_COLOR,
                                 onClick = { viewModel.requestBatteryExemption() },
                             )
                         }
