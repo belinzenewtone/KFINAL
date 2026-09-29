@@ -23,13 +23,10 @@ ORDER BY created_at DESC
 LIMIT 10;
 
 observeConversation:
-SELECT * FROM (
-    SELECT * FROM assistant_messages
-    WHERE deleted_at IS NULL AND conversation_id = :conversationId
-    ORDER BY created_at DESC
-    LIMIT 100
-)
-ORDER BY created_at ASC;
+SELECT * FROM assistant_messages
+WHERE deleted_at IS NULL AND conversation_id = :conversationId
+ORDER BY created_at ASC
+LIMIT 100;
 
 insertOrReplace:
 INSERT OR REPLACE INTO assistant_messages (id, conversation_id, role, content, actions, created_at, updated_at, sync_state, record_source, deleted_at, revision, user_id)

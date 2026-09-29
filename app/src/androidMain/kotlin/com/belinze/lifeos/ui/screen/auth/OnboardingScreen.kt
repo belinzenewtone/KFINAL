@@ -359,7 +359,7 @@ private fun WelcomeStep() {
         }
         Spacer(Modifier.height(Spacing.lg))
         Text(
-            text       = "Welcome to PersonalOS",
+            text       = "Welcome to LifeOS",
             style      = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.onSurface,
@@ -632,10 +632,10 @@ private fun FinalStep() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(Spacing.xl))
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            OnboardingPillarCard(Icons.Outlined.AutoAwesome, "Personalized Insights","Actionable summaries tuned to your real usage.")
-            OnboardingPillarCard(Icons.Outlined.Speed,       "Unified Workflow",     "Tasks, calendar, and finance in a single rhythm.")
-            OnboardingPillarCard(Icons.Outlined.Shield,      "Private & Secure",     "Your data stays controlled, with transparent protection.")
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            FeatureRow(Icons.Outlined.AutoAwesome, "Personalized insights tuned to your real usage")
+            FeatureRow(Icons.Outlined.Speed,       "Tasks, calendar, and finance in a single rhythm")
+            FeatureRow(Icons.Outlined.Shield,      "Your data stays controlled and private")
         }
     }
 }
