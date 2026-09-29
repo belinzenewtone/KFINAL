@@ -18,13 +18,12 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Repeat
 import com.belinze.lifeos.ui.components.AppAlertDialog
+import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.LifeOSSwitch
+import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.components.TopBanner
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -207,20 +206,12 @@ fun RecurringScreen(
                                 Icon(Icons.Outlined.Delete, contentDescription = "Delete",
                                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                             }
-                            // RC-8: match RN toggle visual — white thumb on primary track
-                            Switch(
+                            LifeOSSwitch(
                                 checked = enabled,
                                 onCheckedChange = { v ->
                                     viewModel.toggleRecurringEnabled(rule.id, v)
                                     banner = "${rule.title} ${if (v) "enabled" else "paused"}"
                                 },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                                    checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                                    uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                                    uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                                ),
                             )
                         }
                     }

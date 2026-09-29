@@ -40,8 +40,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -66,6 +64,7 @@ import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.DateField
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -258,16 +257,9 @@ fun ExportScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(
-                        checked = encryptEnabled,
+                    LifeOSSwitch(
+                        checked         = encryptEnabled,
                         onCheckedChange = { encryptEnabled = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                        ),
                     )
                 }
                 if (encryptEnabled) {

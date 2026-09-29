@@ -38,8 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,6 +62,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
@@ -206,11 +205,10 @@ fun ScreenLockScreen(
                         title    = "Biometric Lock",
                         subtitle = "Use fingerprint or face to unlock",
                     ) {
-                        Switch(
-                            checked       = settings.fingerprintEnabled,
+                        LifeOSSwitch(
+                            checked         = settings.fingerprintEnabled,
                             onCheckedChange = { v ->
                                 if (v) {
-                                    // SL-2: require successful biometric proof before enabling
                                     triggerBiometric {
                                         viewModel.setFingerprintEnabled(true)
                                         message = "Biometric unlock enabled"
@@ -220,13 +218,6 @@ fun ScreenLockScreen(
                                     message = null
                                 }
                             },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor   = Color.White,
-                                checkedTrackColor   = primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                            ),
                         )
                     }
 
@@ -248,7 +239,7 @@ fun ScreenLockScreen(
                         Box {
                             Surface(
                                 onClick = { relockExpanded = true },
-                                shape   = RoundedCornerShape(8.dp),
+                                shape   = MaterialTheme.shapes.extraSmall,
                                 color   = MaterialTheme.colorScheme.surfaceVariant,
                             ) {
                                 Row(
@@ -313,12 +304,10 @@ fun ScreenLockScreen(
                         title    = "PIN Lock",
                         subtitle = "Use a ${PIN_LENGTH}-digit PIN to unlock",
                     ) {
-                        Switch(
-                            checked       = settings.screenLockEnabled || pinSetupPending,
+                        LifeOSSwitch(
+                            checked         = settings.screenLockEnabled || pinSetupPending,
                             onCheckedChange = { v ->
                                 if (v) {
-                                    // Don't call setScreenLockEnabled here — we only enable the lock
-                                    // after the user has actually saved a PIN. Show the PIN setup card.
                                     pinSetupPending = true
                                 } else {
                                     pinSetupPending = false
@@ -326,13 +315,6 @@ fun ScreenLockScreen(
                                     viewModel.disableScreenLock()
                                 }
                             },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor   = Color.White,
-                                checkedTrackColor   = primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                            ),
                         )
                     }
                 }

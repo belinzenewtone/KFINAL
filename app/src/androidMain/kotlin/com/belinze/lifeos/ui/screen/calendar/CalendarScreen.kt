@@ -22,10 +22,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Cake
@@ -261,172 +260,111 @@ fun CalendarScreen(
 
             Spacer(Modifier.height(Spacing.xs))
 
-            // ── Month card — mirrors KOTLIN CMP's CalendarMonthCard ───────────
-            GlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.screenHorizontal),
-            ) {
-                // Month header row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
-                    }) {
-                        Icon(Icons.Outlined.ChevronLeft, contentDescription = "Previous month",
-                            tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            FMT_MMMM_YYYY.format(yearMonth),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        if (!isCurrentMonth) {
-                            TextButton(onClick = {
-                                scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
-                                selectedDate = today.toString()
-                            }) {
-                                Text(
-                                    "Today",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
-                        }
-                    }
-                    IconButton(onClick = {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                    }) {
-                        Icon(Icons.Outlined.ChevronRight, contentDescription = "Next month",
-                            tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Weekday header
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { label ->
-                        Text(
-                            text = label,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-
-                // Smooth month paging — userScrollEnabled respects the Settings toggle.
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxWidth(),
-                    beyondViewportPageCount = 1,
-                    userScrollEnabled = calendarSwipeEnabled,
-                ) { page ->
-                    val pageMonth = LocalDate(today.year, today.month, 1).plus(page - PAGER_CENTER, DateTimeUnit.MONTH)
-                    MonthGrid(
-                        yearMonth    = pageMonth,
-                        today        = today,
-                        selectedDate = selectedDate,
-                        eventsByDate = eventState.eventsByDate,
-                        onDayClick   = { selectedDate = it },
-                        modifier     = Modifier.fillMaxWidth(),
-                    )
-                }
+            // Calendar tab: card scrolls with content inside LazyColumn below.
+            // Tasks/Events tabs: card stays fixed above the list.
+            if (selectedTab != CalendarTab.Calendar) {
+                CalendarMonthCard(
+                    pagerState           = pagerState,
+                    yearMonth            = yearMonth,
+                    isCurrentMonth       = isCurrentMonth,
+                    today                = today,
+                    calendarSwipeEnabled = calendarSwipeEnabled,
+                    selectedDate         = selectedDate,
+                    eventsByDate         = eventState.eventsByDate,
+                    selectedDateLabel    = selectedDateLabel,
+                    onTodayClick         = {
+                        scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
+                        selectedDate = today.toString()
+                    },
+                    onDayClick           = { selectedDate = it },
+                )
             }
-
-            Spacer(Modifier.height(Spacing.base))
-            Text(
-                selectedDateLabel,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
-            )
-            Spacer(Modifier.height(Spacing.sm))
 
             // ── Tab content scrolls below the always-visible calendar ──────────
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
-                    CalendarTab.Calendar -> Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = Spacing.screenHorizontal),
+                    CalendarTab.Calendar -> LazyColumn(
+                        modifier       = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
                     ) {
-                        SearchBar(
-                            value = calendarQuery,
-                            onChange = { calendarQuery = it },
-                            placeholder = "Search across all categories",
-                        )
-                        Spacer(Modifier.height(Spacing.sm))
-
-                        if (dayItemGroups.isEmpty() && tasksForDay.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(Spacing.x2l),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(40.dp))
-                                    Text("Nothing for the day", style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface)
-                                    Text("Tap + to add an event, birthday, countdown and more.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center)
-                                }
-                            }
-                        } else {
-                            // Tasks from the tasks table due on this day
-                            if (tasksForDay.isNotEmpty()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                                ) {
-                                    Box(modifier = Modifier.size(width = 4.dp, height = 16.dp).background(SUCCESS, MaterialTheme.shapes.extraSmall))
-                                    Text("Due Today", style = MaterialTheme.typography.labelLarge, color = SUCCESS, modifier = Modifier.weight(1f))
-                                    Text("${tasksForDay.size}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                Spacer(Modifier.height(Spacing.sm))
-                                tasksForDay.forEach { task ->
-                                    CalendarTaskItem(
-                                        task    = task,
-                                        onToggle = {
-                                            if (task.status == "completed") {
-                                                taskViewModel.reopen(task.id)
-                                            } else {
-                                                taskViewModel.complete(task.id)
-                                            }
-                                        },
-                                        onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
-                                    )
-                                }
-                                Spacer(Modifier.height(Spacing.base))
-                            }
-                            dayItemGroups.forEach { group ->
-                                DayItemGroup(
-                                    label = group.first,
-                                    color = group.second,
-                                    items = group.third,
-                                    onItemClick = { item ->
-                                        navController.navigate(NavTo.eventDetail(item.id))
-                                    },
+                        item {
+                            CalendarMonthCard(
+                                pagerState           = pagerState,
+                                yearMonth            = yearMonth,
+                                isCurrentMonth       = isCurrentMonth,
+                                today                = today,
+                                calendarSwipeEnabled = calendarSwipeEnabled,
+                                selectedDate         = selectedDate,
+                                eventsByDate         = eventState.eventsByDate,
+                                selectedDateLabel    = selectedDateLabel,
+                                onTodayClick         = {
+                                    scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
+                                    selectedDate = today.toString()
+                                },
+                                onDayClick           = { selectedDate = it },
+                            )
+                        }
+                        item {
+                            Column(modifier = Modifier.padding(horizontal = Spacing.screenHorizontal)) {
+                                SearchBar(
+                                    value       = calendarQuery,
+                                    onChange    = { calendarQuery = it },
+                                    placeholder = "Search across all categories",
                                 )
-                                Spacer(Modifier.height(Spacing.base))
+                                Spacer(Modifier.height(Spacing.sm))
+
+                                if (dayItemGroups.isEmpty() && tasksForDay.isEmpty()) {
+                                    Box(
+                                        modifier          = Modifier.fillMaxWidth().padding(Spacing.x2l),
+                                        contentAlignment  = Alignment.Center,
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(Icons.Outlined.CalendarMonth, contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(40.dp))
+                                            Text("Nothing for the day", style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurface)
+                                            Text("Tap + to add an event, birthday, countdown and more.",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center)
+                                        }
+                                    }
+                                } else {
+                                    if (tasksForDay.isNotEmpty()) {
+                                        Row(
+                                            modifier              = Modifier.fillMaxWidth(),
+                                            verticalAlignment     = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                        ) {
+                                            Box(modifier = Modifier.size(width = 4.dp, height = 16.dp).background(SUCCESS, MaterialTheme.shapes.extraSmall))
+                                            Text("Due Today", style = MaterialTheme.typography.labelLarge, color = SUCCESS, modifier = Modifier.weight(1f))
+                                            Text("${tasksForDay.size}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        Spacer(Modifier.height(Spacing.sm))
+                                        tasksForDay.forEach { task ->
+                                            CalendarTaskItem(
+                                                task     = task,
+                                                onToggle = {
+                                                    if (task.status == "completed") taskViewModel.reopen(task.id)
+                                                    else taskViewModel.complete(task.id)
+                                                },
+                                                onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
+                                            )
+                                        }
+                                        Spacer(Modifier.height(Spacing.base))
+                                    }
+                                    dayItemGroups.forEach { group ->
+                                        DayItemGroup(
+                                            label      = group.first,
+                                            color      = group.second,
+                                            items      = group.third,
+                                            onItemClick = { navController.navigate(NavTo.eventDetail(it.id)) },
+                                        )
+                                        Spacer(Modifier.height(Spacing.base))
+                                    }
+                                }
                             }
                         }
-
-                        Spacer(Modifier.height(Spacing.bottomNavSafeArea))
                     }
 
                     CalendarTab.Tasks -> LazyColumn(
@@ -546,6 +484,98 @@ fun CalendarScreen(
             }
         }
     }
+}
+
+@Composable
+private fun CalendarMonthCard(
+    pagerState:           PagerState,
+    yearMonth:            LocalDate,
+    isCurrentMonth:       Boolean,
+    today:                LocalDate,
+    calendarSwipeEnabled: Boolean,
+    selectedDate:         String,
+    eventsByDate:         Map<LocalDate, Set<String>>,
+    selectedDateLabel:    String,
+    onTodayClick:         () -> Unit,
+    onDayClick:           (String) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.screenHorizontal),
+    ) {
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = {
+                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+            }) {
+                Icon(Icons.Outlined.ChevronLeft, contentDescription = "Previous month",
+                    tint = MaterialTheme.colorScheme.onSurface)
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    FMT_MMMM_YYYY.format(yearMonth),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (!isCurrentMonth) {
+                    TextButton(onClick = onTodayClick) {
+                        Text("Today",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+            IconButton(onClick = {
+                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+            }) {
+                Icon(Icons.Outlined.ChevronRight, contentDescription = "Next month",
+                    tint = MaterialTheme.colorScheme.onSurface)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { label ->
+                Text(
+                    text     = label,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontSize  = 11.sp,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        HorizontalPager(
+            state                = pagerState,
+            modifier             = Modifier.fillMaxWidth(),
+            beyondViewportPageCount = 1,
+            userScrollEnabled    = calendarSwipeEnabled,
+        ) { page ->
+            val pageMonth = LocalDate(today.year, today.month, 1).plus(page - PAGER_CENTER, DateTimeUnit.MONTH)
+            MonthGrid(
+                yearMonth    = pageMonth,
+                today        = today,
+                selectedDate = selectedDate,
+                eventsByDate = eventsByDate,
+                onDayClick   = onDayClick,
+                modifier     = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+    Spacer(Modifier.height(Spacing.base))
+    Text(
+        selectedDateLabel,
+        style    = MaterialTheme.typography.titleMedium,
+        color    = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
+    )
+    Spacer(Modifier.height(Spacing.sm))
 }
 
 @Composable

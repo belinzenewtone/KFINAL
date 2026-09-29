@@ -103,7 +103,7 @@ fun LearningScreen(
                 Icon(
                     imageVector        = Icons.Outlined.Add,
                     contentDescription = "Log session",
-                    tint               = MaterialTheme.colorScheme.onSurface,
+                    tint               = MaterialTheme.colorScheme.primary,
                 )
             }
         },

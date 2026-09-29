@@ -35,8 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -57,6 +55,7 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
@@ -315,16 +314,9 @@ fun TaskFormScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Switch(
-                        checked = formState.alarmEnabled,
+                    LifeOSSwitch(
+                        checked         = formState.alarmEnabled,
                         onCheckedChange = { viewModel.toggleAlarm(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                        ),
                     )
                 }
 

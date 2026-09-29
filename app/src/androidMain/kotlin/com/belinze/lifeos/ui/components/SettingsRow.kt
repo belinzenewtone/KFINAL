@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
@@ -165,7 +166,7 @@ fun SettingsRow(
 }
 
 @Composable
-private fun LifeOSSwitch(
+fun LifeOSSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true,
@@ -178,12 +179,24 @@ private fun LifeOSSwitch(
         },
         enabled = enabled,
         colors = SwitchDefaults.colors(
-            checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
+            checkedThumbColor    = Color.White,
             checkedTrackColor    = MaterialTheme.colorScheme.primary,
             uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
             uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
             uncheckedBorderColor = MaterialTheme.colorScheme.outline,
         ),
-        modifier = Modifier.scale(0.85f),
+        modifier = Modifier
+            .scale(0.8f)
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val w = (placeable.width  * 0.8f).toInt()
+                val h = (placeable.height * 0.8f).toInt()
+                layout(w, h) {
+                    placeable.placeRelative(
+                        x = -(placeable.width  - w) / 2,
+                        y = -(placeable.height - h) / 2,
+                    )
+                }
+            },
     )
 }

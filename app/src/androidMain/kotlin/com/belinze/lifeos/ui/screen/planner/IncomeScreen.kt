@@ -19,13 +19,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Payments
-import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.ui.components.AppAlertDialog
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -228,16 +226,9 @@ fun IncomeScreen(
                                 maxLines = 1,
                                 modifier = Modifier.weight(1f),
                             )
-                            Switch(
+                            LifeOSSwitch(
                                 checked = isActive,
-                                onCheckedChange = { v -> Haptics.light(); viewModel.setIncomeActive(income.id, v) },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                                    checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                                    uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                                    uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                                ),
+                                onCheckedChange = { v -> viewModel.setIncomeActive(income.id, v) },
                             )
                             Spacer(Modifier.width(28.dp))
                             IconButton(

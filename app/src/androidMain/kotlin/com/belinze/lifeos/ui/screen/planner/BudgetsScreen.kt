@@ -23,8 +23,7 @@ import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -315,17 +314,7 @@ private fun BudgetCard(
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(start = Spacing.sm),
             )
-            Switch(
-                checked = isActive,
-                onCheckedChange = onToggle,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                    checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                    uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                    uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                ),
-            )
+            LifeOSSwitch(checked = isActive, onCheckedChange = onToggle)
             IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
                 Icon(Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
             }

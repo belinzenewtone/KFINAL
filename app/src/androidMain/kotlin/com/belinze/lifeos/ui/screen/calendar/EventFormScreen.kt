@@ -41,6 +41,7 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.theme.AppBarDimens
@@ -1203,17 +1204,7 @@ private fun FormToggleRow(
         }
         Text(label, style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-        Switch(
-            checked         = checked,
-            onCheckedChange = onCheckedChange,
-            colors          = SwitchDefaults.colors(
-                checkedThumbColor    = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor    = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor  = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-            ),
-        )
+        LifeOSSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
