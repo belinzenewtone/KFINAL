@@ -260,25 +260,6 @@ fun CalendarScreen(
 
             Spacer(Modifier.height(Spacing.xs))
 
-            // Calendar tab: card scrolls with content inside LazyColumn below.
-            // Tasks/Events tabs: card stays fixed above the list.
-            if (selectedTab != CalendarTab.Calendar) {
-                CalendarMonthCard(
-                    pagerState           = pagerState,
-                    yearMonth            = yearMonth,
-                    isCurrentMonth       = isCurrentMonth,
-                    today                = today,
-                    calendarSwipeEnabled = calendarSwipeEnabled,
-                    selectedDate         = selectedDate,
-                    eventsByDate         = eventState.eventsByDate,
-                    selectedDateLabel    = selectedDateLabel,
-                    onTodayClick         = {
-                        scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
-                        selectedDate = today.toString()
-                    },
-                    onDayClick           = { selectedDate = it },
-                )
-            }
 
             // ── Tab content scrolls below the always-visible calendar ──────────
             Box(modifier = Modifier.weight(1f)) {
@@ -368,24 +349,41 @@ fun CalendarScreen(
                     }
 
                     CalendarTab.Tasks -> LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = Spacing.screenHorizontal),
+                        modifier       = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
                     ) {
                         item {
-                            Text(
-                                "$pendingCount Pending · $doingCount Doing · $doneCount Done",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            CalendarMonthCard(
+                                pagerState           = pagerState,
+                                yearMonth            = yearMonth,
+                                isCurrentMonth       = isCurrentMonth,
+                                today                = today,
+                                calendarSwipeEnabled = calendarSwipeEnabled,
+                                selectedDate         = selectedDate,
+                                eventsByDate         = eventState.eventsByDate,
+                                selectedDateLabel    = selectedDateLabel,
+                                onTodayClick         = {
+                                    scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
+                                    selectedDate = today.toString()
+                                },
+                                onDayClick           = { selectedDate = it },
                             )
-                            Spacer(Modifier.height(Spacing.sm))
-                            SearchBar(
-                                value = tasksQuery,
-                                onChange = { tasksQuery = it },
-                                placeholder = "Search tasks...",
-                            )
-                            Spacer(Modifier.height(Spacing.sm))
+                        }
+                        item {
+                            Column(modifier = Modifier.padding(horizontal = Spacing.screenHorizontal)) {
+                                Text(
+                                    "$pendingCount Pending · $doingCount Doing · $doneCount Done",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(Spacing.sm))
+                                SearchBar(
+                                    value       = tasksQuery,
+                                    onChange    = { tasksQuery = it },
+                                    placeholder = "Search tasks...",
+                                )
+                                Spacer(Modifier.height(Spacing.sm))
+                            }
                         }
 
                         if (filteredTasks.isEmpty()) {
@@ -396,41 +394,57 @@ fun CalendarScreen(
                             }
                         } else {
                             items(filteredTasks, key = { it.id }) { task ->
-                                CalendarTaskItem(
-                                    task = task,
-                                    onToggle = {
-                                    if (task.status == "completed") {
-                                        taskViewModel.reopen(task.id)
-                                    } else {
-                                        taskViewModel.complete(task.id)
-                                    }
-                                },
-                                    onClick = { navController.navigate(NavTo.taskDetail(task.id)) },
-                                )
+                                Box(modifier = Modifier.padding(horizontal = Spacing.screenHorizontal)) {
+                                    CalendarTaskItem(
+                                        task     = task,
+                                        onToggle = {
+                                            if (task.status == "completed") taskViewModel.reopen(task.id)
+                                            else taskViewModel.complete(task.id)
+                                        },
+                                        onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
+                                    )
+                                }
                             }
                         }
                         item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
                     }
 
                     CalendarTab.Events -> LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = Spacing.screenHorizontal),
+                        modifier       = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
                     ) {
                         item {
-                            Text(
-                                "${filteredEvents.size} event${if (filteredEvents.size != 1) "s" else ""}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            CalendarMonthCard(
+                                pagerState           = pagerState,
+                                yearMonth            = yearMonth,
+                                isCurrentMonth       = isCurrentMonth,
+                                today                = today,
+                                calendarSwipeEnabled = calendarSwipeEnabled,
+                                selectedDate         = selectedDate,
+                                eventsByDate         = eventState.eventsByDate,
+                                selectedDateLabel    = selectedDateLabel,
+                                onTodayClick         = {
+                                    scope.launch { pagerState.animateScrollToPage(PAGER_CENTER) }
+                                    selectedDate = today.toString()
+                                },
+                                onDayClick           = { selectedDate = it },
                             )
-                            Spacer(Modifier.height(Spacing.sm))
-                            SearchBar(
-                                value = eventsQuery,
-                                onChange = { eventsQuery = it },
-                                placeholder = "Search events...",
-                            )
-                            Spacer(Modifier.height(Spacing.sm))
+                        }
+                        item {
+                            Column(modifier = Modifier.padding(horizontal = Spacing.screenHorizontal)) {
+                                Text(
+                                    "${filteredEvents.size} event${if (filteredEvents.size != 1) "s" else ""}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(Spacing.sm))
+                                SearchBar(
+                                    value       = eventsQuery,
+                                    onChange    = { eventsQuery = it },
+                                    placeholder = "Search events...",
+                                )
+                                Spacer(Modifier.height(Spacing.sm))
+                            }
                         }
 
                         if (filteredEvents.isEmpty()) {
@@ -441,11 +455,13 @@ fun CalendarScreen(
                             }
                         } else {
                             items(filteredEvents, key = { it.id }) { event ->
-                                EventListItem(
-                                    event = event,
-                                    onClick = { navController.navigate(NavTo.eventDetail(event.id)) },
-                                    onDelete = { eventViewModel.softDelete(event.id) },
-                                )
+                                Box(modifier = Modifier.padding(horizontal = Spacing.screenHorizontal)) {
+                                    EventListItem(
+                                        event    = event,
+                                        onClick  = { navController.navigate(NavTo.eventDetail(event.id)) },
+                                        onDelete = { eventViewModel.softDelete(event.id) },
+                                    )
+                                }
                             }
                         }
                         item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
