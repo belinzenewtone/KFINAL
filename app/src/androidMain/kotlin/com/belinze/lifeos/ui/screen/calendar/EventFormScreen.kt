@@ -1012,7 +1012,6 @@ private fun TimezonePickerPage(
             placeholder   = { Text("Search time zones") },
             modifier      = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             singleLine    = true,
-            shape         = RoundedCornerShape(10.dp),
         )
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(filtered.size) { idx ->
@@ -1092,7 +1091,6 @@ private fun FormTextField(
         label         = { Text(label) },
         maxLines      = maxLines,
         modifier      = Modifier.fillMaxWidth(),
-        shape         = RoundedCornerShape(10.dp),
         leadingIcon   = if (icon != null) {
             ({
             Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1271,7 +1269,6 @@ private fun GuestsSection(
             label         = { Text("Add guest (name or email)") },
             singleLine    = true,
             modifier      = Modifier.weight(1f),
-            shape         = RoundedCornerShape(10.dp),
             leadingIcon   = {
                 Icon(Icons.Outlined.People, null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
@@ -1361,7 +1358,6 @@ private fun LocationSection(
             label         = { Text("Add location") },
             singleLine    = true,
             modifier      = Modifier.weight(1f),
-            shape         = RoundedCornerShape(10.dp),
             leadingIcon   = {
                 Icon(Icons.Outlined.LocationOn, null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))

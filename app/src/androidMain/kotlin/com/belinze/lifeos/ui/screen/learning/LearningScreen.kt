@@ -29,9 +29,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +40,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -90,13 +92,18 @@ fun LearningScreen(
     // LE-2: bottom sheet visibility state
     var showLogSheet by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        PageScaffold(
-            eyebrow = "Growth",
-            title = "Learn",
-            onBack = { navController.popBackStack() },
-            scrollable = false,
-        ) {
+    PageScaffold(
+        eyebrow  = "Growth",
+        title    = "Learn",
+        onBack   = { navController.popBackStack() },
+        scrollable = false,
+        actions  = {
+            IconButton(onClick = { showLogSheet = true }) {
+                Icon(Icons.Outlined.Add, contentDescription = "Log session")
+            }
+        },
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = Spacing.bottomNavSafeArea),
@@ -219,34 +226,23 @@ fun LearningScreen(
 
                 item { Spacer(Modifier.height(Spacing.bottomNavSafeArea)) }
             }
-        }
 
-        ExtendedFloatingActionButton(
-            onClick = { showLogSheet = true },
-            text = { Text("Log Session") },
-            icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = Spacing.lg, bottom = Spacing.lg),
-        )
-
-        // LE-2: Log Session bottom sheet
-        if (showLogSheet) {
-            LogSessionSheet(
-                defaultCategory = category ?: "Career",
-                onDismiss = { showLogSheet = false },
-                onSave = { topic, selectedCategory, durationMinutes, notes ->
-                    viewModel.logSession(
-                        title       = topic,
-                        category    = selectedCategory,
-                        duration    = durationMinutes,
-                        description = notes,
-                    )
-                    showLogSheet = false
-                },
-            )
+            // LE-2: Log Session bottom sheet
+            if (showLogSheet) {
+                LogSessionSheet(
+                    defaultCategory = category ?: "Career",
+                    onDismiss = { showLogSheet = false },
+                    onSave = { topic, selectedCategory, durationMinutes, notes ->
+                        viewModel.logSession(
+                            title       = topic,
+                            category    = selectedCategory,
+                            duration    = durationMinutes,
+                            description = notes,
+                        )
+                        showLogSheet = false
+                    },
+                )
+            }
         }
     }
 }
@@ -267,81 +263,143 @@ private fun LogSessionSheet(
     var topicError    by remember { mutableStateOf(false) }
     var durationError by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = sheetState,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg)
                 .padding(bottom = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.base),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            Text(
-                "Log Session",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            // ── Header ───────────────────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    "Log a Session",
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    "Track what you learned today",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
+            // ── Topic ─────────────────────────────────────────────────────────
             OutlinedTextField(
-                value = topic,
+                value         = topic,
                 onValueChange = { topic = it; topicError = false },
-                label = { Text("Topic") },
-                isError = topicError,
+                label         = { Text("What did you study?") },
+                placeholder   = { Text("e.g. Kotlin coroutines") },
+                isError       = topicError,
                 supportingText = if (topicError) ({ Text("Topic is required") }) else null,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                singleLine    = true,
+                leadingIcon   = { Icon(Icons.Outlined.School, contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint     = MaterialTheme.colorScheme.onSurfaceVariant) },
+                modifier      = Modifier.fillMaxWidth(),
             )
 
-            OutlinedTextField(
-                value = duration,
-                onValueChange = { duration = it; durationError = false },
-                label = { Text("Duration (minutes)") },
-                isError = durationError,
-                supportingText = if (durationError) ({ Text("Enter a duration greater than 0") }) else null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            // Category chip row
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                items(sessionCategories, key = { it }) { cat ->
-                    FilterChip(
-                        selected = cat == selectedCat,
-                        onClick  = { selectedCat = cat },
-                        label    = { Text(cat) },
-                    )
+            // ── Category ──────────────────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    "Category",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    items(sessionCategories, key = { it }) { cat ->
+                        FilterChip(
+                            selected = cat == selectedCat,
+                            onClick  = { selectedCat = cat },
+                            label    = { Text(cat) },
+                        )
+                    }
                 }
             }
 
+            // ── Duration ──────────────────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    "Duration",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    OutlinedTextField(
+                        value         = duration,
+                        onValueChange = { duration = it; durationError = false },
+                        isError       = durationError,
+                        singleLine    = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        leadingIcon   = { Icon(Icons.Outlined.Timer, contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint     = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Start),
+                        modifier  = Modifier.weight(1f),
+                    )
+                    Text(
+                        "min",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (durationError) {
+                    Text(
+                        "Enter a duration greater than 0",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 4.dp),
+                    )
+                }
+                // Quick-pick duration chips
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    val picks = listOf(15, 30, 45, 60, 90)
+                    items(picks, key = { it }) { min ->
+                        FilterChip(
+                            selected = duration == min.toString(),
+                            onClick  = { duration = min.toString(); durationError = false },
+                            label    = { Text("${min}m") },
+                        )
+                    }
+                }
+            }
+
+            // ── Notes ─────────────────────────────────────────────────────────
             OutlinedTextField(
-                value = notes,
+                value         = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optional)") },
-                minLines = 3,
-                maxLines = 5,
-                modifier = Modifier.fillMaxWidth(),
+                label         = { Text("Notes (optional)") },
+                minLines      = 3,
+                maxLines      = 4,
+                modifier      = Modifier.fillMaxWidth(),
             )
 
-            Row(
+            Spacer(Modifier.height(Spacing.xs))
+
+            // ── Save button ───────────────────────────────────────────────────
+            Button(
+                onClick = {
+                    val durationInt = duration.trim().toIntOrNull() ?: 0
+                    topicError    = topic.isBlank()
+                    durationError = durationInt <= 0
+                    if (!topicError && !durationError) {
+                        onSave(topic.trim(), selectedCat, durationInt, notes.trim())
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
+                shape    = MaterialTheme.shapes.small,
             ) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                Spacer(Modifier.size(Spacing.sm))
-                Button(
-                    onClick = {
-                        val durationInt = duration.trim().toIntOrNull() ?: 0
-                        topicError    = topic.isBlank()
-                        durationError = durationInt <= 0
-                        if (!topicError && !durationError) {
-                            onSave(topic.trim(), selectedCat, durationInt, notes.trim())
-                        }
-                    },
-                ) {
-                    Text("Save")
-                }
+                Text("Save Session", style = MaterialTheme.typography.labelLarge)
             }
         }
     }

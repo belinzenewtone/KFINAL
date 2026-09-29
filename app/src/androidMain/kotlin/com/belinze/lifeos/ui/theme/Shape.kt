@@ -33,7 +33,7 @@ val ShapeHeroBottom = RoundedCornerShape(
 // Material 3 Shapes — map to the same scale
 // (Material 3 uses extra-small → extra-large)
 val LifeOsShapes = Shapes(
-    extraSmall = ShapeSm,    //  8 dp  — small chips, tooltips
+    extraSmall = ShapeMd,    // 12 dp  — OutlinedTextField, tooltips (well-rounded)
     small      = ShapeMd,    // 12 dp  — cards in dense layouts
     medium     = ShapeLg,    // 20 dp  — GlassCard, FrostCard, main cards
     large      = ShapeXl,    // 24 dp  — FloatingTabBar, sheet handles
