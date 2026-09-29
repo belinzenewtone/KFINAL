@@ -155,11 +155,14 @@ fun FinanceScreen(
     // Reload budgets + transaction metrics whenever Finance resumes (e.g. returning
     // from the Budgets/Categorize screens) so the budget alert, budget card, and
     // uncategorized banner count reflect current data instead of stale values.
+    // Also reloads the transaction list — SmsImportWorker does not emit per-transaction
+    // events, so without this the list stays empty after a historical import.
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             budgetViewModel.load()
             viewModel.refreshMetrics()
+            viewModel.reloadTransactions()
         }
     }
 

@@ -147,7 +147,7 @@ fun AuthScreen(
                             letterSpacing = 0.5.sp,
                         )
                         Text(
-                            text  = "Your PersonalOS",
+                            text  = "Your LifeOS",
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
