@@ -35,12 +35,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,7 +100,11 @@ fun LearningScreen(
         scrollable = false,
         actions  = {
             IconButton(onClick = { showLogSheet = true }) {
-                Icon(Icons.Outlined.Add, contentDescription = "Log session")
+                Icon(
+                    imageVector        = Icons.Outlined.Add,
+                    contentDescription = "Log session",
+                    tint               = MaterialTheme.colorScheme.onSurface,
+                )
             }
         },
     ) {
@@ -268,6 +273,9 @@ private fun LogSessionSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState       = sheetState,
+        containerColor   = MaterialTheme.colorScheme.surface,
+        tonalElevation   = 0.dp,
+        scrimColor       = Color.Black.copy(alpha = 0.55f),
     ) {
         Column(
             modifier = Modifier
@@ -303,6 +311,12 @@ private fun LogSessionSheet(
                 leadingIcon   = { Icon(Icons.Outlined.School, contentDescription = null,
                     modifier = Modifier.size(20.dp),
                     tint     = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors  = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor      = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor    = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor   = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                ),
                 modifier      = Modifier.fillMaxWidth(),
             )
 
@@ -345,6 +359,12 @@ private fun LogSessionSheet(
                             modifier = Modifier.size(20.dp),
                             tint     = MaterialTheme.colorScheme.onSurfaceVariant) },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Start),
+                        colors  = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor      = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor    = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor   = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        ),
                         modifier  = Modifier.weight(1f),
                     )
                     Text(
@@ -381,6 +401,12 @@ private fun LogSessionSheet(
                 label         = { Text("Notes (optional)") },
                 minLines      = 3,
                 maxLines      = 4,
+                colors  = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor      = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor    = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor   = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                ),
                 modifier      = Modifier.fillMaxWidth(),
             )
 
