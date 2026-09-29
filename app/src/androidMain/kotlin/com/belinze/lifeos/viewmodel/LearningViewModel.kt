@@ -89,6 +89,28 @@ constructor(
         }
     }
 
+    fun updateSession(
+        id:          String,
+        title:       String,
+        category:    String,
+        duration:    Int,
+        description: String = "",
+    ) {
+        viewModelScope.launch {
+            val existing = dao.getById(id) ?: return@launch
+            dao.update(
+                existing.copy(
+                    title           = title,
+                    category        = category,
+                    durationMinutes = duration,
+                    description     = description.ifBlank { null },
+                    updatedAt       = Clock.System.now().toString(),
+                )
+            )
+            Haptics.success()
+        }
+    }
+
     fun deleteSession(id: String) {
         viewModelScope.launch {
             val now = Clock.System.now().toString()

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
@@ -90,7 +91,8 @@ fun LearningScreen(
     val monthlyGoalHours = 10f
 
     // LE-2: bottom sheet visibility state
-    var showLogSheet by remember { mutableStateOf(false) }
+    var showLogSheet    by remember { mutableStateOf(false) }
+    var editingSession  by remember { mutableStateOf<LearningSessionEntity?>(null) }
 
     PageScaffold(
         eyebrow  = "Growth",
@@ -221,8 +223,9 @@ fun LearningScreen(
                             },
                         ) {
                             LearningCard(
-                                session = session,
-                                onTap   = { viewModel.toggleCompleted(session.id, session.isCompleted == 1) },
+                                session  = session,
+                                onTap    = { viewModel.toggleCompleted(session.id, session.isCompleted == 1) },
+                                onEdit   = { editingSession = session },
                             )
                         }
                     }
@@ -247,6 +250,28 @@ fun LearningScreen(
                     },
                 )
             }
+
+            // Edit Session bottom sheet
+            editingSession?.let { session ->
+                LogSessionSheet(
+                    defaultCategory  = session.category,
+                    initialTitle     = session.title,
+                    initialDuration  = session.durationMinutes.toString(),
+                    initialNotes     = session.description ?: "",
+                    saveLabel        = "Save Changes",
+                    onDismiss        = { editingSession = null },
+                    onSave           = { topic, selectedCategory, durationMinutes, notes ->
+                        viewModel.updateSession(
+                            id          = session.id,
+                            title       = topic,
+                            category    = selectedCategory,
+                            duration    = durationMinutes,
+                            description = notes,
+                        )
+                        editingSession = null
+                    },
+                )
+            }
         }
     }
 }
@@ -255,14 +280,18 @@ fun LearningScreen(
 @Composable
 private fun LogSessionSheet(
     defaultCategory: String,
+    initialTitle:    String = "",
+    initialDuration: String = "",
+    initialNotes:    String = "",
+    saveLabel:       String = "Save Session",
     onDismiss: () -> Unit,
     onSave: (topic: String, category: String, durationMinutes: Int, notes: String) -> Unit,
 ) {
     val sessionCategories = CATEGORIES.drop(1) // exclude "All"
 
-    var topic         by remember { mutableStateOf("") }
-    var duration      by remember { mutableStateOf("") }
-    var notes         by remember { mutableStateOf("") }
+    var topic         by remember { mutableStateOf(initialTitle) }
+    var duration      by remember { mutableStateOf(initialDuration) }
+    var notes         by remember { mutableStateOf(initialNotes) }
     var selectedCat   by remember { mutableStateOf(defaultCategory.takeIf { it in sessionCategories } ?: "Career") }
     var topicError    by remember { mutableStateOf(false) }
     var durationError by remember { mutableStateOf(false) }
@@ -424,14 +453,14 @@ private fun LogSessionSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape    = MaterialTheme.shapes.small,
             ) {
-                Text("Save Session", style = MaterialTheme.typography.labelLarge)
+                Text(saveLabel, style = MaterialTheme.typography.labelLarge)
             }
         }
     }
 }
 
 @Composable
-private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit) {
+private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit, onEdit: () -> Unit) {
     val completed = session.isCompleted == 1
     val color = CATEGORY_COLORS[session.category] ?: MaterialTheme.colorScheme.primary
 
@@ -539,6 +568,17 @@ private fun LearningCard(session: LearningSessionEntity, onTap: () -> Unit) {
                         )
                     }
                 }
+            }
+            IconButton(
+                onClick  = onEdit,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    Icons.Outlined.Edit,
+                    contentDescription = "Edit session",
+                    tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(15.dp),
+                )
             }
         }
     }
