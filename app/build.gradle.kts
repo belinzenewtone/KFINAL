@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)   // JetBrains CMP Gradle plugin
     alias(libs.plugins.kotlin.compose)           // Compose compiler plugin (all targets)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)

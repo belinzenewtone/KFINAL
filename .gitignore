@@ -17,6 +17,11 @@ keystore.properties
 *.jks
 *.keystore
 
+# ── Backups / build artifacts ────────────────────────────────────────────────
+*.ab
+*.apk
+*.aab
+
 # ── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

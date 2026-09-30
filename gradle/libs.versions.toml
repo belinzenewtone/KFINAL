@@ -1,10 +1,8 @@
 [versions]
 agp                 = "8.8.2"
 kotlin              = "2.1.0"
-ksp                 = "2.1.0-1.0.28"
 sqldelight          = "2.0.2"
 compose-multiplatform = "1.7.3"
-composeBom          = "2024.12.01"
 koin                = "4.0.2"
 navigation      = "2.8.5"
 datastore       = "1.1.1"
@@ -22,16 +20,8 @@ kotlinx-datetime = "0.6.2"
 
 [libraries]
 # Compose
-compose-bom                    = { group = "androidx.compose",      name = "compose-bom",               version.ref = "composeBom" }
-compose-ui                     = { group = "androidx.compose.ui",   name = "ui" }
-compose-ui-graphics            = { group = "androidx.compose.ui",   name = "ui-graphics" }
-compose-ui-tooling-preview     = { group = "androidx.compose.ui",   name = "ui-tooling-preview" }
 compose-ui-tooling             = { group = "androidx.compose.ui",   name = "ui-tooling" }
 compose-ui-test-manifest       = { group = "androidx.compose.ui",   name = "ui-test-manifest" }
-compose-material3              = { group = "androidx.compose.material3", name = "material3" }
-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
-compose-animation              = { group = "androidx.compose.animation", name = "animation" }
-compose-foundation             = { group = "androidx.compose.foundation", name = "foundation" }
 
 # AndroidX
 activity-compose       = { group = "androidx.activity",  name = "activity-compose",     version = "1.9.3" }
@@ -42,7 +32,6 @@ splashscreen           = { group = "androidx.core",      name = "core-splashscre
 navigation-compose     = { group = "androidx.navigation", name = "navigation-compose",  version.ref = "navigation" }
 
 # Koin
-koin-bom               = { group = "io.insert-koin",     name = "koin-bom",             version.ref = "koin" }
 koin-core              = { group = "io.insert-koin",     name = "koin-core",              version.ref = "koin" }
 koin-android           = { group = "io.insert-koin",     name = "koin-android",           version.ref = "koin" }
 koin-androidx-compose  = { group = "io.insert-koin",     name = "koin-androidx-compose",  version.ref = "koin" }
@@ -108,7 +97,6 @@ kotlin-android         = { id = "org.jetbrains.kotlin.android",             vers
 kotlin-multiplatform   = { id = "org.jetbrains.kotlin.multiplatform",       version.ref = "kotlin" }
 kotlin-compose         = { id = "org.jetbrains.kotlin.plugin.compose",      version.ref = "kotlin" }
 compose-multiplatform  = { id = "org.jetbrains.compose",                    version.ref = "compose-multiplatform" }
-ksp                    = { id = "com.google.devtools.ksp",                   version.ref = "ksp" }
 detekt                 = { id = "io.gitlab.arturbosch.detekt",               version = "1.23.7" }
 ktlint                 = { id = "org.jlleitschuh.gradle.ktlint",             version = "12.1.2" }
 android-test           = { id = "com.android.test",                          version.ref = "agp" }
