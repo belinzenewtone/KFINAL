@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
 import com.belinze.lifeos.ui.components.AppAlertDialog
+import com.belinze.lifeos.ui.navigation.NavTo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -192,7 +193,15 @@ fun TransactionDetailDialog(
                                     )
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    DetailRow("Merchant", tx.merchant ?: "")
+                                    val merchantName = tx.merchant?.takeIf { it.isNotBlank() }
+                                    DetailRow(
+                                        label      = "Merchant",
+                                        value      = tx.merchant ?: "",
+                                        valueColor = if (merchantName != null) MaterialTheme.colorScheme.primary else null,
+                                        onClick    = merchantName?.let { name ->
+                                            { navController.navigate(NavTo.merchantDetail(name)) }
+                                        },
+                                    )
                                     DetailRow("Category", categoryKey.replaceFirstChar { it.uppercase() })
                                     DetailRow("Amount", formatCurrency(tx.amount), valueColor = amountColor)
                                 }
@@ -397,10 +406,11 @@ private fun InlineEditPanel(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String, valueColor: Color? = null) {
+private fun DetailRow(label: String, value: String, valueColor: Color? = null, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {

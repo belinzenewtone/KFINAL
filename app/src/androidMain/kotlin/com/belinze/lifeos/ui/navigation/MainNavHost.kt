@@ -130,7 +130,7 @@ fun MainNavHost(
             arguments = listOf(navArgument("merchant") { type = NavType.StringType }),
         ) { back ->
             val merchant = back.arguments?.getString("merchant")?.let {
-                java.net.URLDecoder.decode(it, "UTF-8")
+                runCatching { java.net.URLDecoder.decode(it, "UTF-8") }.getOrDefault(it)
             } ?: ""
             com.belinze.lifeos.ui.screen.finance.MerchantDetailScreen(merchant = merchant, navController = navController)
         }

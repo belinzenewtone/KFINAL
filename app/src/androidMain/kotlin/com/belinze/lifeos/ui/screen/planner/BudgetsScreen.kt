@@ -1,6 +1,7 @@
 package com.belinze.lifeos.ui.screen.planner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -259,6 +260,7 @@ fun BudgetsScreen(
                 Box(modifier = Modifier.animateItem()) {
                     BudgetCard(
                         bws = bws,
+                        onOpen = { navController.navigate(NavTo.budgetDetail(bws.budget.id)) },
                         onToggle = { viewModel.toggleActive(bws.budget.id, it) },
                         onEdit = { navController.navigate(NavTo.budgetForm(bws.budget.id)) },
                         onDelete = { budgetToDelete = bws.budget.id to bws.budget.category },
@@ -273,6 +275,7 @@ fun BudgetsScreen(
 @Composable
 private fun BudgetCard(
     bws: BudgetWithSpend,
+    onOpen: () -> Unit,
     onToggle: (Boolean) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -291,7 +294,8 @@ private fun BudgetCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = Spacing.sm)
-            .alpha(if (isActive) 1f else 0.7f),
+            .alpha(if (isActive) 1f else 0.7f)
+            .clickable(onClick = onOpen),
     ) {
         // Row 1: icon + title | switch | edit | delete
         Row(

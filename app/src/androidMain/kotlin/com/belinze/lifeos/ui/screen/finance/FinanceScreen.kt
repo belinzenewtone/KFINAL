@@ -437,8 +437,10 @@ fun FinanceScreen(
                                 modifier = Modifier.weight(1f),
                                 icon     = Icons.Outlined.Receipt,
                                 label    = "Charges",
+                                action   = "View all",
                                 amount   = feeTotal,
                                 sub      = "Airtime, Fuliza & subs",
+                                onClick  = { navController.navigate(Route.FEE_ANALYTICS) },
                             )
                         }
                     }
