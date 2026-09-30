@@ -11,14 +11,6 @@ package com.belinze.lifeos.ui.navigation
 // ─────────────────────────────────────────────────────────────────────────────
 
 object Route {
-    // ── Auth / onboarding flow ────────────────────────────────────────────────
-
-    /** Shown while DataStore is hydrating. No navigation stack. */
-    const val LOADING    = "loading"
-    const val ONBOARDING = "onboarding"
-    const val AUTH       = "auth"
-    const val APP_LOCK   = "app_lock"
-
     // ── Main tab scaffold (root of authenticated graph) ───────────────────────
 
     const val MAIN = "main"
@@ -65,15 +57,6 @@ object Route {
     const val EXPORT_DATA             = "export"
     const val CSV_IMPORT              = "csv_import?fileUri={fileUri}&fileName={fileName}"
 
-    /** Alias for CSV_IMPORT used by FinanceScreen chip */
-    const val IMPORT_CSV              = "csv_import?fileUri=&fileName="
-
-    /** SMS import sheet */
-    const val IMPORT_SMS              = "sms_import"
-
-    /** Uncategorized / pending review queue */
-    const val UNCATEGORIZED           = "review_queue"
-
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
     const val TASKS                   = "tasks"
@@ -113,14 +96,6 @@ object Route {
     const val MONTHLY_WRAPPED         = "monthly_wrapped?initialMonthOffset={initialMonthOffset}"
     const val WEEK_REVIEW             = "week_review"
     const val LEARNING                = "learning"
-
-    // ── Convenience aliases (used by screen composables) ─────────────────────
-
-    /** Profile edit → maps to PERSONAL_INFORMATION */
-    const val EDIT_PROFILE            = "personal_information"
-
-    /** Security / screen lock → maps to SCREEN_LOCK */
-    const val SECURITY                = "screen_lock"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,13 +105,6 @@ object Route {
 object NavTo {
     fun transactionDetail(transactionId: String) =
         "transaction_detail/$transactionId"
-
-    fun transactionForm(transactionId: String? = null) =
-        if (transactionId != null) {
-            "transaction_form?transactionId=$transactionId"
-        } else {
-            "transaction_form?transactionId="
-        }
 
     fun merchantDetail(merchant: String) =
         "merchant_detail/${merchant.encodeForRoute()}"
