@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
  *
  * Derives all displayed data from:
  *  - SmsService (parser-owned tables: import_audit, sms_ingest_queue)
- *  - LifeOsDatabase (app Room DB: tx count, integrity, js DB path)
+ *  - LifeOsDatabase (app database: tx count, integrity, js DB path)
  *  - SmsService.isIgnoringBatteryOptimizations() for battery warning
  *  - SmsService.getReceiverStatus() for realtime receiver state
  */

@@ -4,7 +4,7 @@ import com.belinze.lifeos.data.db.entity.ImportAuditEntity
 import com.belinze.lifeos.data.db.entity.SmsIngestQueueEntity
 
 /**
- * Room-native access to the SMS pipeline tables (`sms_ingest_queue`,
+ * Access to the SMS pipeline tables (`sms_ingest_queue`,
  * `import_audit`). The parser's DbWriter executes its own SQL on the same
  * connection; this DAO is the app-side, compile-time-checked surface for UI
  * and future refactors.

@@ -1,7 +1,7 @@
 package com.belinze.lifeos.data.db.entity
 
 /**
- * Room entity for the `transactions` table.
+ * Entity for the `transactions` table.
  * Schema is authoritative — verified against src/database/schema.ts.
  */
 data class TransactionEntity(

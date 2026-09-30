@@ -1,8 +1,8 @@
 import java.util.Properties
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Phase 3 CMP: converted from kotlin("android") to kotlin("multiplatform").
-// Source files stay in src/main/java/ (androidMain) until Phase 5.
+// Kotlin Multiplatform module: shared code in commonMain, the shipping Android
+// app in androidMain, plus iosMain / desktopMain entry points.
 // ─────────────────────────────────────────────────────────────────────────────
 plugins {
     alias(libs.plugins.android.application)
@@ -79,13 +79,10 @@ kotlin {
             // Coroutines core (KMP artifact); android adds the Android dispatcher
             implementation(libs.coroutines.core)
 
-            // SQLDelight — KMP database layer (replaces Room, Phase 4)
+            // SQLDelight — KMP database layer
             implementation(libs.sqldelight.coroutines)
             implementation(libs.sqldelight.runtime)
         }
-
-        // Phase 5: sources moved to src/androidMain/kotlin and src/commonMain/kotlin.
-        // No srcDirs override needed — KMP default layout applies.
 
         // Android — platform-specific sources
         androidMain.dependencies {
@@ -97,14 +94,14 @@ kotlin {
             // Extended material icons (CMP accessor — no separate version needed)
             implementation(compose.materialIconsExtended)
 
-            // Navigation (Jetpack — Android-specific; CMP navigation TBD Phase 5+)
+            // Navigation (Jetpack — Android-specific; CMP navigation TBD)
             implementation(libs.navigation.compose)
 
             // Koin Android extensions (androidContext(), viewModel DSL)
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
 
-            // SQLDelight Android driver (Phase 4 — Room removed)
+            // SQLDelight Android driver
             implementation(libs.sqldelight.android.driver)
 
             // SQLite framework — provides FrameworkSQLiteOpenHelperFactory for DatabaseDriverFactory
@@ -201,7 +198,7 @@ android {
         }
     }
 
-    // KMP remaps Android source roots; keep existing src/main/ layout until Phase 5 source move
+    // Kotlin sources use the KMP layout; the manifest, res and assets stay under src/main
     sourceSets {
         getByName("main") {
             manifest.srcFile("src/main/AndroidManifest.xml")
@@ -229,7 +226,7 @@ android {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SQLDelight database configuration (Phase 4 — replaces Room)
+// SQLDelight database configuration
 // ─────────────────────────────────────────────────────────────────────────────
 sqldelight {
     databases {

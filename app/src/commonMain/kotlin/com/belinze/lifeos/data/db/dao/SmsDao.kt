@@ -3,7 +3,7 @@ package com.belinze.lifeos.data.db.dao
 import com.belinze.lifeos.data.db.entity.*
 
 /**
- * DAO for Room-owned tables adjacent to the SMS pipeline.
+ * DAO for tables adjacent to the SMS pipeline.
  *
  * `import_audit` and `sms_ingest_queue` are intentionally absent: they are
  * owned by the untouched parser (DbWriter) and accessed via SmsService.

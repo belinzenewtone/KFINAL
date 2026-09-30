@@ -5,12 +5,12 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 
 /**
  * Thin wrapper around SQLDelight's [LifeOsDatabase] that provides the
- * Room-era surface area still needed by a few call sites:
+ * legacy surface area still needed by a few call sites:
  *  - [SettingsViewModel.clearAllData] calls [clearAllTables]
  *  - [SmsImportHealthViewModel.load] / [repairDb] call [openHelper]
  *
  * The [openHelper] here wraps the underlying [SupportSQLiteDatabase] obtained
- * from [DatabaseDriverFactory] so PRAGMA queries work without Room.
+ * from [DatabaseDriverFactory] so PRAGMA queries keep working.
  */
 class AppDatabase(
     val db: LifeOsDatabase,

@@ -80,7 +80,7 @@ fun LearningScreen(
     navController: NavHostController,
     viewModel: LearningViewModel = koinViewModel(),
 ) {
-    // LE-1 / LE-10: live Room state
+    // LE-1 / LE-10: live database state
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     var category by remember { mutableStateOf<String?>(null) }

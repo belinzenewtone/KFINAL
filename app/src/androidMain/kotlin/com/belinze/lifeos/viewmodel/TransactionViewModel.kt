@@ -42,13 +42,8 @@ import kotlinx.datetime.todayIn
 // TransactionViewModel
 //
 // Mirrors useTransactionStore / useFinanceStore from the RN app.
-// Manages the Paging 3 transaction list (Finance screen), month totals,
+// Manages the transaction list (Finance screen), month totals,
 // category totals, merchant totals, and the add/edit form state.
-//
-// Paging 3 replaces the old manual currentPage / loadNextPage / fetchPage
-// approach. flatMapLatest on filters creates a new Pager on every filter
-// change; Room's InvalidationTracker auto-invalidates the PagingSource on any
-// table write — no explicit reload() calls are needed anywhere.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Active filter parameters — mirrors the Finance screen filter drawer state. */

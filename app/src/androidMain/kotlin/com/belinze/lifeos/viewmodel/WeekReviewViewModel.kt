@@ -33,7 +33,7 @@ import kotlinx.datetime.todayIn
 // ─────────────────────────────────────────────────────────────────────────────
 // WeekReviewViewModel — full parity with WeekReviewScreen.tsx
 //
-// Loads per-day and per-week data from Room, computes health score using the
+// Loads per-day and per-week data from the database, computes health score using the
 // same formula as the React app, and exposes DOW spend bars with averages.
 // ─────────────────────────────────────────────────────────────────────────────
 

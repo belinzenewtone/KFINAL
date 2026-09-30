@@ -21,7 +21,7 @@ import kotlinx.datetime.Clock
 // LearningViewModel — LE-1 / LE-10
 //
 // Provides:
-//  - sessions: list of LearningSessionEntity from Room (live)
+//  - sessions: list of LearningSessionEntity from the database (live)
 //  - monthlyHours: SUM(duration_minutes WHERE is_completed=1 AND current month)/60
 //  - completed count
 // ─────────────────────────────────────────────────────────────────────────────

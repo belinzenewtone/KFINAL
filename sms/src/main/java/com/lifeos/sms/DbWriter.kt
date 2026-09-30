@@ -283,7 +283,7 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
             // surfaced by getPendingIngest() every run and refused by every claim.
             //
             // executeUpdateDelete() reports THIS statement's row count. The previous
-            // SELECT changes() probe was a second acquisition of Room's pooled
+            // SELECT changes() probe was a second acquisition of the pooled
             // connection, so it could observe another thread's UPDATE (false positive →
             // two workers on one row) or a secondary connection (false negative).
             db.compileStatement(
