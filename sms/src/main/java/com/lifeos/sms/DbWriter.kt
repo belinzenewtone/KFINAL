@@ -11,20 +11,16 @@ import java.util.UUID
 /**
  * Parser-side data access for lifeos.db.
  *
- * SINGLE-WRITER ARCHITECTURE (Phase 3 / PHASE0_DECISIONS.md D3): this class
- * owns NO SQLiteOpenHelper and creates NO schema. It executes on the Room
- * database's connection, supplied via [attachDatabase] by the app's DI module
- * ([com.belinze.lifeos.di.DatabaseModule]). Room is the sole schema owner —
- * all tables, including `import_audit` and `sms_ingest_queue`, are declared
- * as Room entities and created/migrated by Room.
- *
- * The public API surface is unchanged so workers/receivers/SmsService are
- * untouched by the migration.
+ * SINGLE-WRITER ARCHITECTURE: this class owns NO SQLiteOpenHelper and creates NO
+ * schema. It executes on the app database's connection (the SQLDelight Android
+ * driver), supplied via [attachDatabase] by the app's DI module. SQLDelight is the
+ * sole schema owner — all tables, including `import_audit` and `sms_ingest_queue`,
+ * are declared in the app's `.sq` files.
  */
 internal class DbWriter private constructor(private val db: SupportSQLiteDatabase) {
     // ── Connection shims over SupportSQLiteDatabase ───────────────────────────
     // Keep the historical call-shapes (rawQuery/execSQL with String args) so the
-    // query bodies stay byte-identical to the pre-Room implementation.
+    // query bodies stay unchanged.
 
     private fun rawQuery(sql: String, selectionArgs: Array<String>?): android.database.Cursor =
         db.query(SimpleSQLiteQuery(sql, selectionArgs))
@@ -45,7 +41,7 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
         @Volatile private var dbProvider: (() -> SupportSQLiteDatabase)? = null
 
         /**
-         * Called once by the app's DI module to hand the parser the Room
+         * Called once by the app's DI module to hand the parser the app
          * database's writable connection. Workers may run before/without DI in
          * tests — [getInstance] throws if no provider was attached.
          */
@@ -62,7 +58,7 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
 
         fun getInstance(context: Context): DbWriter {
             val provider = dbProvider
-                ?: error("DbWriter used before Room attachment — DatabaseModule must run first")
+                ?: error("DbWriter used before the database was attached — call SmsParserDatabase.attach first")
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: DbWriter(provider()).also { INSTANCE = it }
             }
@@ -658,24 +654,6 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
         }
     }
 
-    // ─── Fuliza outstanding balance ───────────────────────────────────────────
-
-    /**
-     * Returns the current active Fuliza outstanding balance, or 0.0 if no active loan row exists.
-     */
-    fun getFulizaOutstanding(): Double {
-        return try {
-            rawQuery(
-                "SELECT draw_amount_kes - total_repaid_kes FROM fuliza_loans WHERE status = 'active' ORDER BY updated_at DESC LIMIT 1",
-                null
-            ).use { c ->
-                if (c.moveToFirst()) c.getDouble(0) else 0.0
-            }
-        } catch (e: Exception) {
-            0.0
-        }
-    }
-
     // ─── Import audit ─────────────────────────────────────────────────────────
 
     fun insertAudit(
@@ -824,19 +802,6 @@ internal class DbWriter private constructor(private val db: SupportSQLiteDatabas
             "UPDATE import_audit SET outcome = 'imported_review_approved' WHERE id IN ($placeholders)",
             ids.map { it.toString() }.toTypedArray()
         )
-    }
-
-    /** Clears all rows from the import audit log. The transactions table is untouched. */
-    fun clearAuditLog(): Int {
-        return try {
-            execSQL("DELETE FROM import_audit")
-            rawQuery("SELECT changes()", null).use { c ->
-                if (c.moveToFirst()) c.getInt(0) else 0
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "clearAuditLog failed: ${e.message}", e)
-            0
-        }
     }
 
     fun getQuarantinedById(id: Long): Map<String, Any?>? {

@@ -365,8 +365,7 @@ class SmsService(
     // ─── Fuliza limit ─────────────────────────────────────────────────────────
 
     /**
-     * Persists the user-configured Fuliza credit limit so [FulizaProjection] can
-     * compute the projected balance accurately. Stored in the SharedPreferences
+     * Persists the user-configured Fuliza credit limit. Stored in the SharedPreferences
      * silo that SmsProcessWorker reads via [SmsReceiver.PREFS_NAME].
      */
     fun setFulizaLimit(limitKes: Double) {

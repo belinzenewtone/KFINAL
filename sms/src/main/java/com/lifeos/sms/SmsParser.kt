@@ -980,7 +980,4 @@ object SmsParser {
             )
         }
     }
-
-    fun parseOrNull(sms: String): ParsedTransaction? =
-        (parse(sms) as? SmsParseResult.Success)?.transaction
 }
