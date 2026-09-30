@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -206,7 +206,7 @@ constructor(
         viewModelScope.launch {
             // Persist user message
             assistantDao.insert(AssistantMessageEntity(
-                id             = UUID.randomUUID().toString(),
+                id             = newId(),
                 conversationId = DEFAULT_CONVERSATION_ID,
                 role           = "user",
                 content        = input,
@@ -221,7 +221,7 @@ constructor(
 
             // Persist assistant reply (with suggested action chips, if any)
             assistantDao.insert(AssistantMessageEntity(
-                id             = UUID.randomUUID().toString(),
+                id             = newId(),
                 conversationId = DEFAULT_CONVERSATION_ID,
                 role           = "assistant",
                 content        = response.content,

@@ -1,5 +1,6 @@
 package com.belinze.lifeos.viewmodel
 
+import com.belinze.lifeos.util.newId
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -152,7 +153,7 @@ constructor(
         val ts       = nowIso()
         smsDao.upsertMerchantCategory(
             MerchantCategoryEntity(
-                id            = existing?.id ?: java.util.UUID.randomUUID().toString(),
+                id            = existing?.id ?: newId(),
                 merchant      = key,
                 category      = category,
                 confidence    = 1.0,

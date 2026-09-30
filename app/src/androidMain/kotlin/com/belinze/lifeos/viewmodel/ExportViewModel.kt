@@ -32,7 +32,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
@@ -350,7 +350,7 @@ constructor(
                 ).sum()
 
                 plannerDao.insertExport(ExportEntity(
-                    id          = UUID.randomUUID().toString(),
+                    id          = newId(),
                     filePath    = file.absolutePath,
                     fileSize    = file.length(),
                     format      = "json",
@@ -461,7 +461,7 @@ constructor(
                 if (passphrase.isNotBlank()) file = encryptFile(file, passphrase)
 
                 plannerDao.insertExport(ExportEntity(
-                    id          = UUID.randomUUID().toString(),
+                    id          = newId(),
                     filePath    = file.absolutePath,
                     fileSize    = file.length(),
                     format      = "pdf",
@@ -609,7 +609,7 @@ constructor(
                 if (passphrase.isNotBlank()) file = encryptFile(file, passphrase)
 
                 plannerDao.insertExport(ExportEntity(
-                    id          = UUID.randomUUID().toString(),
+                    id          = newId(),
                     filePath    = file.absolutePath,
                     fileSize    = file.length(),
                     format      = "csv",

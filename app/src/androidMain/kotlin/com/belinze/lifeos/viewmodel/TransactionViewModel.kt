@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -413,7 +413,7 @@ constructor(
             try {
                 val existing = form.id?.let { dao.getById(it) }
                 val entity = (existing ?: TransactionEntity(
-                    id              = UUID.randomUUID().toString(),
+                    id              = newId(),
                     amount          = 0.0,
                     merchant        = null,
                     category        = "uncategorized",

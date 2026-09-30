@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -165,7 +165,7 @@ constructor(
             try {
                 val existing = form.id?.let { budgetDao.getById(it) }
                 val entity = (existing ?: BudgetEntity(
-                    id           = UUID.randomUUID().toString(),
+                    id           = newId(),
                     category     = "",
                     limitAmount  = 0.0,
                     period       = "monthly",

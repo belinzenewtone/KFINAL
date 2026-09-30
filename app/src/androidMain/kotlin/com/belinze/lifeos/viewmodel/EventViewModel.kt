@@ -32,7 +32,7 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.json.JSONArray
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EventViewModel
@@ -413,7 +413,7 @@ constructor(
         }
 
         val base = existing ?: EventEntity(
-            id        = UUID.randomUUID().toString(),
+            id        = newId(),
             title     = "",
             date      = nowIso(),
             type      = "event",

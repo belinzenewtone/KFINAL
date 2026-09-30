@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 
 @Immutable
 data class CsvColumnMapping(
@@ -118,7 +118,7 @@ constructor(
                 var count = 0
                 valid.forEach { row ->
                     dao.insert(TransactionEntity(
-                        id = UUID.randomUUID().toString(),
+                        id = newId(),
                         amount = row.amount,
                         merchant = row.merchant,
                         category = row.category,

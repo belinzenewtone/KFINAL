@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -204,7 +204,7 @@ constructor(
             try {
                 val existing = form.id?.let { dao.getById(it) }
                 val entity   = (existing ?: TaskEntity(
-                    id        = UUID.randomUUID().toString(),
+                    id        = newId(),
                     title     = "",
                     status    = "active",
                     priority  = "medium",

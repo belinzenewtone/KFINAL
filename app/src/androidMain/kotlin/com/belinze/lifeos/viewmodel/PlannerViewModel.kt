@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
@@ -297,7 +297,7 @@ constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getRuleById(it) } ?: RecurringRuleEntity(
-                    id = UUID.randomUUID().toString(), title = "", type = "expense", cadence = "monthly",
+                    id = newId(), title = "", type = "expense", cadence = "monthly",
                     nextRunAt = nowIso(), amount = 0.0, category = "uncategorized", enabled = 1,
                     createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
@@ -381,7 +381,7 @@ constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getBillById(it) } ?: BillEntity(
-                    id = UUID.randomUUID().toString(), title = "", amount = 0.0,
+                    id = newId(), title = "", amount = 0.0,
                     cycle = "monthly", nextDueDate = nowIso(), isActive = 1,
                     createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
@@ -494,7 +494,7 @@ constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getGoalById(it) } ?: GoalEntity(
-                    id = UUID.randomUUID().toString(), title = "", targetValue = 0.0,
+                    id = newId(), title = "", targetValue = 0.0,
                     currentValue = 0.0, category = "savings", createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(
                     title = form.name,
@@ -631,7 +631,7 @@ constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { plannerDao.getLoanById(it) } ?: FulizaLoanEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = newId(),
                     drawCode = form.drawCode.ifBlank { null },
                     drawAmountKes = amt,
                     status = "active",
@@ -688,7 +688,7 @@ constructor(
         viewModelScope.launch {
             try {
                 val e = (form.id?.let { incomeDao.getById(it) } ?: IncomeEntity(
-                    id = UUID.randomUUID().toString(), source = "", amount = 0.0,
+                    id = newId(), source = "", amount = 0.0,
                     date = nowIso(), note = null, isRecurring = 0,
                     createdAt = nowIso(), updatedAt = nowIso(),
                 )).copy(

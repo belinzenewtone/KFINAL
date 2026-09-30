@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ constructor(
             val now = Clock.System.now().toString()
             dao.insert(
                 LearningSessionEntity(
-                    id              = UUID.randomUUID().toString(),
+                    id              = newId(),
                     title           = title,
                     category        = category,
                     description     = description.ifBlank { null },
