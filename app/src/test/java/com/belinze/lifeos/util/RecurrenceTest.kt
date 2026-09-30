@@ -1,6 +1,6 @@
 package com.belinze.lifeos.util
 
-import java.time.Instant
+import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -11,13 +11,13 @@ import kotlin.test.assertNull
  * cases, using a fixed "now" for determinism: 2026-07-03T12:00:00Z (Friday).
  */
 class RecurrenceTest {
-    private val NOW: Long = Instant.parse("2026-07-03T12:00:00Z").toEpochMilli()
+    private val NOW: Long = Instant.parse("2026-07-03T12:00:00Z").toEpochMilliseconds()
 
     private fun assertIso(expected: String, actual: String?) {
         assertNotNull(actual)
         assertEquals(
-            Instant.parse(expected).toEpochMilli(),
-            Instant.parse(actual).toEpochMilli(),
+            Instant.parse(expected).toEpochMilliseconds(),
+            Instant.parse(actual).toEpochMilliseconds(),
         )
     }
 

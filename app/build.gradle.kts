@@ -251,11 +251,8 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 
-    // Unit tests (Robolectric — Phase 3 migration test)
+    // Unit tests
     testImplementation(libs.kotlin.test)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.coroutines.test)
 }
 
 // Static analysis (Phase 4) — shared YAML, strict gate
