@@ -116,20 +116,6 @@ constructor(
         _uiState.update { it.copy(isLoading = false, tasks = sorted.toImmutableList()) }
     }
 
-    fun setFilter(f: TaskFilter) {
-        _uiState.update { it.copy(filter = f) }
-        viewModelScope.launch {
-            applyFilter(dao.getAll())
-        }
-    }
-
-    fun setSort(s: TaskSort) {
-        _uiState.update { it.copy(sort = s) }
-        viewModelScope.launch {
-            applyFilter(dao.getAll())
-        }
-    }
-
     private fun loadUpcoming() {
         viewModelScope.launch {
             // Next 7 days

@@ -13,8 +13,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -42,17 +40,6 @@ data class ProfileUiState(
     val error:         String?      = null,
 )
 
-@Immutable
-data class ProfileFormState(
-    val name:      String  = "",
-    val email:     String  = "",
-    val phone:     String  = "",
-    val username:  String  = "",
-    val avatarUri: String  = "",
-    val isSaving:  Boolean = false,
-    val error:     String? = null,
-)
-
 class ProfileViewModel
 constructor(
     private val appPreferences:  AppPreferences,
@@ -68,29 +55,7 @@ constructor(
     private val _uiState   = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
-    private val _formState = MutableStateFlow(ProfileFormState())
-    val formState: StateFlow<ProfileFormState> = _formState.asStateFlow()
-
     init {
-        // Sync form from prefs whenever prefs change (avoid overwrite while saving)
-        prefState
-            .onEach { p ->
-                _formState.update { f ->
-                    if (f.isSaving) {
-                        f
-                    } else {
-                        f.copy(
-                        name      = p.profileName,
-                        email     = p.profileEmail,
-                        phone     = p.profilePhone,
-                        username  = p.profileUsername,
-                        avatarUri = p.profileAvatarUri,
-                    )
-                    }
-                }
-            }
-            .launchIn(viewModelScope)
-
         loadStats()
     }
 
@@ -132,16 +97,6 @@ constructor(
     }
 
     // ─── Form ─────────────────────────────────────────────────────────────────
-
-    fun updateName(v: String) = _formState.update { it.copy(name = v) }
-
-    fun updateEmail(v: String) = _formState.update { it.copy(email = v) }
-
-    fun updatePhone(v: String) = _formState.update { it.copy(phone = v) }
-
-    fun updateUsername(v: String) = _formState.update { it.copy(username = v) }
-
-    fun updateAvatarUri(v: String) = _formState.update { it.copy(avatarUri = v) }
 
     /** Save only name + username (the Profile hero edit modal), preserving the rest. */
     fun saveNameAndUsername(
@@ -204,26 +159,6 @@ constructor(
                 }
                 onSuccess()
             } catch (_: Exception) {
-            }
-        }
-    }
-
-    fun saveProfile(onSuccess: () -> Unit) {
-        val form = _formState.value
-        _formState.update { it.copy(isSaving = true, error = null) }
-        viewModelScope.launch {
-            try {
-                appPreferences.update {
-                    it[PreferenceKeys.PROFILE_NAME]       = form.name
-                    it[PreferenceKeys.PROFILE_EMAIL]      = form.email
-                    it[PreferenceKeys.PROFILE_PHONE]      = form.phone
-                    it[PreferenceKeys.PROFILE_USERNAME]   = form.username
-                    it[PreferenceKeys.PROFILE_AVATAR_URI] = form.avatarUri
-                }
-                _formState.update { it.copy(isSaving = false) }
-                onSuccess()
-            } catch (e: Exception) {
-                _formState.update { it.copy(isSaving = false, error = e.message) }
             }
         }
     }

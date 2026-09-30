@@ -127,12 +127,6 @@ constructor(
         }
     }
 
-    fun updateTheme(theme: String) {
-        viewModelScope.launch {
-            appPreferences.update { it[PreferenceKeys.THEME] = theme }
-        }
-    }
-
     fun updateFulizaLimit(limit: Double) {
         viewModelScope.launch {
             appPreferences.update { it[PreferenceKeys.FULIZA_LIMIT] = limit }

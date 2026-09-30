@@ -41,15 +41,10 @@ import com.belinze.lifeos.util.newId
 // Full parity with TaskEventForm.tsx — all type-specific fields.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Calendar view modes matching CalendarScreen tabs */
-enum class CalendarView { Month, Week, Agenda }
-
 @Immutable
 data class EventUiState(
     val isLoading:    Boolean                    = true,
     val events:       ImmutableList<EventEntity> = persistentListOf(),
-    val selectedDay:  LocalDate         = Clock.System.todayIn(TimeZone.currentSystemDefault()),
-    val calendarView: CalendarView      = CalendarView.Month,
     val nextEvent:    EventEntity?      = null,
     /** Per-day event-type flags for the visible calendar month; keyed by LocalDate. */
     val eventsByDate: Map<LocalDate, Set<String>> = emptyMap(),
@@ -134,10 +129,6 @@ constructor(
     }
 
     // ─── View controls ────────────────────────────────────────────────────────
-
-    fun selectDay(day: LocalDate) = _uiState.update { it.copy(selectedDay = day) }
-
-    fun setCalendarView(view: CalendarView) = _uiState.update { it.copy(calendarView = view) }
 
     fun eventsForDay(day: LocalDate): List<EventEntity> {
         val nextDay = day.plus(1, DateTimeUnit.DAY)
@@ -251,8 +242,6 @@ constructor(
     fun updateRepeatRule(v: String) = _formState.update { it.copy(repeatRule = v) }
 
     fun updateRepeatEndDate(v: String?) = _formState.update { it.copy(repeatEndDate = v) }
-
-    fun updateLocationInput(v: String) = _formState.update { it.copy(locationInput = v) }
 
     fun addLocation(loc: String) {
         val trimmed = loc.trim()

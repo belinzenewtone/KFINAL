@@ -112,8 +112,6 @@ constructor(
         val permissionGranted: Boolean = false,
         val isImporting:       Boolean = false,
         val banner:            String?  = null,
-        val previewCount:      Int?     = null,  // SMS found in window (null = not yet scanned)
-        val isPreviewing:      Boolean  = false,
         /** Live chunk-by-chunk progress while the worker is running. */
         val importProgress:    ImportProgress? = null,
         /** Final counts once the worker succeeds — shown until next import starts. */
@@ -220,56 +218,8 @@ constructor(
         )
     }
 
-    fun setBanner(text: String) {
-        _uiState.value = _uiState.value.copy(banner = text)
-    }
-
     fun clearBanner() {
         _uiState.value = _uiState.value.copy(banner = null)
-    }
-
-    /**
-     * Count SMS in the selected window without importing — gives the user a
-     * "Found X messages" preview before they tap Start Import.
-     */
-    fun previewImport(periodDays: Long?, filter: String) {
-        if (!_uiState.value.permissionGranted) return
-        _uiState.value = _uiState.value.copy(isPreviewing = true, previewCount = null)
-        viewModelScope.launch {
-            val count = withContext(Dispatchers.IO) {
-                runCatching {
-                    val now    = System.currentTimeMillis()
-                    val fromMs = periodDays?.let { now - TimeUnit.DAYS.toMillis(it) } ?: 0L
-                    val uri    = android.net.Uri.parse("content://sms")
-                    val selection = if (fromMs > 0L) "date >= ?" else null
-                    val selArgs   = if (fromMs > 0L) arrayOf(fromMs.toString()) else null
-                    val c: Cursor? = context.contentResolver.query(
-                        uri, arrayOf("_id", "address"), selection, selArgs, null
-                    )
-                    if (c == null) return@runCatching 0
-                    val result = if (filter == "all") {
-                        c.count
-                    } else {
-                        val addrIdx = c.getColumnIndexOrThrow("address")
-                        var kept = 0
-                        while (c.moveToNext()) {
-                            val addr = (c.getString(addrIdx) ?: "").uppercase()
-                            val ok = when (filter) {
-                                "mpesa_only" -> "MPESA" in addr || "M-PESA" in addr
-                                "banks_only" -> listOf("KCB", "EQUITY", "COOPERATIVE", "ABSA",
-                                    "STANDARD", "DTB", "NCBA", "BANK").any { it in addr }
-                                else         -> true
-                            }
-                            if (ok) kept++
-                        }
-                        kept
-                    }
-                    c.close()
-                    result
-                }.getOrElse { null }
-            }
-            _uiState.value = _uiState.value.copy(isPreviewing = false, previewCount = count)
-        }
     }
 
     /** Entry point from the sheet: mpesa_only imports immediately; banks_only/all detect first. */

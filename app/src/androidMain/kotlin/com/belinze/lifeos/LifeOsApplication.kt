@@ -6,7 +6,6 @@ import androidx.work.Configuration
 import com.belinze.lifeos.data.datastore.AppPreferences
 import com.belinze.lifeos.di.appModule
 import com.belinze.lifeos.services.BudgetAlertService
-import com.belinze.lifeos.services.DarajaEnrichmentService
 import com.belinze.lifeos.services.NotificationSync
 import com.belinze.lifeos.services.RuleBundleSync
 import com.belinze.lifeos.util.Haptics
@@ -27,7 +26,6 @@ class LifeOsApplication : Application(), Configuration.Provider {
     private val prefs: AppPreferences by inject()
     private val notificationSync: NotificationSync by inject()
     private val budgetAlertService: BudgetAlertService by inject()
-    private val darajaEnrichmentService: DarajaEnrichmentService by inject()
     private val ruleBundleSync: RuleBundleSync by inject()
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -52,7 +50,6 @@ class LifeOsApplication : Application(), Configuration.Provider {
                 Haptics.enabled = state.hapticFeedback
                 notificationSync.syncAll(state)
                 budgetAlertService.checkAllBudgetThresholds(state)
-                darajaEnrichmentService.warmCache()
             } catch (e: Exception) {
                 Log.e("LifeOS/App", "Startup sync failed", e)
                 Haptics.enabled = true

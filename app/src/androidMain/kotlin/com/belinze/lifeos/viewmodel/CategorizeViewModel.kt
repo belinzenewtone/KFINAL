@@ -49,7 +49,6 @@ constructor(
         val isLoading:      Boolean = true,
         val transactions:   ImmutableList<TransactionEntity> = persistentListOf(),
         val merchantGroups: ImmutableList<MerchantGroup>    = persistentListOf(),
-        val groupByMerchant: Boolean = true,
         val message:        String? = null,
         val isError:        Boolean = false,
     )
@@ -72,37 +71,9 @@ constructor(
                     isLoading      = false,
                     transactions   = txs.toImmutableList(),
                     merchantGroups = groups,
-                    groupByMerchant = _uiState.value.groupByMerchant,
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, message = "Failed to load", isError = true)
-            }
-        }
-    }
-
-    fun setGroupByMerchant(grouped: Boolean) {
-        _uiState.value = _uiState.value.copy(groupByMerchant = grouped)
-    }
-
-    /** Assign category to a single transaction. */
-    fun assignCategory(id: String, category: String) {
-        val tx = _uiState.value.transactions.find { it.id == id }
-        _uiState.value = _uiState.value.copy(
-            transactions   = _uiState.value.transactions.filterNot { it.id == id }.toImmutableList(),
-            merchantGroups = _uiState.value.merchantGroups
-                .map { g -> g.copy(transactions = g.transactions.filterNot { it.id == id }.toImmutableList()) }
-                .filter { it.count > 0 }
-                .toImmutableList(),
-        )
-        viewModelScope.launch {
-            try {
-                dao.updateCategoryById(id, category, nowIso())
-                _uiState.value = _uiState.value.copy(message = "Saved", isError = false)
-                tx?.let { classifier.recordCorrection(it, category) }
-                tx?.merchant?.let { rememberMerchantCategory(it, category) }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(message = "Failed to save category", isError = true)
-                refresh()
             }
         }
     }
@@ -143,8 +114,8 @@ constructor(
      *
      * RFINAL keeps this table (MerchantCategoryRepository.setCategory) so future imports
      * of the same merchant are auto-categorised. KFINAL already READS merchant_categories
-     * — DbWriter consults it on import and DarajaEnrichmentService uses it — but nothing
-     * ever wrote to it from the Categorize screen.
+     * — DbWriter consults it on import — but nothing ever wrote to it from the Categorize
+     * screen.
      */
     private suspend fun rememberMerchantCategory(merchant: String, category: String) {
         val key = merchant.trim()

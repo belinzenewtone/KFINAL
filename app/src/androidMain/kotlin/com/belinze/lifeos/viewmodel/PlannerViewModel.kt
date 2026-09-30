@@ -172,8 +172,6 @@ constructor(
 
     fun updateRecurringEnabled(v: Boolean) = _recurringForm.update { it.copy(enabled = v) }
 
-    fun updateRecurringError(v: String?) = _recurringForm.update { it.copy(error = v) }
-
     fun updateBillName(v: String) = _billForm.update { it.copy(name = v) }
 
     fun updateBillAmount(v: String) = _billForm.update { it.copy(amount = v) }
@@ -187,8 +185,6 @@ constructor(
     fun updateBillPaid(v: Boolean) = _billForm.update { it.copy(isPaid = v) }
 
     fun updateBillActive(v: Boolean) = _billForm.update { it.copy(isActive = v) }
-
-    fun updateBillError(v: String?) = _billForm.update { it.copy(error = v) }
 
     fun updateGoalName(v: String) = _goalForm.update { it.copy(name = v) }
 
@@ -204,8 +200,6 @@ constructor(
 
     fun updateGoalStatus(v: String) = _goalForm.update { it.copy(status = v) }
 
-    fun updateGoalError(v: String?) = _goalForm.update { it.copy(error = v) }
-
     fun updateLoanDrawCode(v: String) = _loanForm.update { it.copy(drawCode = v) }
 
     fun updateLoanDrawAmount(v: String) = _loanForm.update { it.copy(drawAmountKes = v) }
@@ -218,8 +212,6 @@ constructor(
 
     fun updateLoanLastRepaymentDate(v: String) = _loanForm.update { it.copy(lastRepaymentDate = v) }
 
-    fun updateLoanError(v: String?) = _loanForm.update { it.copy(error = v) }
-
     fun updateIncomeSource(v: String) = _incomeForm.update { it.copy(source = v) }
 
     fun updateIncomeAmount(v: String) = _incomeForm.update { it.copy(amount = v) }
@@ -231,8 +223,6 @@ constructor(
     fun updateIncomeRecurring(v: Boolean) = _incomeForm.update { it.copy(isRecurring = v) }
 
     fun updateIncomeFrequency(v: String) = _incomeForm.update { it.copy(frequency = v) }
-
-    fun updateIncomeError(v: String?) = _incomeForm.update { it.copy(error = v) }
 
     fun loadAll() {
         viewModelScope.launch {
@@ -519,15 +509,6 @@ constructor(
     }
 
     fun deleteGoal(id: String) = viewModelScope.launch { plannerDao.softDeleteGoal(id, nowIso()); loadAll(); Haptics.warning() }
-
-    fun addToGoal(goalId: String, amount: Double) {
-        viewModelScope.launch {
-            val e = plannerDao.getGoalById(goalId) ?: return@launch
-            plannerDao.updateGoal(e.copy(currentValue = e.currentValue + amount, updatedAt = nowIso()))
-            Haptics.success()
-            loadAll()
-        }
-    }
 
     fun logGoalProgress(goalId: String, amount: Double) {
         viewModelScope.launch {

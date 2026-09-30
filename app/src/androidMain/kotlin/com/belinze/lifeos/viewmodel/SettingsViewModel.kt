@@ -63,8 +63,6 @@ constructor(
 
     fun setNotifBudgetAlerts(v: Boolean) = update { it[PreferenceKeys.NOTIF_BUDGET_ALERTS] = v }
 
-    fun setNotifDailyDigest(v: Boolean) = update { it[PreferenceKeys.NOTIF_DAILY_DIGEST] = v }
-
     fun setNotifRecurring(v: Boolean) = update { it[PreferenceKeys.NOTIF_RECURRING_RULES] = v }
 
     fun setNotifTxAlerts(v: Boolean) = update { it[PreferenceKeys.NOTIF_TX_ALERTS] = v }
@@ -121,21 +119,11 @@ constructor(
         smsService.setFulizaLimit(limit)
     }
 
-    // ── Currency ──────────────────────────────────────────────────────────────
-
-    fun setCurrency(v: String) = update { it[PreferenceKeys.CURRENCY] = v }
-
     // ── Profile ───────────────────────────────────────────────────────────────
 
     fun setProfileAvatarUri(uri: String) = update { it[PreferenceKeys.PROFILE_AVATAR_URI] = uri }
 
     // ── Display ───────────────────────────────────────────────────────────────
-
-    fun setDateFormat(v: String) = update { it[PreferenceKeys.DATE_FORMAT] = v }
-
-    fun setTimeFormat(v: String) = update { it[PreferenceKeys.TIME_FORMAT] = v }
-
-    fun setDecimalPrecision(v: Int) = update { it[PreferenceKeys.DECIMAL_PRECISION] = v }
 
     fun setHapticFeedback(v: Boolean) {
         Haptics.enabled = v
@@ -145,8 +133,6 @@ constructor(
     }
 
     fun setCalendarSwipe(v: Boolean) = update { it[PreferenceKeys.CALENDAR_SWIPE] = v }
-
-    fun setDefaultCategory(v: String) = update { it[PreferenceKeys.DEFAULT_TX_CATEGORY] = v }
 
     // ── OTA update check ──────────────────────────────────────────────────────
 

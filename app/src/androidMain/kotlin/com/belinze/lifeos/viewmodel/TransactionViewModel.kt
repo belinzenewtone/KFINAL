@@ -112,16 +112,6 @@ constructor(
     private val _selectedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val selectedTransaction: StateFlow<TransactionEntity?> = _selectedTransaction.asStateFlow()
 
-    data class CounterpartyStats(
-        val merchant:    String,
-        val count:       Int,
-        val totalAmount: Double,
-        val avgAmount:   Double,
-    )
-
-    private val _counterpartyStats = MutableStateFlow<CounterpartyStats?>(null)
-    val counterpartyStats: StateFlow<CounterpartyStats?> = _counterpartyStats.asStateFlow()
-
     // monthKey is computed per-call inside loadMetrics() to stay accurate across month boundaries
 
     // ─── Paginated list (manual pagination replacing Paging 3) ───────────────
@@ -239,11 +229,6 @@ constructor(
         reloadTransactions()
     }
 
-    fun setType(type: String?) {
-        _uiState.update { it.copy(filters = it.filters.copy(type = type)) }
-        reloadTransactions()
-    }
-
     fun setDateRange(start: String?, end: String?) {
         _uiState.update { it.copy(filters = it.filters.copy(startDate = start, endDate = end)) }
         reloadTransactions()
@@ -261,11 +246,6 @@ constructor(
         val start = f.startDate ?: return emptyMap()
         val end   = f.endDate ?: return emptyMap()
         return dao.getDayNetTotals(start, end).associate { it.day to it.net }
-    }
-
-    fun clearFilters() {
-        _uiState.update { it.copy(filters = TransactionFilters()) }
-        reloadTransactions()
     }
 
     // ─── Analytics ────────────────────────────────────────────────────────────
@@ -325,19 +305,6 @@ constructor(
     fun loadTransaction(id: String) {
         viewModelScope.launch {
             _selectedTransaction.value = dao.getById(id)
-        }
-    }
-
-    fun loadCounterpartyStats(merchant: String) {
-        viewModelScope.launch {
-            val txs = dao.getByMerchant(merchant)
-            val total = txs.sumOf { it.amount }
-            _counterpartyStats.value = CounterpartyStats(
-                merchant    = merchant,
-                count       = txs.size,
-                totalAmount = total,
-                avgAmount   = if (txs.isNotEmpty()) total / txs.size else 0.0,
-            )
         }
     }
 

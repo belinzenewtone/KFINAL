@@ -254,16 +254,6 @@ constructor(
         _uiState.update { it.copy(lastClearedAuditId = topId) }
     }
 
-    fun enableReceiver() {
-        smsService.enableBackgroundReceiver()
-        load()
-    }
-
-    fun disableReceiver() {
-        smsService.disableBackgroundReceiver()
-        load()
-    }
-
     fun requestBatteryExemption() {
         // Mirrors the React requestIgnoreBatteryOptimizations behaviour.
         smsService.requestIgnoreBatteryOptimizations()

@@ -31,12 +31,7 @@ object PreferenceKeys {
 
     // Settings
     val THEME                    = stringPreferencesKey("theme")               // "system" | "dark" | "light"
-    val CURRENCY                 = stringPreferencesKey("currency")
-    val DATE_FORMAT              = stringPreferencesKey("date_format")
-    val TIME_FORMAT              = stringPreferencesKey("time_format")         // "12h" | "24h"
-    val DECIMAL_PRECISION        = intPreferencesKey("decimal_precision")
     val HAPTIC_FEEDBACK          = booleanPreferencesKey("haptic_feedback")
-    val DEFAULT_TX_CATEGORY      = stringPreferencesKey("default_tx_category")
     val FULIZA_LIMIT             = doublePreferencesKey("fuliza_limit")
 
     // Notifications
@@ -45,7 +40,6 @@ object PreferenceKeys {
     val NOTIF_TASK_REMINDERS     = booleanPreferencesKey("notif_task_reminders")
     val NOTIF_BILL_REMINDERS     = booleanPreferencesKey("notif_bill_reminders")
     val NOTIF_BUDGET_ALERTS      = booleanPreferencesKey("notif_budget_alerts")
-    val NOTIF_DAILY_DIGEST       = booleanPreferencesKey("notif_daily_digest")
     val DAILY_DIGEST_MORNING     = booleanPreferencesKey("daily_digest_morning_summary")
     val DAILY_DIGEST_TIME        = stringPreferencesKey("daily_digest_delivery_time")
     val NOTIF_RECURRING_RULES    = booleanPreferencesKey("notif_recurring_rules")
@@ -100,19 +94,13 @@ data class AppPreferenceState(
     val onboardingStep: Int             = 0,
     val onboardingGoal: String          = "balanced",
     val theme: String                   = "system",
-    val currency: String                = "KES",
-    val dateFormat: String              = "dd/MM/yyyy",
-    val timeFormat: String              = "24h",
-    val decimalPrecision: Int           = 2,
     val hapticFeedback: Boolean         = true,
-    val defaultTxCategory: String       = "uncategorized",
     val fulizaLimit: Double             = 0.0,
     val notificationsEnabled: Boolean   = false,
     val notifReminders: Boolean         = true,
     val notifTaskReminders: Boolean     = true,
     val notifBillReminders: Boolean     = true,
     val notifBudgetAlerts: Boolean      = true,
-    val notifDailyDigest: Boolean       = false,
     val notifRecurringRules: Boolean    = true,
     val notifTxAlerts: Boolean          = false,
     val dailyDigestMorningSummary: Boolean = false,
@@ -198,19 +186,13 @@ constructor(
         onboardingStep         = this[PreferenceKeys.ONBOARDING_STEP]          ?: 0,
         onboardingGoal         = this[PreferenceKeys.ONBOARDING_GOAL]          ?: "balanced",
         theme                  = this[PreferenceKeys.THEME]                    ?: "system",
-        currency               = this[PreferenceKeys.CURRENCY]                 ?: "KES",
-        dateFormat             = this[PreferenceKeys.DATE_FORMAT]              ?: "dd/MM/yyyy",
-        timeFormat             = this[PreferenceKeys.TIME_FORMAT]              ?: "24h",
-        decimalPrecision       = this[PreferenceKeys.DECIMAL_PRECISION]        ?: 2,
         hapticFeedback         = this[PreferenceKeys.HAPTIC_FEEDBACK]          ?: true,
-        defaultTxCategory      = this[PreferenceKeys.DEFAULT_TX_CATEGORY]      ?: "uncategorized",
         fulizaLimit            = this[PreferenceKeys.FULIZA_LIMIT]             ?: 0.0,
         notificationsEnabled   = this[PreferenceKeys.NOTIFICATIONS_ENABLED]    ?: false,
         notifReminders         = this[PreferenceKeys.NOTIF_REMINDERS]          ?: true,
         notifTaskReminders     = this[PreferenceKeys.NOTIF_TASK_REMINDERS]     ?: true,
         notifBillReminders     = this[PreferenceKeys.NOTIF_BILL_REMINDERS]     ?: true,
         notifBudgetAlerts      = this[PreferenceKeys.NOTIF_BUDGET_ALERTS]      ?: true,
-        notifDailyDigest       = this[PreferenceKeys.NOTIF_DAILY_DIGEST]       ?: false,
         notifRecurringRules    = this[PreferenceKeys.NOTIF_RECURRING_RULES]    ?: true,
         notifTxAlerts          = this[PreferenceKeys.NOTIF_TX_ALERTS]          ?: false,
         dailyDigestMorningSummary = this[PreferenceKeys.DAILY_DIGEST_MORNING] ?: false,

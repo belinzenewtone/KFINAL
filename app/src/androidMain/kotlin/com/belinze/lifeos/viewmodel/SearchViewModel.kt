@@ -100,12 +100,6 @@ constructor(
         _recentSearches.value = updated
     }
 
-    fun removeFromRecent(query: String) {
-        _recentSearches.value = _recentSearches.value
-            .filter { it != query }
-            .toImmutableList()
-    }
-
     fun clearRecent() {
         _recentSearches.value = persistentListOf()
     }
@@ -125,26 +119,6 @@ constructor(
     }
 
     fun setTab(tab: SearchTab) = _uiState.update { it.copy(activeTab = tab) }
-
-    fun clearQuery() = _uiState.update { current ->
-        current.copy(
-            query        = "",
-            isLoading    = false,
-            transactions = persistentListOf(),
-            tasks        = persistentListOf(),
-            events       = persistentListOf(),
-            birthdays    = persistentListOf(),
-            anniversaries = persistentListOf(),
-            countdowns   = persistentListOf(),
-            budgets      = persistentListOf(),
-            recurring    = persistentListOf(),
-            bills        = persistentListOf(),
-            goals        = persistentListOf(),
-            incomes      = persistentListOf(),
-            loans        = persistentListOf(),
-            // activeTab preserved — user's tab selection should not reset on clear
-        )
-    }
 
     private fun clearResults() {
         _uiState.update { it.copy(

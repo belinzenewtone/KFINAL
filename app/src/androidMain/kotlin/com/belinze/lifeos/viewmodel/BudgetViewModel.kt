@@ -146,9 +146,6 @@ constructor(
 
     fun updateActive(v: Boolean) = _formState.update { it.copy(isActive = v) }
 
-    // Backward-compatible alias used by BudgetFormScreen
-    fun updateLimit(v: String) = updateLimitAmount(v)
-
     fun saveForm(onSuccess: () -> Unit) {
         val form        = _formState.value
         val limitDouble = form.limitAmount.toDoubleOrNull()

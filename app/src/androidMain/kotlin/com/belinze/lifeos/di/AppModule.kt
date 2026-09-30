@@ -26,7 +26,6 @@ import com.belinze.lifeos.data.db.dao.impl.TaskDaoImpl
 import com.belinze.lifeos.data.db.dao.impl.TransactionDaoImpl
 import com.belinze.lifeos.ml.TransactionClassifier
 import com.belinze.lifeos.services.BudgetAlertService
-import com.belinze.lifeos.services.DarajaEnrichmentService
 import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.services.NotificationSync
 import com.belinze.lifeos.services.RuleBundleSync
@@ -118,7 +117,6 @@ val appModule = module {
     single<NotificationScheduler>   { NotificationScheduler(androidContext()) }
     single<BudgetAlertService>      { BudgetAlertService(get(), get(), get(), get()) }
     single<NotificationSync>        { NotificationSync(androidContext(), get(), get(), get(), get(), get(), get()) }
-    single<DarajaEnrichmentService> { DarajaEnrichmentService(get(), androidContext()) }
     single<RuleBundleSync>          { RuleBundleSync(androidContext(), get()) }
     single<TransactionClassifier>   { TransactionClassifier(get(), get()) }
 
