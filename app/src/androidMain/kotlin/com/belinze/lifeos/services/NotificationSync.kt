@@ -118,10 +118,4 @@ constructor(
         }
         return rule.nextRunAt
     }
-
-    /** Called after a transaction mutation to re-evaluate budget thresholds. */
-    fun evaluateBudgetAlerts() {
-        // Budget thresholds are computed by the caller (TransactionViewModel);
-        // this hook exists to keep the port symmetric with the RN service.
-    }
 }
