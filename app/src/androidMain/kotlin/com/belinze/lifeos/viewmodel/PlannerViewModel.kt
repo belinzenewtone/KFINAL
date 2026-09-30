@@ -11,6 +11,7 @@ import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
 import com.belinze.lifeos.data.db.entity.GoalEntity
 import com.belinze.lifeos.data.db.entity.IncomeEntity
 import com.belinze.lifeos.data.db.entity.RecurringRuleEntity
+import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.nowIso
 import kotlinx.collections.immutable.ImmutableList
@@ -131,6 +132,7 @@ class PlannerViewModel
 constructor(
     private val plannerDao: PlannerDao,
     private val incomeDao:  IncomeDao,
+    private val scheduler:  NotificationScheduler,
 ) : ViewModel() {
     private val _uiState        = MutableStateFlow(PlannerUiState())
     val uiState: StateFlow<PlannerUiState> = _uiState.asStateFlow()
@@ -309,6 +311,7 @@ constructor(
                     updatedAt = nowIso(),
                 )
                 plannerDao.insertRule(e)
+                syncRecurringReminder(e)
                 loadAll()
                 Haptics.success()
                 _recurringForm.update { it.copy(isSaving = false) }
@@ -319,12 +322,28 @@ constructor(
         }
     }
 
-    fun deleteRule(id: String) = viewModelScope.launch { plannerDao.softDeleteRule(id, nowIso()); loadAll(); Haptics.warning() }
+    fun deleteRule(id: String) = viewModelScope.launch {
+        plannerDao.softDeleteRule(id, nowIso())
+        scheduler.cancelRecurringReminder(id)
+        loadAll()
+        Haptics.warning()
+    }
+
+    private fun syncRecurringReminder(rule: RecurringRuleEntity) {
+        val nextRunAt = rule.nextRunAt
+        if (rule.enabled != 0 && nextRunAt != null) {
+            scheduler.scheduleRecurringReminder(rule.id, rule.title, nextRunAt, rule.amount)
+        } else {
+            scheduler.cancelRecurringReminder(rule.id)
+        }
+    }
 
     fun toggleRecurringEnabled(id: String, enabled: Boolean) {
         viewModelScope.launch {
             val e = plannerDao.getRuleById(id) ?: return@launch
-            plannerDao.updateRule(e.copy(enabled = if (enabled) 1 else 0, updatedAt = nowIso()))
+            val updated = e.copy(enabled = if (enabled) 1 else 0, updatedAt = nowIso())
+            plannerDao.updateRule(updated)
+            syncRecurringReminder(updated)
             loadAll()
             Haptics.light()
         }
@@ -374,6 +393,7 @@ constructor(
                     isActive = if (form.isActive) 1 else 0, updatedAt = nowIso(),
                 )
                 plannerDao.insertBill(e)
+                syncBillReminder(e)
                 loadAll()
                 Haptics.success()
                 _billForm.update { it.copy(isSaving = false) }
@@ -384,7 +404,21 @@ constructor(
         }
     }
 
-    fun deleteBill(id: String) = viewModelScope.launch { plannerDao.softDeleteBill(id, nowIso()); loadAll(); Haptics.warning() }
+    fun deleteBill(id: String) = viewModelScope.launch {
+        plannerDao.softDeleteBill(id, nowIso())
+        scheduler.cancelBillReminder(id)
+        loadAll()
+        Haptics.warning()
+    }
+
+    private fun syncBillReminder(bill: BillEntity) {
+        val due = bill.nextDueDate
+        if (bill.isActive != 0 && bill.paidStatus != 1 && due != null) {
+            scheduler.scheduleBillReminder(bill.id, bill.title, due, bill.amount)
+        } else {
+            scheduler.cancelBillReminder(bill.id)
+        }
+    }
 
     /** Toggle a bill's paid status; advancing the due date for recurring cycles (mirrors BillsScreen.tsx). */
     fun toggleBillPaid(id: String) {
@@ -403,6 +437,7 @@ constructor(
                 bill.copy(paidStatus = 0, lastPaidAt = null, updatedAt = nowIso())
             }
             plannerDao.updateBill(updated)
+            syncBillReminder(updated)
             Haptics.success()
             loadAll()
         }

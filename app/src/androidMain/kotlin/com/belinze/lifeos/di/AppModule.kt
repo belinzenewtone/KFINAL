@@ -135,7 +135,7 @@ val appModule = module {
     viewModel { LearningViewModel(get()) }
     viewModel { MerchantDetailViewModel(get()) }
     viewModel { MonthlyWrappedViewModel(get()) }
-    viewModel { PlannerViewModel(get(), get()) }
+    viewModel { PlannerViewModel(get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get()) }
     viewModel { ReviewQueueViewModel(get(), get()) }
     viewModel { SearchViewModel(get(), get(), get(), get(), get(), get()) }
