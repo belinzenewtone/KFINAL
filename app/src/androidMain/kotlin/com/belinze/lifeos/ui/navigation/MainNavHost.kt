@@ -2,8 +2,8 @@ package com.belinze.lifeos.ui.navigation
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
@@ -46,26 +46,23 @@ import com.belinze.lifeos.viewmodel.AppViewModel
 //   ‣ Pop = slide back to left in 100ms
 // ─────────────────────────────────────────────────────────────────────────────
 
-// M3 Emphasized easing — matches Android predictive-back feel.
-// Decelerate: fast start → slow settle (incoming screens).
-// Accelerate: slow start → fast exit (outgoing screens).
+// M3 Emphasized decelerate for every direction. An accelerate curve on the leaving
+// screen barely moves it for most of the duration, which reads as an instant cut.
+// No fades: the screens must stay opaque so the slide is actually visible.
 private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
-private val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
 
-private const val ENTER_MS = 350
-private const val EXIT_MS  = 250
+private const val TRANSITION_MS = 350
 
-// Forward push: incoming flies in from right; outgoing drifts slightly left (parallax).
-private val slideEnter = slideInHorizontally(tween(ENTER_MS, easing = EmphasizedDecelerate)) { it } +
-    fadeIn(tween(ENTER_MS / 2, easing = EmphasizedDecelerate))
-private val slideExit  = slideOutHorizontally(tween(EXIT_MS, easing = EmphasizedAccelerate)) { -(it / 6) } +
-    fadeOut(tween(EXIT_MS / 2))
+// Forward push: incoming slides in from the right; outgoing drifts slightly left (parallax).
+private val slideEnter = slideInHorizontally(tween(TRANSITION_MS, easing = EmphasizedDecelerate)) { it }
+private val slideExit  = slideOutHorizontally(tween(TRANSITION_MS, easing = EmphasizedDecelerate)) { -(it / 4) }
 
-// Back pop: outgoing exits right; incoming eases in from slight left offset (parallax reversal).
-private val popEnter   = slideInHorizontally(tween(ENTER_MS, easing = EmphasizedDecelerate)) { -(it / 6) } +
-    fadeIn(tween(ENTER_MS / 2, easing = EmphasizedDecelerate))
-private val popExit    = slideOutHorizontally(tween(EXIT_MS, easing = EmphasizedAccelerate)) { it } +
-    fadeOut(tween(EXIT_MS / 2))
+// Back pop (native cross-activity style): leaving window slides right and shrinks slightly,
+// revealing the previous page which scales up from a small left offset.
+private val popEnter = slideInHorizontally(tween(TRANSITION_MS, easing = EmphasizedDecelerate)) { -(it / 4) } +
+    scaleIn(tween(TRANSITION_MS, easing = EmphasizedDecelerate), initialScale = 0.94f)
+private val popExit  = slideOutHorizontally(tween(TRANSITION_MS, easing = EmphasizedDecelerate)) { it } +
+    scaleOut(tween(TRANSITION_MS, easing = EmphasizedDecelerate), targetScale = 0.92f)
 
 @Composable
 fun MainNavHost(
