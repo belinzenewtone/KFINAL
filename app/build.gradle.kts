@@ -250,6 +250,7 @@ dependencies {
 
     // Unit tests
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlin.test.junit)
 }
 
 // Static analysis — shared YAML, strict gate
