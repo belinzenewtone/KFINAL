@@ -29,3 +29,6 @@ Thumbs.db
 # ── Logs / misc ──────────────────────────────────────────────────────────────
 *.log
 captures/
+
+# ── Local tool settings ──────────────────────────────────────────────────────
+.claude/settings.local.json

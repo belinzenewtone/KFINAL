@@ -13,10 +13,10 @@ failure is a No-Go.
 
 ## 2. Database integrity
 
-- [ ] Room schema JSON exported and committed (`app/schemas/`)
-- [ ] No manual SQL migrations outside `LifeOsDatabase.MIGRATION_*`
+- [ ] Any schema change has a matching SQLDelight `.sqm` migration file
+      committed next to the `.sq` schema
 - [ ] Install-over-upgrade smoke test: previous release → new build
-      (verifies MIGRATION_2_3 on real data)
+      (verifies migrations on real data)
 
 ## 3. SMS pipeline smoke test (physical device)
 

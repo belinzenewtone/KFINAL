@@ -1,7 +1,7 @@
 # LifeOS detekt configuration (Phase 4 hardening).
 # Builds on detekt's defaults; only deviations are listed.
-# The baseline (config/detekt/baseline.xml) records pre-existing findings —
-# CI fails on NEW violations only. Burn the baseline down over time.
+# Per-module baselines (app/detekt-baseline.xml, sms/detekt-baseline.xml) record
+# pre-existing findings — CI fails on NEW violations only. Burn them down over time.
 
 build:
   maxIssues: 0
