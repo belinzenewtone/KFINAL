@@ -647,25 +647,33 @@ object SmsParser {
         }
     }
 
+    private val TWO_DIGIT_YEAR_BASE: java.util.Date =
+        java.util.GregorianCalendar(2000, java.util.Calendar.JANUARY, 1).time
+
+    /**
+     * Strict parse of [text] with [pattern] in the device time zone: rejects impossible dates
+     * (SimpleDateFormat would roll 31/2 over), requires the whole string to match, and reads
+     * two-digit years as 20xx. This mirrors the java.time formatters this replaced.
+     */
+    private fun parseStrict(pattern: String, text: String): Long? {
+        val format = java.text.SimpleDateFormat(pattern, Locale.ENGLISH).apply {
+            timeZone = java.util.TimeZone.getDefault()
+            isLenient = false
+            set2DigitYearStart(TWO_DIGIT_YEAR_BASE)
+        }
+        val position = java.text.ParsePosition(0)
+        val date = format.parse(text, position) ?: return null
+        return if (position.index == text.length) date.time else null
+    }
+
     private fun parseDateMatch(datePart: String, timePart: String?): Long? {
         val shape = dateShape(datePart)
         if (timePart != null) {
             val combined = "$datePart $timePart"
-            dtFormatters(shape).firstNotNullOfOrNull { pattern ->
-                runCatching {
-                    java.text.SimpleDateFormat(pattern, Locale.ENGLISH)
-                        .apply { timeZone = java.util.TimeZone.getDefault() }
-                        .parse(combined)?.time
-                }.getOrNull()
-            }?.let { return it }
+            dtFormatters(shape).firstNotNullOfOrNull { pattern -> parseStrict(pattern, combined) }
+                ?.let { return it }
         }
-        return doFormatters(shape).firstNotNullOfOrNull { pattern ->
-            runCatching {
-                java.text.SimpleDateFormat(pattern, Locale.ENGLISH)
-                    .apply { timeZone = java.util.TimeZone.getDefault() }
-                    .parse(datePart)?.time
-            }.getOrNull()
-        }
+        return doFormatters(shape).firstNotNullOfOrNull { pattern -> parseStrict(pattern, datePart) }
     }
 
     // ── Stage 5e: Semantic hash ───────────────────────────────────────────────

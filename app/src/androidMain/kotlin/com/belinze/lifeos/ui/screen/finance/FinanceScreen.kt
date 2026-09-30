@@ -671,6 +671,10 @@ fun FinanceScreen(
                 transactionId = id,
                 onDismiss     = { selectedTransactionId = null },
                 viewModel     = viewModel,
+                onOpenMerchant = { name ->
+                    selectedTransactionId = null
+                    navController.navigate(NavTo.merchantDetail(name))
+                },
             )
         }
     }

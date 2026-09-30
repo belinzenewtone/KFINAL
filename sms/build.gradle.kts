@@ -63,6 +63,8 @@ dependencies {
     // Unit tests (ported from RFINAL modules/lifeos-sms — see Phase 2)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit)
+    // FrameworkSQLiteOpenHelperFactory (SmsProcessWorkerTest) — previously supplied by room-runtime
+    testImplementation(libs.androidx.sqlite.framework)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.work.testing)
     testImplementation(libs.robolectric)

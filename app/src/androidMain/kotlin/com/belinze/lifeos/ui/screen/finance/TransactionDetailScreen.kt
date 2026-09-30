@@ -82,6 +82,7 @@ fun TransactionDetailScreen(
         transactionId = transactionId,
         onDismiss     = { navController.popBackStack() },
         viewModel     = viewModel,
+        onOpenMerchant = { navController.navigate(NavTo.merchantDetail(it)) },
     )
 }
 
@@ -98,6 +99,7 @@ fun TransactionDetailDialog(
     transactionId: String,
     onDismiss:     () -> Unit,
     viewModel:     TransactionViewModel,
+    onOpenMerchant: ((String) -> Unit)? = null,
 ) {
     val selectedTx by viewModel.selectedTransaction.collectAsStateWithLifecycle()
     val tx = selectedTx?.takeIf { it.id == transactionId }
@@ -194,13 +196,12 @@ fun TransactionDetailDialog(
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
                                     val merchantName = tx.merchant?.takeIf { it.isNotBlank() }
+                                    val canOpenMerchant = merchantName != null && onOpenMerchant != null
                                     DetailRow(
                                         label      = "Merchant",
                                         value      = tx.merchant ?: "",
-                                        valueColor = if (merchantName != null) MaterialTheme.colorScheme.primary else null,
-                                        onClick    = merchantName?.let { name ->
-                                            { navController.navigate(NavTo.merchantDetail(name)) }
-                                        },
+                                        valueColor = if (canOpenMerchant) MaterialTheme.colorScheme.primary else null,
+                                        onClick    = if (canOpenMerchant) ({ onOpenMerchant?.invoke(merchantName.orEmpty()) }) else null,
                                     )
                                     DetailRow("Category", categoryKey.replaceFirstChar { it.uppercase() })
                                     DetailRow("Amount", formatCurrency(tx.amount), valueColor = amountColor)
