@@ -1,0 +1,58 @@
+-- v2 -> v3: adopt the parser-owned import_audit / sms_ingest_queue tables into the
+-- app schema. The legacy tables carry DEFAULT (datetime('now')) expression defaults
+-- and extra NOT NULLs, so both are rebuilt and the data copied. Ported from the
+-- Room-era MIGRATION_2_3.
+
+DROP INDEX IF EXISTS idx_tx_inst_cat;
+DROP INDEX IF EXISTS idx_tx_inst_date;
+DROP INDEX IF EXISTS idx_tx_inst_extref;
+DROP INDEX IF EXISTS idx_tx_semantic_hash;
+DROP INDEX IF EXISTS idx_tx_source_hash;
+
+CREATE TABLE `_tmp_import_audit` (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    `mpesa_code` TEXT,
+    `raw_message` TEXT,
+    `amount` REAL,
+    `merchant` TEXT,
+    `outcome` TEXT,
+    `failure_reason` TEXT,
+    `confidence` TEXT,
+    `created_at` TEXT
+);
+
+INSERT INTO `_tmp_import_audit`
+    (`id`, `mpesa_code`, `raw_message`, `amount`, `merchant`, `outcome`, `failure_reason`, `confidence`, `created_at`)
+SELECT `id`, `mpesa_code`, `raw_message`, `amount`, `merchant`, `outcome`, `failure_reason`, `confidence`, `created_at`
+FROM `import_audit`;
+
+DROP TABLE `import_audit`;
+ALTER TABLE `_tmp_import_audit` RENAME TO `import_audit`;
+
+CREATE INDEX IF NOT EXISTS `index_import_audit_outcome` ON `import_audit` (`outcome`);
+CREATE INDEX IF NOT EXISTS `index_import_audit_created_at` ON `import_audit` (`created_at`);
+
+CREATE TABLE `_tmp_sms_ingest_queue` (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    `body` TEXT NOT NULL,
+    `body_hash` TEXT NOT NULL,
+    `status` TEXT NOT NULL DEFAULT 'pending',
+    `attempts` INTEGER NOT NULL DEFAULT 0,
+    `last_error` TEXT,
+    `received_at` TEXT,
+    `next_retry_at` TEXT,
+    `claimed_at` TEXT,
+    `sender_address` TEXT NOT NULL DEFAULT ''
+);
+
+INSERT INTO `_tmp_sms_ingest_queue`
+    (`id`, `body`, `body_hash`, `status`, `attempts`, `last_error`, `received_at`, `next_retry_at`, `claimed_at`, `sender_address`)
+SELECT `id`, `body`, `body_hash`, `status`, `attempts`, `last_error`, `received_at`, `next_retry_at`, `claimed_at`, COALESCE(`sender_address`, '')
+FROM `sms_ingest_queue`;
+
+DROP TABLE `sms_ingest_queue`;
+ALTER TABLE `_tmp_sms_ingest_queue` RENAME TO `sms_ingest_queue`;
+
+CREATE INDEX IF NOT EXISTS `index_sms_ingest_queue_status_next_retry_at` ON `sms_ingest_queue` (`status`, `next_retry_at`);
+CREATE INDEX IF NOT EXISTS `index_sms_ingest_queue_status_claimed_at` ON `sms_ingest_queue` (`status`, `claimed_at`);
+CREATE UNIQUE INDEX IF NOT EXISTS `index_sms_ingest_queue_body_hash` ON `sms_ingest_queue` (`body_hash`);

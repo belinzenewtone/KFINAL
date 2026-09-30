@@ -1,0 +1,4 @@
+-- v5 -> v6: rename the assistant conversation id 'main' -> 'default' so stored chat
+-- history stays visible. Ported from the Room-era MIGRATION_5_6.
+
+UPDATE `assistant_messages` SET `conversation_id` = 'default' WHERE `conversation_id` = 'main';

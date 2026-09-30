@@ -1,0 +1,25 @@
+-- v1 -> v2: add learning_sessions and drop legacy expo-era transaction indices.
+-- Ported from the Room-era MIGRATION_1_2 so existing installs upgrade in place.
+
+DROP INDEX IF EXISTS idx_tx_inst_cat;
+DROP INDEX IF EXISTS idx_tx_inst_date;
+DROP INDEX IF EXISTS idx_tx_inst_extref;
+DROP INDEX IF EXISTS idx_tx_semantic_hash;
+DROP INDEX IF EXISTS idx_tx_source_hash;
+
+CREATE TABLE IF NOT EXISTS learning_sessions (
+    id               TEXT    NOT NULL PRIMARY KEY,
+    title            TEXT    NOT NULL DEFAULT '',
+    category         TEXT    NOT NULL DEFAULT 'General',
+    description      TEXT,
+    duration_minutes INTEGER NOT NULL DEFAULT 0,
+    is_completed     INTEGER NOT NULL DEFAULT 0,
+    logged_at        TEXT,
+    created_at       TEXT,
+    updated_at       TEXT,
+    deleted_at       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS index_learning_sessions_category ON learning_sessions (category);
+CREATE INDEX IF NOT EXISTS index_learning_sessions_logged_at ON learning_sessions (logged_at);
+CREATE INDEX IF NOT EXISTS index_learning_sessions_is_completed ON learning_sessions (is_completed);

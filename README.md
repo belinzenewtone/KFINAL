@@ -21,6 +21,11 @@ finance pipeline.
   connection via `SmsParserDatabase.attach`; no second SQLiteOpenHelper exists.
   `docs/PHASE0_DECISIONS.md` (D3) is the historical record and still describes
   the earlier Room design.
+- **Schema versions** — the database version is the highest migration number
+  plus one (`app/src/commonMain/sqldelight/migrations/N.sqm` upgrades N → N+1;
+  currently v6). Changing a `.sq` table needs a matching new `.sqm`. Files
+  `1.sqm`–`5.sqm` are the old Room migrations, so Room-era installs (which report
+  version 6) open in place instead of failing with a downgrade error.
 - **Dependency injection** — Koin (`di/AppModule.kt`); register new ViewModels
   there. Hilt is not used.
 - **Dates** — `kotlinx-datetime` everywhere; no `java.time`.

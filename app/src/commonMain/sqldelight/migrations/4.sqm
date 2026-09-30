@@ -1,0 +1,4 @@
+-- v4 -> v5: income sources can be paused/resumed like budgets, bills and recurring
+-- rules. Ported from the Room-era MIGRATION_4_5.
+
+ALTER TABLE `incomes` ADD COLUMN `is_active` INTEGER NOT NULL DEFAULT 1;
