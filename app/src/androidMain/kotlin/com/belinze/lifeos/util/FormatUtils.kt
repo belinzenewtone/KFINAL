@@ -82,42 +82,6 @@ fun formatCurrency(
 ): String = formatCurrency(amount.toDouble(), showCurrency, compact, decimals)
 
 /**
- * Format a plain number with comma thousands separator.
- * Used for counts, percentages, etc.
- */
-fun formatNumber(amount: Double, decimals: Int = 0): String {
-    val fmt = NumberFormat.getNumberInstance(Locale.US).apply {
-        minimumFractionDigits = decimals
-        maximumFractionDigits = decimals
-        isGroupingUsed        = true
-    }
-    return fmt.format(amount)
-}
-
-/**
- * Compact KES shorthand: "KES 1.2M", "KES 34K", "KES 999".
- * Matches the RN compactCurrency() helper.
- */
-fun compactCurrency(amount: Double): String {
-    val abs = Math.abs(amount)
-    val sign = if (amount < 0) "-" else ""
-    return when {
-        abs >= 1_000_000 -> "${sign}Ksh ${String.format(Locale.US, "%.1f", abs / 1_000_000)}M"
-        abs >= 1_000     -> "${sign}Ksh ${String.format(Locale.US, "%.1f", abs / 1_000)}K"
-        else             -> formatCurrency(amount)
-    }
-}
-
-/**
- * Return a sign-aware string: "+KES 1,234" for positive deltas.
- * Used in budget/goal progress lines.
- */
-fun formatDelta(amount: Double): String {
-    val prefix = if (amount >= 0) "+" else ""
-    return "$prefix${formatCurrency(amount)}"
-}
-
-/**
  * Event location is stored as a JSON array of strings (multi-location support);
  * falls back to a legacy plain-string location. Renders as a comma-joined list.
  */

@@ -222,27 +222,6 @@ fun formatRelativeDay(dateIso: String): String {
     }
 }
 
-// ─── Category chip ────────────────────────────────────────────────────────────
-
-@Composable
-fun CategoryChip(category: String) {
-    Box(
-        modifier = Modifier
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                MaterialTheme.shapes.extraSmall,
-            )
-            .padding(horizontal = 6.dp, vertical = 1.dp),
-    ) {
-        Text(
-            text      = category,
-            fontSize  = 10.sp,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines  = 1,
-        )
-    }
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 private val DATE_FMT = LocalDate.Format {

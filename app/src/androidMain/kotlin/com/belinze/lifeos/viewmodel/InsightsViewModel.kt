@@ -35,9 +35,6 @@ import kotlinx.datetime.todayIn
 // Mirrors the 2-tab React AnalyticsScreen (Analytics tab + Insights tab).
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Enums ─────────────────────────────────────────────────────────────────────
-enum class InsightsPeriod { ThisMonth, LastMonth, Last3Months, Last6Months, ThisYear }
-
 enum class AnalyticsTab   { Analytics, Insights }
 
 enum class AnalyticsRange { ThisWeek, ThisMonth }

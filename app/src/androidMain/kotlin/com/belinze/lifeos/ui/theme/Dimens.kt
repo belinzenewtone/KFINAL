@@ -35,7 +35,6 @@ object Spacing {
 object TabBarDimens {
     val height       = 48.dp
     val borderRadius = 24.dp      // ShapeXl
-    val sideInset    = 12.dp      // Spacing.screenHorizontal
     val iconSize     = 20.dp
     const val labelSize = 10          // sp (Spacing.xs - 2 in the RN version = 10 sp)
 }

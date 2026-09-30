@@ -42,11 +42,6 @@ val BgSecondary  = Color(0xFF141825)
 val BgElevated   = Color(0xFF18202F)
 val BgTertiary   = Color(0xFF1B2335)
 
-// Accents
-val AccentPrimary   = Color(0xFF57B9FF)
-val AccentSecondary = Color(0xFF8B5CF6)
-val AccentTertiary  = Color(0xFF5EEAD4)
-
 // Semantic
 val ColorSuccess = Color(0xFF4ADE80)
 val ColorWarning = Color(0xFFFBBF24)
@@ -215,14 +210,6 @@ fun categoryIcon(category: String): ImageVector =
     CategoryIcons[category.lowercase()] ?: Icons.Outlined.HelpOutline
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Priority colours
-// ─────────────────────────────────────────────────────────────────────────────
-
-val PriorityLow    = Color(0xFF3B82F6)
-val PriorityMedium = Color(0xFFF59E0B)
-val PriorityHigh   = Color(0xFFEF4444)
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Material 3 color schemes — values from src/theme/paperTheme.ts exactly
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -291,15 +278,3 @@ val LifeOsLightColorScheme = lightColorScheme(
     inversePrimary       = Color(0xFF7DD3FC),
     scrim                = Color(0xFF000000),
 )
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Material 3 elevation surface tints (from paperTheme.ts elevations)
-// ─────────────────────────────────────────────────────────────────────────────
-
-object ElevationColors {
-    val level1 = Color(0xFF10131E)
-    val level2 = Color(0xFF141825)
-    val level3 = Color(0xFF18202F)
-    val level4 = Color(0xFF1B2335)
-    val level5 = Color(0xFF1F273C)
-}

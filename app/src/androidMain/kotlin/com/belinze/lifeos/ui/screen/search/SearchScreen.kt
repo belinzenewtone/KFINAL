@@ -107,7 +107,6 @@ private val FILTERS = listOf(
     FilterEntry(SearchTab.Loans,         "Loans",      Icons.Outlined.AccountBalance),
 )
 
-private const val MAX_RECENT = 5
 
 @Composable
 fun SearchScreen(
