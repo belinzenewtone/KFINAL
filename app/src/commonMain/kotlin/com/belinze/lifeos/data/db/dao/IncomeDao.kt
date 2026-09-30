@@ -1,6 +1,7 @@
 package com.belinze.lifeos.data.db.dao
 
 import com.belinze.lifeos.data.db.entity.IncomeEntity
+
 interface IncomeDao {
         suspend fun getAll(): List<IncomeEntity>
 

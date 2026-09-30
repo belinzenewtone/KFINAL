@@ -2,6 +2,7 @@ package com.belinze.lifeos.data.db.dao
 
 import com.belinze.lifeos.data.db.entity.AssistantMessageEntity
 import kotlinx.coroutines.flow.Flow
+
 interface AssistantDao {
     /** Rolling 10-message history window for the conversation context. */
         suspend fun getHistory(conversationId: String): List<AssistantMessageEntity>

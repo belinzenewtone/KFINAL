@@ -1,6 +1,7 @@
 package com.belinze.lifeos.data.db.dao
 
 import com.belinze.lifeos.data.db.entity.BudgetEntity
+
 interface BudgetDao {
         suspend fun getActive(): List<BudgetEntity>
 

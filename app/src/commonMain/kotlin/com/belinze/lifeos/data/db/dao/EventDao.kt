@@ -2,6 +2,7 @@ package com.belinze.lifeos.data.db.dao
 
 import com.belinze.lifeos.data.db.entity.EventEntity
 import kotlinx.coroutines.flow.Flow
+
 interface EventDao {
         suspend fun getFrom(fromDate: String): List<EventEntity>
 

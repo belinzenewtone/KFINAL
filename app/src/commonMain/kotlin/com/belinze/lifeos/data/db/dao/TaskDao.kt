@@ -2,6 +2,7 @@ package com.belinze.lifeos.data.db.dao
 
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import kotlinx.coroutines.flow.Flow
+
 interface TaskDao {
         suspend fun getAll(): List<TaskEntity>
 

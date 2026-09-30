@@ -252,10 +252,17 @@ dependencies {
     testImplementation(libs.kotlin.test)
 }
 
-// Static analysis (Phase 4) — shared YAML, strict gate
+// Static analysis — shared YAML, strict gate
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+}
+
+// Generated SQLDelight sources are not hand-written; never lint them.
+ktlint {
+    filter {
+        exclude { it.file.path.replace('\\', '/').contains("/build/generated/") }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
