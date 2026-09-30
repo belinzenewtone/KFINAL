@@ -16,7 +16,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -35,28 +34,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.components.TopBanner
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.AppSegmentedControl
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.components.SegmentOption
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.viewmodel.TransactionViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.atStartOfDayIn
+import org.koin.androidx.compose.koinViewModel
 
 private val TX_TYPES = listOf("expense", "income", "transfer")
 private val STATUSES = listOf("completed", "pending", "failed", "reversed")

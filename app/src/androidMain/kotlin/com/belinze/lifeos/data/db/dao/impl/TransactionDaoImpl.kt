@@ -12,9 +12,9 @@ import com.belinze.lifeos.data.db.dao.FeeCategoryTotal
 import com.belinze.lifeos.data.db.dao.FeeSummary
 import com.belinze.lifeos.data.db.dao.IncomeDateRow
 import com.belinze.lifeos.data.db.dao.MerchantTotal
+import com.belinze.lifeos.data.db.dao.MonthTotals
 import com.belinze.lifeos.data.db.dao.MonthlyCategoryRow
 import com.belinze.lifeos.data.db.dao.MonthlyTotalsRow
-import com.belinze.lifeos.data.db.dao.MonthTotals
 import com.belinze.lifeos.data.db.dao.SizeBreakdownRow
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.TransactionEntity
@@ -23,15 +23,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TransactionDaoImpl(private val q: TransactionQueries) : TransactionDao {
-
     // ─── Reads ────────────────────────────────────────────────────────────────
 
     override suspend fun getPage(limit: Int, offset: Int): List<TransactionEntity> =
         q.getPage(limit.toLong(), offset.toLong()).executeAsList().map { it.toEntity() }
 
     override suspend fun getFiltered(
-        search: String, category: String, type: String?, status: String?,
-        startDate: String?, endDate: String?, limit: Int, offset: Int,
+        search: String,
+        category: String,
+        type: String?,
+        status: String?,
+        startDate: String?,
+        endDate: String?,
+        limit: Int,
+        offset: Int,
     ): List<TransactionEntity> =
         q.getFiltered(search, category, type, status, startDate, endDate, limit.toLong(), offset.toLong())
             .executeAsList().map { it.toEntity() }

@@ -6,7 +6,6 @@ import com.belinze.lifeos.data.db.dao.BudgetDao
 import com.belinze.lifeos.data.db.entity.BudgetEntity
 
 class BudgetDaoImpl(private val q: BudgetQueries) : BudgetDao {
-
     override suspend fun getActive(): List<BudgetEntity> =
         q.getActive().executeAsList().map { it.toEntity() }
 

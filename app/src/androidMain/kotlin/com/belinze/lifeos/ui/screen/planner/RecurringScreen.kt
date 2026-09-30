@@ -16,10 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Repeat
-import com.belinze.lifeos.ui.components.AppAlertDialog
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.components.LifeOSSwitch
-import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,13 +32,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -50,6 +49,7 @@ import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import org.koin.androidx.compose.koinViewModel
 
 private val CADENCE_LABELS = mapOf(
     "hourly"   to "Hourly",

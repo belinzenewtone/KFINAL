@@ -12,7 +12,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class BootReceiver : BroadcastReceiver(), KoinComponent {
-
     private val notificationSync: NotificationSync by inject()
     private val prefs: AppPreferences by inject()
 

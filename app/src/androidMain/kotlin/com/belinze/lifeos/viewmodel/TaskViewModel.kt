@@ -7,13 +7,13 @@ import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.entity.TaskEntity
 import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
+import com.belinze.lifeos.util.newId
 import com.belinze.lifeos.util.nowIso
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.datetime.todayIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,13 +21,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TaskViewModel
@@ -174,9 +174,14 @@ constructor(
         if (raw.isNullOrBlank()) return emptyList()
         return try {
             val cleaned = raw.trim().removePrefix("[").removeSuffix("]")
-            if (cleaned.isBlank()) emptyList()
-            else cleaned.split(",").mapNotNull { it.trim().toIntOrNull() }
-        } catch (_: Exception) { emptyList() }
+            if (cleaned.isBlank()) {
+                emptyList()
+            } else {
+                cleaned.split(",").mapNotNull { it.trim().toIntOrNull() }
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun saveForm(onSuccess: () -> Unit) {

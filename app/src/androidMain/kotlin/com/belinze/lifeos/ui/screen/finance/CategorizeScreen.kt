@@ -28,24 +28,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.PickerOption
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.CategorizeViewModel
 import com.belinze.lifeos.viewmodel.MerchantGroup
+import org.koin.androidx.compose.koinViewModel
 
 private val CATEGORIZE_CATEGORIES = listOf(
     "food", "transport", "utilities", "groceries", "rent", "airtime",

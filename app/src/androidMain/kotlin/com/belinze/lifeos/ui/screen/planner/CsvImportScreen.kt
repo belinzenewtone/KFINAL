@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppChip
@@ -49,6 +48,7 @@ import com.belinze.lifeos.viewmodel.CsvImportViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import org.koin.androidx.compose.koinViewModel
 
 private fun mappingFor(field: String, m: CsvColumnMapping): String = when (field) {
     "amount" -> m.amount

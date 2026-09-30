@@ -1,6 +1,5 @@
 package com.belinze.lifeos.ui.navigation
 
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -11,16 +10,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.screen.auth.AppLockScreen
 import com.belinze.lifeos.ui.screen.auth.AuthScreen
 import com.belinze.lifeos.ui.screen.auth.LoadingScreen
 import com.belinze.lifeos.ui.screen.auth.OnboardingScreen
 import com.belinze.lifeos.viewmodel.AppViewModel
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LifeOsNavHost — root composable for the whole app.

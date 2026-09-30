@@ -71,7 +71,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -88,6 +87,7 @@ import com.belinze.lifeos.viewmodel.SettingsViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileScreen — 1:1 port of src/screens/profile/ProfileScreen.tsx.

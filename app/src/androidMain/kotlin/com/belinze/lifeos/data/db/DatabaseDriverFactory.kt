@@ -19,7 +19,6 @@ import java.io.File
  * is retained so existing installs keep their data.
  */
 actual class DatabaseDriverFactory(private val context: Context) {
-
     // Lazy-create the helper so it is only opened when createDriver() is first called.
     private val helper: SupportSQLiteOpenHelper by lazy {
         val factory = androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory()

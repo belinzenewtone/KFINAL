@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backspace
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Lock
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -55,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.belinze.lifeos.data.datastore.AppPreferenceState
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt

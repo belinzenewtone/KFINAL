@@ -13,7 +13,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import com.belinze.lifeos.ui.theme.LocalDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -44,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.belinze.lifeos.ui.theme.LocalDarkTheme
 import com.belinze.lifeos.ui.theme.ShapeLg
 import com.belinze.lifeos.ui.theme.ShapePill
 import com.belinze.lifeos.ui.theme.Spacing

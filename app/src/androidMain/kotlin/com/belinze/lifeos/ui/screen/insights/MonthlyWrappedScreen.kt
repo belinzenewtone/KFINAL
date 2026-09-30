@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -32,6 +31,7 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.MonthlyWrappedViewModel
 import com.belinze.lifeos.viewmodel.TopCategoryRow
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MonthlyWrappedScreen — 1:1 with MonthlyWrappedScreen.tsx

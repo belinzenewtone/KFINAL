@@ -28,8 +28,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,15 +40,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.FulizaLoanEntity
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
@@ -59,6 +58,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
+import org.koin.androidx.compose.koinViewModel
 
 // Matches LoansScreen.tsx's local SEMANTIC/STATUS_COLOR constants exactly.
 private val SUCCESS = Color(0xFF4ADE80)

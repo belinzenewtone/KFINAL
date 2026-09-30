@@ -6,7 +6,6 @@ import com.belinze.lifeos.data.db.dao.IncomeDao
 import com.belinze.lifeos.data.db.entity.IncomeEntity
 
 class IncomeDaoImpl(private val q: IncomeQueries) : IncomeDao {
-
     override suspend fun getAll(): List<IncomeEntity> =
         q.getAll().executeAsList().map { it.toEntity() }
 

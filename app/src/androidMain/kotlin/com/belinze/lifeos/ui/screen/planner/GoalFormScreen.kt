@@ -47,9 +47,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
@@ -59,9 +59,9 @@ import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.atStartOfDayIn
+import org.koin.androidx.compose.koinViewModel
 import java.util.Calendar
 import java.util.TimeZone
-import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val GOAL_STATUSES = listOf("active", "completed", "archived")
 private val GOAL_STATUS_COLOR = mapOf(

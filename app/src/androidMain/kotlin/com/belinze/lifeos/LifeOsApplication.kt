@@ -21,7 +21,6 @@ import org.koin.core.context.startKoin
 import java.io.File
 
 class LifeOsApplication : Application(), Configuration.Provider {
-
     private val smsService: SmsService by inject()
     private val prefs: AppPreferences by inject()
     private val notificationSync: NotificationSync by inject()

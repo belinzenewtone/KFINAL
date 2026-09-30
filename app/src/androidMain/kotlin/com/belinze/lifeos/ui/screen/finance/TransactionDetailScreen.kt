@@ -11,25 +11,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import com.belinze.lifeos.ui.theme.AppBarDimens
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
-import com.belinze.lifeos.ui.components.AppAlertDialog
-import com.belinze.lifeos.ui.navigation.NavTo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,9 +48,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.AppSegmentedControl
@@ -62,6 +59,8 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.components.SegmentOption
 import com.belinze.lifeos.ui.components.TopBanner
+import com.belinze.lifeos.ui.navigation.NavTo
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.categoryColor
 import com.belinze.lifeos.ui.theme.categoryIcon
@@ -71,6 +70,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun TransactionDetailScreen(

@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class AssistantDaoImpl(private val q: AssistantMessageQueries) : AssistantDao {
-
     override suspend fun getHistory(conversationId: String): List<AssistantMessageEntity> =
         q.getHistory(conversationId).executeAsList().map { it.toEntity() }
 

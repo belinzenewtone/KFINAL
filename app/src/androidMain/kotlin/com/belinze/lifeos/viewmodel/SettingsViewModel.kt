@@ -137,10 +137,12 @@ constructor(
     // ── OTA update check ──────────────────────────────────────────────────────
 
     private val _otaChecking = MutableStateFlow(false)
+
     /** True while a manual "Check for Updates" network request is in flight. */
     val otaChecking: StateFlow<Boolean> = _otaChecking.asStateFlow()
 
     private val _otaUpdateAvailable = MutableStateFlow(false)
+
     /** True after a check confirms an update is available — enables the Download button. */
     val otaUpdateAvailable: StateFlow<Boolean> = _otaUpdateAvailable.asStateFlow()
 
@@ -148,6 +150,7 @@ constructor(
     private var _cachedManifest: OtaUpdateManifest? = null
 
     private val _otaMessage = MutableStateFlow<String?>(null)
+
     /**
      * Result of the last manual check — consumed once by [SettingsScreen] via
      * a [LaunchedEffect] and then cleared with [clearOtaMessage].

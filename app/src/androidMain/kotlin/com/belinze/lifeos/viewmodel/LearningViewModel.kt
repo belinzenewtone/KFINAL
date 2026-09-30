@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.LearningSessionDao
 import com.belinze.lifeos.data.db.entity.LearningSessionEntity
 import com.belinze.lifeos.util.Haptics
+import com.belinze.lifeos.util.newId
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -14,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 
 // ─────────────────────────────────────────────────────────────────────────────

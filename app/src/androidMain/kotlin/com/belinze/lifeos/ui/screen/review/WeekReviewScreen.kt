@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,6 +36,7 @@ import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.DayBar
 import com.belinze.lifeos.viewmodel.WeekReviewViewModel
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -12,10 +12,14 @@ import com.belinze.lifeos.data.db.dao.PlannerDao
 import com.belinze.lifeos.data.db.dao.TaskDao
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.AssistantMessageEntity
+import com.belinze.lifeos.util.FMT_EEE_D_MMM
+import com.belinze.lifeos.util.FMT_MMM_D
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.formatCurrency
+import com.belinze.lifeos.util.lastDayOfMonth
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
+import com.belinze.lifeos.util.newId
 import com.belinze.lifeos.util.nowIso
 import com.belinze.lifeos.util.previousMonthKey
 import kotlinx.collections.immutable.ImmutableList
@@ -32,8 +36,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -49,9 +51,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import com.belinze.lifeos.util.FMT_EEE_D_MMM
-import com.belinze.lifeos.util.FMT_MMM_D
-import com.belinze.lifeos.util.lastDayOfMonth
+import org.json.JSONArray
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -448,7 +448,8 @@ constructor(
         val nowMs      = nowInstant.toEpochMilliseconds()
 
         fun startMs(date: LocalDate) = date.atStartOfDayIn(zone).toEpochMilliseconds()
-        fun endMs(date: LocalDate)   = LocalDateTime(
+
+        fun endMs(date: LocalDate) = LocalDateTime(
             date.year, date.month, date.dayOfMonth, 23, 59, 59, 999_000_000
         ).toInstant(zone).toEpochMilliseconds()
 

@@ -1,7 +1,6 @@
 package com.belinze.lifeos.data.db
 
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
 
 /**
  * Thin wrapper around SQLDelight's [LifeOsDatabase] that provides the

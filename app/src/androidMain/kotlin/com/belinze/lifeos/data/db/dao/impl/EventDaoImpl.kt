@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class EventDaoImpl(private val q: EventQueries) : EventDao {
-
     override suspend fun getFrom(fromDate: String): List<EventEntity> =
         q.getFrom(fromDate).executeAsList().map { it.toEntity() }
 

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.belinze.lifeos.data.db.dao.TransactionDao
 import com.belinze.lifeos.data.db.entity.TransactionEntity
+import com.belinze.lifeos.util.newId
 import com.belinze.lifeos.util.nowIso
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -14,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.belinze.lifeos.util.newId
 
 @Immutable
 data class CsvColumnMapping(

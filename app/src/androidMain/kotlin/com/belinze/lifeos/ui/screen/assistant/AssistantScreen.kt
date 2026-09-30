@@ -34,7 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowCircleUp
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.DeleteOutline
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,8 +57,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.ui.theme.TabBarDimens
 import com.belinze.lifeos.viewmodel.AssistantViewModel
@@ -67,6 +66,7 @@ import com.belinze.lifeos.viewmodel.ChatMessage
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.DateTimeComponents
 import kotlinx.datetime.toLocalDateTime
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AssistantScreen

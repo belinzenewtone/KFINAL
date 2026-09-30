@@ -36,10 +36,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.belinze.lifeos.ui.components.AppAlertDialog
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.TopBanner
@@ -53,12 +52,13 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format.DayOfWeekNames
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EventFormScreen — redesigned to match reference CalendarAddScreen
@@ -1573,7 +1573,11 @@ private val EF_FMT_MMMM_D = LocalDate.Format {
 }
 
 private fun formatDisplayDate(isoDate: String, pattern: String = "EEE, MMM d, yyyy"): String {
-    val date = try { LocalDate.parse(isoDate) } catch (_: Exception) { return isoDate.ifBlank { "Not set" } }
+    val date = try {
+        LocalDate.parse(isoDate)
+    } catch (_: Exception) {
+        return isoDate.ifBlank { "Not set" }
+    }
     val trailing = pattern.length - pattern.trimEnd().length
     val formatted = when (pattern.trim()) {
         "EEE, MMM d, yyyy" -> EF_FMT_EEE_MMM_D_YYYY.format(date)

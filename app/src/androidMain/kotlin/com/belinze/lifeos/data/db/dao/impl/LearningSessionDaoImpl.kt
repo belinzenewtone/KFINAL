@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class LearningSessionDaoImpl(private val q: LearningSessionQueries) : LearningSessionDao {
-
     override fun observeAll(): Flow<List<LearningSessionEntity>> =
         q.observeAll().asFlow().mapToList(Dispatchers.IO).map { list -> list.map { it.toEntity() } }
 

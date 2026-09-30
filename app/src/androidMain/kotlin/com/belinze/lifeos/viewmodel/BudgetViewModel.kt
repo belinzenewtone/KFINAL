@@ -10,6 +10,7 @@ import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.currentMonthKey
 import com.belinze.lifeos.util.monthKeyToEndMillis
 import com.belinze.lifeos.util.monthKeyToStartMillis
+import com.belinze.lifeos.util.newId
 import com.belinze.lifeos.util.nowIso
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -19,7 +20,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.belinze.lifeos.util.newId
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

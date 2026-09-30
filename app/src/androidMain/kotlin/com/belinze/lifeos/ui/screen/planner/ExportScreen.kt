@@ -56,7 +56,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.AppChip
@@ -64,9 +63,9 @@ import com.belinze.lifeos.ui.components.AppDropdownField
 import com.belinze.lifeos.ui.components.AppPickerSheet
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.DateField
-import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.InlineBanner
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.PickerOption
 import com.belinze.lifeos.ui.theme.Spacing
@@ -80,6 +79,7 @@ import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
+import org.koin.androidx.compose.koinViewModel
 
 private data class PreviewDomain(val key: String, val label: String, val color: Color)
 

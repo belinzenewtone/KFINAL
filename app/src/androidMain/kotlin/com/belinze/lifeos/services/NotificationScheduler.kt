@@ -496,4 +496,3 @@ class NotificationReceiver : BroadcastReceiver() {
         kotlin.io.println("LifeOS notification fired: kind=$kind id=$entityId")
     }
 }
-

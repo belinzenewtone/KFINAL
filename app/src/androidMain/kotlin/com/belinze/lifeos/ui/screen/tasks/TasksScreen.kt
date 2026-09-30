@@ -23,14 +23,13 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.Timer
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,10 +53,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.TaskEntity
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -66,6 +65,7 @@ import com.belinze.lifeos.ui.navigation.Route
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.TaskViewModel
+import org.koin.androidx.compose.koinViewModel
 
 private val SUCCESS = Color(0xFF4ADE80)
 private val WARNING = Color(0xFFFBBF24)

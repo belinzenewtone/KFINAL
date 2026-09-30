@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -30,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.core.update.presentation.OtaUpdatePromptHost
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.FloatingTabBar
 import com.belinze.lifeos.ui.components.LifeOsTab
 import com.belinze.lifeos.ui.screen.assistant.AssistantScreen

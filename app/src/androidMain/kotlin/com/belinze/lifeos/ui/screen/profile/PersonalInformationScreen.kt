@@ -50,7 +50,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -59,6 +58,7 @@ import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.ProfileViewModel
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PersonalInformationScreen — 1:1 port of

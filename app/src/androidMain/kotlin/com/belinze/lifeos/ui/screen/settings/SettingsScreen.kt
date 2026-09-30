@@ -32,18 +32,17 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Radio
-import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Wallet
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,22 +66,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.compose.runtime.LaunchedEffect
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.FulizaLimitModal
-import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.SegmentedControl
 import com.belinze.lifeos.ui.components.SettingsRow
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.Route
+import com.belinze.lifeos.ui.theme.AppBarDimens
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.SettingsViewModel
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SettingsScreen — 1:1 port of src/screens/settings/SettingsScreen.tsx.

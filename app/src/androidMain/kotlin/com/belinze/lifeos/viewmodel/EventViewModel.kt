@@ -9,6 +9,7 @@ import com.belinze.lifeos.services.NotificationScheduler
 import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.util.formatInstantAsIsoOffset
 import com.belinze.lifeos.util.lastDayOfMonth
+import com.belinze.lifeos.util.newId
 import com.belinze.lifeos.util.nowIso
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -32,7 +33,6 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.json.JSONArray
-import com.belinze.lifeos.util.newId
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EventViewModel

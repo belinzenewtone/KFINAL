@@ -317,8 +317,11 @@ fun OnboardingScreen(
                             .padding(horizontal = 3.dp)
                             .size(width = if (index == step - 1) 24.dp else 6.dp, height = 4.dp)
                             .background(
-                                if (index < step) MaterialTheme.colorScheme.primary
-                                else              MaterialTheme.colorScheme.outlineVariant,
+                                if (index < step) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outlineVariant
+                                },
                                 CircleShape,
                             ),
                     )
@@ -371,7 +374,7 @@ private fun WelcomeStep() {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             FeatureRow(Icons.Outlined.Speed,        "Tasks, routines, and focused planning")
             FeatureRow(Icons.Outlined.PieChart,     "Budgets, spending, and financial trends")
-            FeatureRow(Icons.Outlined.CalendarMonth,"Events, birthdays, and smart reminders")
+            FeatureRow(Icons.Outlined.CalendarMonth, "Events, birthdays, and smart reminders")
         }
     }
 }
@@ -399,7 +402,7 @@ private fun PillarsStep() {
         Spacer(Modifier.height(Spacing.lg))
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             OnboardingPillarCard(Icons.Outlined.Speed,        "Productivity",       "Prioritize what matters and keep focused execution daily.")
-            OnboardingPillarCard(Icons.Outlined.CalendarMonth,"Planning & Calendar","Events, reminders, birthdays — all in one view.")
+            OnboardingPillarCard(Icons.Outlined.CalendarMonth, "Planning & Calendar", "Events, reminders, birthdays — all in one view.")
             OnboardingPillarCard(Icons.Outlined.PieChart,     "Finance",            "Track spending, watch budgets, and review trends.")
         }
     }

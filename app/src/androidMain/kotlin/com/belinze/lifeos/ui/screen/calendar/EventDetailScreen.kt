@@ -27,9 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.rememberFormFadeIn
@@ -44,7 +44,7 @@ import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
-import com.belinze.lifeos.ui.components.AppAlertDialog
+import org.koin.androidx.compose.koinViewModel
 
 private val PRIORITY_COLORS = mapOf(
     "low" to Color(0xFF7FC8F8),
@@ -105,7 +105,9 @@ fun EventDetailScreen(
                 try {
                     val arr = org.json.JSONArray(event.guests ?: "[]")
                     (0 until arr.length()).map { arr.getString(it) }
-                } catch (_: Exception) { emptyList() }
+                } catch (_: Exception) {
+                    emptyList()
+                }
             }
             if (guests.isNotEmpty()) {
                 DetailRow("Guests", guests.joinToString(", "))
@@ -172,5 +174,7 @@ private fun formatDateTime(iso: String): String {
         }
         val datePart = FMT_EEE_MMM_D_YYYY.format(ldt.date)
         "%s · %02d:%02d".format(datePart, ldt.hour, ldt.minute)
-    } catch (_: Exception) { iso }
+    } catch (_: Exception) {
+        iso
+    }
 }

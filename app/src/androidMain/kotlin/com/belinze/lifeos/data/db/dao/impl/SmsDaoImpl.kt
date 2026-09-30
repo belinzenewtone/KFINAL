@@ -1,7 +1,7 @@
 package com.belinze.lifeos.data.db.dao.impl
 
-import com.belinze.lifeos.data.db.Merchant_categories
 import com.belinze.lifeos.data.db.MerchantCategoryQueries
+import com.belinze.lifeos.data.db.Merchant_categories
 import com.belinze.lifeos.data.db.MlTrainingSampleQueries
 import com.belinze.lifeos.data.db.Ml_training_samples
 import com.belinze.lifeos.data.db.PaybillRegistryQueries
@@ -16,7 +16,6 @@ class SmsDaoImpl(
     private val paybillQ: PaybillRegistryQueries,
     private val mlQ: MlTrainingSampleQueries,
 ) : SmsDao {
-
     override suspend fun getMerchantCategory(merchant: String): MerchantCategoryEntity? =
         merchantQ.getMerchantCategory(merchant).executeAsOneOrNull()?.toEntity()
 

@@ -20,11 +20,9 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Wallet
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.belinze.lifeos.ui.components.LifeOSSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -43,14 +41,15 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
+import com.belinze.lifeos.ui.components.LifeOSSwitch
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
@@ -60,6 +59,7 @@ import com.belinze.lifeos.ui.theme.categoryIcon
 import com.belinze.lifeos.util.formatCurrency
 import com.belinze.lifeos.viewmodel.BudgetViewModel
 import com.belinze.lifeos.viewmodel.BudgetWithSpend
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 
 // Matches BudgetsScreen.tsx's local SEMANTIC constant exactly.

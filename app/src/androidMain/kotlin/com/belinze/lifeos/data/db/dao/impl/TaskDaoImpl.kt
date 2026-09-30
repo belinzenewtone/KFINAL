@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TaskDaoImpl(private val q: TaskQueries) : TaskDao {
-
     override suspend fun getAll(): List<TaskEntity> =
         q.getAll().executeAsList().map { it.toEntity() }
 

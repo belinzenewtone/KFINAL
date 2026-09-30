@@ -38,7 +38,6 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Timer
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,20 +67,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.EventEntity
 import com.belinze.lifeos.data.db.entity.TaskEntity
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.formatLocationFirst
+import com.belinze.lifeos.util.lastDayOfMonth
 import com.belinze.lifeos.viewmodel.EventViewModel
 import com.belinze.lifeos.viewmodel.SettingsViewModel
 import com.belinze.lifeos.viewmodel.TaskViewModel
 import kotlinx.coroutines.launch
-import com.belinze.lifeos.util.lastDayOfMonth
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -91,8 +90,9 @@ import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
 import kotlinx.datetime.isoDayNumber
-import kotlinx.datetime.todayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CalendarScreen — 1:1 port of src/screens/calendar/CalendarScreen.tsx.
@@ -260,7 +260,6 @@ fun CalendarScreen(
 
             Spacer(Modifier.height(Spacing.xs))
 
-
             // ── Tab content scrolls below the always-visible calendar ──────────
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
@@ -326,8 +325,11 @@ fun CalendarScreen(
                                             CalendarTaskItem(
                                                 task     = task,
                                                 onToggle = {
-                                                    if (task.status == "completed") taskViewModel.reopen(task.id)
-                                                    else taskViewModel.complete(task.id)
+                                                    if (task.status == "completed") {
+                                                        taskViewModel.reopen(task.id)
+                                                    } else {
+                                                        taskViewModel.complete(task.id)
+                                                    }
                                                 },
                                                 onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
                                             )
@@ -398,8 +400,11 @@ fun CalendarScreen(
                                     CalendarTaskItem(
                                         task     = task,
                                         onToggle = {
-                                            if (task.status == "completed") taskViewModel.reopen(task.id)
-                                            else taskViewModel.complete(task.id)
+                                            if (task.status == "completed") {
+                                                taskViewModel.reopen(task.id)
+                                            } else {
+                                                taskViewModel.complete(task.id)
+                                            }
                                         },
                                         onClick  = { navController.navigate(NavTo.taskDetail(task.id)) },
                                     )
@@ -984,8 +989,11 @@ private fun CalendarPillTabBar(
                     text = tab.name,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
             }
         }

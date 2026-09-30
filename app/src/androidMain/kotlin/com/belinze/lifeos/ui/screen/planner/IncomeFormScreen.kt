@@ -7,12 +7,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -50,21 +50,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
+import com.belinze.lifeos.util.Haptics
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.atStartOfDayIn
-import com.belinze.lifeos.util.Haptics
+import org.koin.androidx.compose.koinViewModel
 import java.util.Calendar
 import java.util.TimeZone
-import com.belinze.lifeos.ui.components.AppAlertDialog
 
 private val FREQUENCIES = listOf("once", "daily", "weekly", "monthly", "yearly")
 

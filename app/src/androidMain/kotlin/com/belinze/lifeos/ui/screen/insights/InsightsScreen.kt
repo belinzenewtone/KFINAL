@@ -66,7 +66,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -91,6 +90,7 @@ import com.belinze.lifeos.viewmodel.MonthBar
 import com.belinze.lifeos.viewmodel.PaydayPulse
 import com.belinze.lifeos.viewmodel.SizeBreakdown
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // InsightsScreen — 1:1 port of AnalyticsScreen.tsx (tab bar) +

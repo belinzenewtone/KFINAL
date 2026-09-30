@@ -28,10 +28,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.belinze.lifeos.ui.components.AppAlertDialog
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
@@ -43,10 +42,10 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.MonthNames
-import kotlinx.datetime.format.Padding
-import kotlinx.datetime.todayIn
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
+import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────

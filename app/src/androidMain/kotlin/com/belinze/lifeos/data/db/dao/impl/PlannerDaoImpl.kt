@@ -1,9 +1,9 @@
 package com.belinze.lifeos.data.db.dao.impl
 
-import com.belinze.lifeos.data.db.Bills
 import com.belinze.lifeos.data.db.BillQueries
-import com.belinze.lifeos.data.db.Exports
+import com.belinze.lifeos.data.db.Bills
 import com.belinze.lifeos.data.db.ExportQueries
+import com.belinze.lifeos.data.db.Exports
 import com.belinze.lifeos.data.db.FulizaLoanQueries
 import com.belinze.lifeos.data.db.Fuliza_loans
 import com.belinze.lifeos.data.db.GoalQueries
@@ -24,7 +24,6 @@ class PlannerDaoImpl(
     private val loanQ: FulizaLoanQueries,
     private val exportQ: ExportQueries,
 ) : PlannerDao {
-
     // ─── Recurring rules ──────────────────────────────────────────────────────
 
     override suspend fun getActiveRules(): List<RecurringRuleEntity> =

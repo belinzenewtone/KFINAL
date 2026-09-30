@@ -1,6 +1,5 @@
 package com.belinze.lifeos.viewmodel
 
-import com.belinze.lifeos.util.newId
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +10,7 @@ import com.belinze.lifeos.data.db.entity.MerchantCategoryEntity
 import com.belinze.lifeos.data.db.entity.TransactionEntity
 import com.belinze.lifeos.ml.TransactionClassifier
 import com.belinze.lifeos.services.BudgetAlertService
+import com.belinze.lifeos.util.newId
 import com.belinze.lifeos.util.nowIso
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

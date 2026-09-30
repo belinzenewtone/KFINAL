@@ -46,7 +46,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,7 +53,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.data.db.entity.LearningSessionEntity
@@ -62,6 +60,8 @@ import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.LearningViewModel
+import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 
 private val CATEGORIES = listOf("All", "Finance", "Technology", "Health", "Leadership", "Mindfulness", "Career")
 

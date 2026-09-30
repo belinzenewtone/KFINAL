@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.outlined.WbSunny
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -26,13 +25,12 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.alpha
-import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.koin.androidx.compose.koinViewModel
+import androidx.compose.ui.draw.alpha
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
 import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
@@ -40,6 +38,8 @@ import com.belinze.lifeos.ui.components.SettingsRow
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.SettingsViewModel
+import org.koin.androidx.compose.koinViewModel
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

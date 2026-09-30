@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.BannerTone
@@ -67,6 +66,7 @@ import com.belinze.lifeos.ui.components.PageScaffold
 import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.viewmodel.SettingsViewModel
+import org.koin.androidx.compose.koinViewModel
 
 private const val PIN_LENGTH = 6
 

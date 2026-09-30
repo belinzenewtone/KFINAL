@@ -58,10 +58,16 @@ fun AppAlertDialog(
         )
     }
 
-    val tintColor  = if (isDark) Color(0xFF1E232D).copy(alpha = 0.55f)
-                     else         Color(0xFFF1F5F9).copy(alpha = 0.55f)
-    val frostColor = if (isDark) Color(0xFF14161C).copy(alpha = 0.45f)
-                     else         Color(0xFFF8FAFC).copy(alpha = 0.50f)
+    val tintColor  = if (isDark) {
+        Color(0xFF1E232D).copy(alpha = 0.55f)
+    } else {
+        Color(0xFFF1F5F9).copy(alpha = 0.55f)
+    }
+    val frostColor = if (isDark) {
+        Color(0xFF14161C).copy(alpha = 0.45f)
+    } else {
+        Color(0xFFF8FAFC).copy(alpha = 0.50f)
+    }
 
     BasicAlertDialog(onDismissRequest = onDismissRequest) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {

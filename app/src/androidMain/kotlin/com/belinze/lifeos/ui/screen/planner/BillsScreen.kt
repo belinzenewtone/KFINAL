@@ -22,7 +22,6 @@ import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Receipt
-import com.belinze.lifeos.ui.components.AppAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,19 +34,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import com.belinze.lifeos.ui.components.BannerTone
-import com.belinze.lifeos.ui.components.TopBanner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
+import com.belinze.lifeos.ui.components.AppAlertDialog
+import com.belinze.lifeos.ui.components.BannerTone
 import com.belinze.lifeos.ui.components.GlassCard
 import com.belinze.lifeos.ui.components.PageScaffold
+import com.belinze.lifeos.ui.components.TopBanner
 import com.belinze.lifeos.ui.navigation.NavTo
 import com.belinze.lifeos.ui.theme.Spacing
 import com.belinze.lifeos.util.Haptics
@@ -59,6 +58,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
 import kotlinx.datetime.todayIn
+import org.koin.androidx.compose.koinViewModel
 
 // Matches BillsScreen.tsx's local SEMANTIC constant exactly.
 private val SUCCESS = Color(0xFF4ADE80)

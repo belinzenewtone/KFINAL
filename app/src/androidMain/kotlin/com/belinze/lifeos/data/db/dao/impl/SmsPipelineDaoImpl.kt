@@ -1,9 +1,9 @@
 package com.belinze.lifeos.data.db.dao.impl
 
-import com.belinze.lifeos.data.db.Import_audit
 import com.belinze.lifeos.data.db.ImportAuditQueries
-import com.belinze.lifeos.data.db.Sms_ingest_queue
+import com.belinze.lifeos.data.db.Import_audit
 import com.belinze.lifeos.data.db.SmsIngestQueueQueries
+import com.belinze.lifeos.data.db.Sms_ingest_queue
 import com.belinze.lifeos.data.db.dao.SmsPipelineDao
 import com.belinze.lifeos.data.db.entity.ImportAuditEntity
 import com.belinze.lifeos.data.db.entity.SmsIngestQueueEntity
@@ -12,7 +12,6 @@ class SmsPipelineDaoImpl(
     private val queueQ: SmsIngestQueueQueries,
     private val auditQ: ImportAuditQueries,
 ) : SmsPipelineDao {
-
     // ─── Ingest queue ─────────────────────────────────────────────────────────
 
     override suspend fun enqueue(row: SmsIngestQueueEntity): Long {

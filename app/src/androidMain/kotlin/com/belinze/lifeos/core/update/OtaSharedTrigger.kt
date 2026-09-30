@@ -26,12 +26,13 @@ import kotlinx.coroutines.flow.StateFlow
  * show a spinner and block duplicate taps while the network request is in flight.
  */
 object OtaSharedTrigger {
-
     private val _pendingManifest = MutableStateFlow<OtaUpdateManifest?>(null)
+
     /** Non-null while an update manifest is waiting to be shown in the dialog. */
     val pendingManifest: StateFlow<OtaUpdateManifest?> = _pendingManifest
 
     private val _forceManifest = MutableStateFlow<OtaUpdateManifest?>(null)
+
     /**
      * Like [pendingManifest] but bypasses [OtaPromptUiState.skippedVersionCode].
      * Set by [SettingsViewModel.triggerDownload] when the user taps "Download"
@@ -40,6 +41,7 @@ object OtaSharedTrigger {
     val forceManifest: StateFlow<OtaUpdateManifest?> = _forceManifest
 
     private val _isChecking = MutableStateFlow(false)
+
     /** True while [SettingsViewModel] is performing a manual check. */
     val isChecking: StateFlow<Boolean> = _isChecking
 

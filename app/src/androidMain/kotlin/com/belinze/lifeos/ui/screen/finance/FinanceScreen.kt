@@ -71,7 +71,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -92,6 +91,7 @@ import com.belinze.lifeos.viewmodel.BudgetViewModel
 import com.belinze.lifeos.viewmodel.PlannerViewModel
 import com.belinze.lifeos.viewmodel.SmsImportViewModel
 import com.belinze.lifeos.viewmodel.TransactionViewModel
+import org.koin.androidx.compose.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FinanceScreen

@@ -67,7 +67,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.belinze.lifeos.ui.components.GlassCard
@@ -82,6 +81,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
+import org.koin.androidx.compose.koinViewModel
 
 private val TYPE_COLORS = mapOf(
     "birthday" to Color(0xFFFF69B4),
@@ -106,7 +106,6 @@ private val FILTERS = listOf(
     FilterEntry(SearchTab.Incomes,       "Income",     Icons.Outlined.TrendingUp),
     FilterEntry(SearchTab.Loans,         "Loans",      Icons.Outlined.AccountBalance),
 )
-
 
 @Composable
 fun SearchScreen(
